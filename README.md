@@ -69,10 +69,16 @@ with the cache (R3) and without it (R4), both with the full 884-weight list.
 The only difference is POWHEG's internal `#rwgt` comment, at 10⁻¹⁵ relative, from dividing
 out and multiplying back α_s; it matters only for a later `rwl_add` re-reweighting of the LHE.
 
-Physics validation (cross sections, scale bands, STXS Stage 1.3 predictions) is documented in
-the accompanying CMS analysis note. At √s = 13.6 TeV, 15 < m_ℓℓ < 150 GeV, μ₀ = m_ZH/2, the
-cached NLO events give 13.060 ± 0.030 fb with a seven-point band of +16.7/−14.0 %, against
-13.02 fb and +16.4/−13.8 % in arXiv:2603.15762 (Table 3).
+Inclusive cross sections, gg → ℓ⁻ℓ⁺H at √s = 13.6 TeV, 15 < m_ℓℓ < 150 GeV, μ₀ = m_ZH/2,
+on-shell m_t = 172.5 GeV, seven-point scale bands (NNPDF3.1 here, PDF4LHC21 in the reference):
+
+| | this setup | arXiv:2603.15762, Table 3 |
+|---|---|---|
+| LO (fixed-order integration) | 7.037(5) fb, +26.8/−20.0 % | 7.026(4) fb, +26.2/−19.7 % |
+| NLO (weights of 200 000 cached events) | 13.060(30) fb, +16.7/−14.0 % | 13.02(1) fb, +16.4/−13.8 % |
+
+Summed over 200 000 LO events, the event weights reproduce the fixed-order LO integration to
+0.1 % at every scale point.
 
 ## Licence and credits
 
