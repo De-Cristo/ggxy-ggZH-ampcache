@@ -5,12 +5,12 @@ type: software
 authors:
   # TODO: full given name and ORCID
   - family-names: "Zhang"
-    given-names: "L."
+    given-names: "Licheng"
     affiliation: "University of Maryland"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # orcid: "https://orcid.org/0000-0001-7947-9007"
 version: "1.0.0"
 license: GPL-3.0-only
-repository-code: "https://github.com/<user>/ggxy-ggZH-ampcache"
+repository-code: "https://github.com/De-Cristo/ggxy-ggZH-ampcache"
 keywords:
   - POWHEG
   - ggxy
