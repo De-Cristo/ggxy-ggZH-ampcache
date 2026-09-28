@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this amplitude cache, please cite it as below, together with arXiv:2603.15762."
+title: "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH"
+type: software
+authors:
+  # TODO: full given name and ORCID
+  - family-names: "Zhang"
+    given-names: "L."
+    affiliation: "University of Maryland"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+version: "1.0.0"
+license: GPL-3.0-only
+repository-code: "https://github.com/<user>/ggxy-ggZH-ampcache"
+keywords:
+  - POWHEG
+  - ggxy
+  - gluon fusion
+  - ZH
+  - NLO
+  - event generation
+references:
+  - type: article
+    title: "gg → ZH at NLO matched to parton showers with ggxy and POWHEG"
+    authors:
+      - family-names: Davies
+        given-names: Joshua
+      - family-names: Schönwald
+        given-names: Kay
+      - family-names: Steinhauser
+        given-names: Matthias
+      - family-names: Stremmer
+        given-names: Daniel
+    identifiers:
+      - type: other
+        value: "arXiv:2603.15762"
