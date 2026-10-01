@@ -14,7 +14,7 @@
        ! all other parameters have been initialized in init_couplings
        ! mt(mut) is read on the c++ side
 -      mat1l = st_alpha**2*ggllh1l(p)
-+      ! VHTNP amplitude cache (ampcache.cpp): POWHEG's reweighting re-evaluates
++      ! Amplitude cache (ampcache.cpp): POWHEG's reweighting re-evaluates
 +      ! the same kinematics for every weight; store the alpha_s-stripped value.
 +      ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))
 +      ckey(4*nlegs+1) = mt
@@ -46,7 +46,7 @@
        ! all other parameters have been initialized in init_couplings
        ! mt(mut) is read on the c++ side
 -      mat2l = st_alpha**2*ggllh2l(p,dsqrt(st_muren2),mut)
-+      ! VHTNP amplitude cache (ampcache.cpp); the finite two-loop part depends
++      ! Amplitude cache (ampcache.cpp); the finite two-loop part depends
 +      ! explicitly on mu_R, which is therefore part of the key.
 +      ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))
 +      ckey(4*nlegs+1) = mt
@@ -81,7 +81,7 @@
 +      !get pr,ipowQCD and iorder
 +      call get_pr_flav(nlegs,flav,pr,ipowQCD,iorder)
 +
-+      ! VHTNP amplitude cache (ampcache.cpp): at fixed order the squared
++      ! Amplitude cache (ampcache.cpp): at fixed order the squared
 +      ! amplitude is an exact power of alpha_s, so the stored value is
 +      ! alpha_s-free and the current st_alpha is re-applied on a hit.
 +      ! Only the 6-leg real emissions are cached here: setborn caches the Born
@@ -121,7 +121,12 @@
  
 --- a/ggxy_ggZH/Born.f
 +++ b/ggxy_ggZH/Born.f
-@@ -5,8 +5,11 @@
+@@ -1,15 +1,20 @@
+       subroutine setborn(p,bflav,born,bornjk,bmunu)
+       use recola_procs, only: compute_bmunu_rec
++      use params_crd,   only: mtscheme
+       implicit none
+       include 'nlegborn.h'
        include 'pwhg_flst.h'
        include 'pwhg_math.h'
        include 'PhysPars.h'
@@ -133,16 +138,30 @@
        real * 8 p(0:3,nlegs),bornjk(nlegs,nlegs)
        integer bflav(nlegs)
        real * 8 bmunu(0:3,0:3,nlegs),born
-@@ -36,10 +39,29 @@
++      real * 8 mt,mut
+ 
+       complex*16 ff1,ff2,ffc1,ffc2  
+       integer i,j,k,mu,nu
+@@ -32,14 +37,39 @@
+       bornjk = 0d0
+       bmunu  = 0d0
+ 
++      if(mtscheme.eq.0) then
++         mt = ph_topmass
++      else
++         call calc_msbar_mass(nlegs,p,mut,mt)
++      endif
++
+       ! with_recola=.true. : spin correlation correctly calculated with Recola
        ! with_recola=.false.: spin correlation calculated as in old implementation
  
        if(with_recola) then
 -        call calc_matsq_rec(nlegs,p,bflav,born)
-+        ! VHTNP amplitude cache: the Born and its spin-correlated tensor are
++        ! Amplitude cache: the Born and its spin-correlated tensor are
 +        ! cached together (alpha_s^2 stripped), because compute_bmunu_rec reads
 +        ! Recola's momenta and amplitudes from the last calc_matsq call.
 +        ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))
-+        ckey(4*nlegs+1) = ph_topmass
++        ckey(4*nlegs+1) = mt
 +        ikey(1:nlegs) = bflav(1:nlegs)
 +        ikey(nlegs+1) = 4
 +        call ampcache_lookupv(4*nlegs+1,ckey,nlegs+1,ikey,1+16*nlegs,cval,found)
@@ -179,7 +198,7 @@
 --- /dev/null
 +++ b/ggxy_ggZH/ampcache.cpp
 @@ -0,0 +1,136 @@
-+// VHTNP amplitude cache for POWHEG-BOX-V2/ggxy_ggZH (gg -> ZH at NLO, ggxy + Recola).
++// Amplitude cache for POWHEG-BOX-V2/ggxy_ggZH (gg -> ZH at NLO, ggxy + Recola).
 +//
 +// Why it exists.  POWHEG's rwl reweighting (pwhg_main.f: rwl_compute_new_weight ->
 +// setrandom -> gen_btilderw) recomputes B-tilde for every weight in the list with the

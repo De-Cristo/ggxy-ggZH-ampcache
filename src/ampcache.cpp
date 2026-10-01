@@ -1,4 +1,4 @@
-// VHTNP amplitude cache for POWHEG-BOX-V2/ggxy_ggZH (gg -> ZH at NLO, ggxy + Recola).
+// Amplitude cache for POWHEG-BOX-V2/ggxy_ggZH (gg -> ZH at NLO, ggxy + Recola).
 //
 // Why it exists.  POWHEG's rwl reweighting (pwhg_main.f: rwl_compute_new_weight ->
 // setrandom -> gen_btilderw) recomputes B-tilde for every weight in the list with the

@@ -26,6 +26,12 @@ instead of 2–4 s.
 - The Born is stored together with its spin-correlated tensor B_μν (`Born.f`), because Recola's
   `compute_bmunu_rec` reads the amplitudes of its last evaluation; the one-loop routine caches
   only the six-leg real amplitudes (`pwhg_ggxy.f`).
+- Every key contains the top mass that is actually passed to the amplitude: the on-shell mass
+  for `mtscheme 0`, the running mass m_t(μ_t) for `mtscheme 1` (MS-bar). The Born key originally
+  used the on-shell input mass; the ggxy_ggZH authors pointed this out and supplied the change
+  to `Born.f`. With the parameters POWHEG-BOX-V2 can reweight (μ_R, μ_F, PDF) both versions give
+  the same results, because m_t(μ_t) is then fixed by the momenta, but the key now follows the
+  same rule as the other amplitudes.
 - Controls (environment variables): `GGXY_AMPCACHE=0` disables the cache (stock behaviour);
   `GGXY_AMPCACHE_MAX` caps the number of entries (default 400000, about 100 MB). A hit/miss
   summary is printed at exit.
@@ -56,7 +62,8 @@ replacing only its `pwhg_main`; grids and cards are unchanged.
 ## Validation
 
 `validation/closure_summary.py` compares, job by job, events generated with the same seed
-with the cache (R3) and without it (R4), both with the full 884-weight list.
+with the cache (R3) and without it (R4), both with the full 884-weight list, in the on-shell
+top-mass scheme (`mtscheme 0`).
 `validation/results/closure.json` holds the result of 9 jobs on 9 worker nodes at four sites:
 
 | | |

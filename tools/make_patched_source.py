@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate the amplitude-cache patch for POWHEG-BOX-V2/ggxy_ggZH.
 
-Reads the process' pwhg_ggxy.f and Makefile, applies exact string replacements
+Reads the process' pwhg_ggxy.f, Born.f and Makefile, applies exact string replacements
 (each asserted to match exactly once, so a drifted upstream source fails loudly
 instead of producing a silently wrong patch), writes the patched files into an
-output process directory and a unified diff next to this script.
+output process directory and a unified diff (default: ggxy_ggZH-ampcache.patch in the
+current directory).
 
     make_patched_source.py <process dir> <patched process dir> [patch file]
 
@@ -47,7 +48,7 @@ FORTRAN_EDITS: list[tuple[str, str, str]] = [
         "      end subroutine ggllh1lfunc\n",
         "      ! all other parameters have been initialized in init_couplings\n"
         "      ! mt(mut) is read on the c++ side\n"
-        "      ! VHTNP amplitude cache (ampcache.cpp): POWHEG's reweighting re-evaluates\n"
+        "      ! Amplitude cache (ampcache.cpp): POWHEG's reweighting re-evaluates\n"
         "      ! the same kinematics for every weight; store the alpha_s-stripped value.\n"
         "      ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))\n"
         "      ckey(4*nlegs+1) = mt\n"
@@ -84,7 +85,7 @@ FORTRAN_EDITS: list[tuple[str, str, str]] = [
         "      end subroutine ggllh2lfunc\n",
         "      ! all other parameters have been initialized in init_couplings\n"
         "      ! mt(mut) is read on the c++ side\n"
-        "      ! VHTNP amplitude cache (ampcache.cpp); the finite two-loop part depends\n"
+        "      ! Amplitude cache (ampcache.cpp); the finite two-loop part depends\n"
         "      ! explicitly on mu_R, which is therefore part of the key.\n"
         "      ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))\n"
         "      ckey(4*nlegs+1) = mt\n"
@@ -129,7 +130,7 @@ FORTRAN_EDITS: list[tuple[str, str, str]] = [
         "      !get pr,ipowQCD and iorder\n"
         "      call get_pr_flav(nlegs,flav,pr,ipowQCD,iorder)\n"
         "\n"
-        "      ! VHTNP amplitude cache (ampcache.cpp): at fixed order the squared\n"
+        "      ! Amplitude cache (ampcache.cpp): at fixed order the squared\n"
         "      ! amplitude is an exact power of alpha_s, so the stored value is\n"
         "      ! alpha_s-free and the current st_alpha is re-applied on a hit.\n"
         "      ! Only the 6-leg real emissions are cached here: setborn caches the Born\n"
@@ -177,10 +178,30 @@ FORTRAN_EDITS: list[tuple[str, str, str]] = [
 
 BORN_EDITS: list[tuple[str, str, str]] = [
     (
+        "setborn modules",
+        "      use recola_procs, only: compute_bmunu_rec\n      implicit none\n",
+        "      use recola_procs, only: compute_bmunu_rec\n      use params_crd,   only: mtscheme\n      implicit none\n",
+    ),
+    (
         "setborn declarations",
         "      include 'PhysPars.h'\n      integer nlegs\n      parameter (nlegs=nlegborn)\n",
         "      include 'PhysPars.h'\n      include 'pwhg_st.h'\n      integer nlegs\n      parameter (nlegs=nlegborn)\n"
         "      real * 8 ckey(4*nlegs+1),cval(1+16*nlegs)\n      integer ikey(nlegs+1),found\n",
+    ),
+    (
+        "setborn top-mass declaration",
+        "      real * 8 bmunu(0:3,0:3,nlegs),born\n",
+        "      real * 8 bmunu(0:3,0:3,nlegs),born\n      real * 8 mt,mut\n",
+    ),
+    (
+        "setborn top mass in the scheme in use",
+        "      bornjk = 0d0\n      bmunu  = 0d0\n\n",
+        "      bornjk = 0d0\n      bmunu  = 0d0\n\n"
+        "      if(mtscheme.eq.0) then\n"
+        "         mt = ph_topmass\n"
+        "      else\n"
+        "         call calc_msbar_mass(nlegs,p,mut,mt)\n"
+        "      endif\n\n",
     ),
     (
         "setborn cached Born and bmunu",
@@ -190,11 +211,11 @@ BORN_EDITS: list[tuple[str, str, str]] = [
         "          if(abs(bflav(j)).gt.6) cycle\n"
         "          call compute_bmunu_rec(1,'NLO',2,j,bmunu(0:3,0:3,j))\n",
         "      if(with_recola) then\n"
-        "        ! VHTNP amplitude cache: the Born and its spin-correlated tensor are\n"
+        "        ! Amplitude cache: the Born and its spin-correlated tensor are\n"
         "        ! cached together (alpha_s^2 stripped), because compute_bmunu_rec reads\n"
         "        ! Recola's momenta and amplitudes from the last calc_matsq call.\n"
         "        ckey(1:4*nlegs) = reshape(p,(/4*nlegs/))\n"
-        "        ckey(4*nlegs+1) = ph_topmass\n"
+        "        ckey(4*nlegs+1) = mt\n"
         "        ikey(1:nlegs) = bflav(1:nlegs)\n"
         "        ikey(nlegs+1) = 4\n"
         "        call ampcache_lookupv(4*nlegs+1,ckey,nlegs+1,ikey,1+16*nlegs,cval,found)\n"
@@ -230,8 +251,12 @@ def main() -> None:
         raise SystemExit(__doc__)
     src = Path(sys.argv[1]).resolve()
     dst = Path(sys.argv[2]).resolve()
-    patch_out = Path(sys.argv[3]) if len(sys.argv) > 3 else Path(__file__).with_name("0003-vhtnp-amplitude-cache.patch")
+    patch_out = Path(sys.argv[3]) if len(sys.argv) > 3 else Path.cwd() / "ggxy_ggZH-ampcache.patch"
     here = Path(__file__).resolve().parent
+    # next to this script (VH-TnP layout) or in ../src (ggxy-ggZH-ampcache layout)
+    cpp_src = next((c for c in (here / "ampcache.cpp", here.parent / "src" / "ampcache.cpp") if c.exists()), None)
+    if cpp_src is None:
+        raise SystemExit(f"ampcache.cpp not found next to {here} or in {here.parent / 'src'}")
 
     if dst.exists():
         raise SystemExit(f"refusing to overwrite {dst}")
@@ -250,8 +275,8 @@ def main() -> None:
             fromfile=f"a/ggxy_ggZH/{name}",
             tofile=f"b/ggxy_ggZH/{name}",
         )
-    shutil.copy2(here / "ampcache.cpp", dst / "ampcache.cpp")
-    cpp = (here / "ampcache.cpp").read_text().splitlines(keepends=True)
+    shutil.copy2(cpp_src, dst / "ampcache.cpp")
+    cpp = cpp_src.read_text().splitlines(keepends=True)
     diff_lines += difflib.unified_diff([], cpp, fromfile="/dev/null", tofile="b/ggxy_ggZH/ampcache.cpp")
     patch_out.write_text("".join(diff_lines))
     # objects that must be rebuilt: make decides by mtime, and the copies above are new
