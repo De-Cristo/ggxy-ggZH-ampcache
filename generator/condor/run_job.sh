@@ -10,7 +10,7 @@
 #
 #   build                                  -> ggzh-install.tgz
 #   grids  [nseeds] [x-grid iterations]    -> grids.tgz (+ out-grids.tgz with logs)
-#   events <nevents> <seed> [none]         -> out-events-<seed>.tgz
+#   events <nevents> <seed> [none]         -> out-events-<seed>.tgz (LHE, log, xsec-raw-<seed>.json)
 #   cache  <nevents> <seed>                -> out-cache-<seed>.tgz
 #   fo     <lo|nlo> <first seed> <nseeds> [np] [np_opt] [pdf] [program] -> out-fo-<mode>-<first seed>.tgz
 #   lo     [nseeds] [points...]            -> out-lo.tgz
@@ -24,6 +24,7 @@ if [ "$STEP" != build ]; then
   [ -f ggzh-install.tgz ] || { echo "FATAL: ggzh-install.tgz not transferred"; exit 2; }
   mkdir -p install && tar xzf ggzh-install.tgz -C install || exit 2
   export GGZH_PREFIX=$PWD/install
+  source "$GGZH_PREFIX/env.sh" || exit 3
 fi
 case $STEP in
   build)
@@ -38,6 +39,8 @@ case $STEP in
     tar czf out-grids.tgz grids/*.log grids/*.json grids/manifest.txt 2>/dev/null; exit $rc ;;
   events)
     "$G/run/powheg_events.sh" grids.tgz out "$1" "$2" "${3:-$G/cards/pwg-rwl.dat}"; rc=$?
+    # per-job sums for analysis/lhe_xsec.py --merge
+    [ $rc = 0 ] && python3 "$G/analysis/lhe_xsec.py" --files "out/events-$2.lhe.gz" --raw --out "out/xsec-raw-$2.json"
     tar czf "out-events-$2.tgz" out; exit $rc ;;
   cache)
     "$G/run/cache_ab.sh" grids.tgz out "$1" "$2"; rc=$?
