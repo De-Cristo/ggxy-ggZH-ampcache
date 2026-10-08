@@ -11,8 +11,8 @@
 #   <genproductions_scripts checkout>: with ggxy_ggZH support (until merged: the fork branch in README.md)
 #   <card dir>: e.g. ../card/ggxy_ggZH_ZToLL_13p6TeV (powheg.input, process.dat)
 # Environment: CMSSW_12_4_11, el8_amd64_gcc10 (CMSSW_RELEASE / SCRAM_ARCH to change).
-# Output: <name>/ in the work area and the gridpack
-#   ggxy_ggZH_<SCRAM_ARCH>_<CMSSW>_<name>.tgz in the current directory.
+# Output: <CMSSW release>/work/<name>/ (the work area, inside the release as genproductions
+# requires) and the gridpack ggxy_ggZH_<SCRAM_ARCH>_<CMSSW>_<name>.tgz in the current directory.
 set -o pipefail
 GP=$(cd "${1:?genproductions_scripts checkout}" && pwd); CARD=$(cd "${2:?card dir}" && pwd); NAME=${3:?name}
 NS=${4:-16}; NX=${5:-3}
@@ -30,7 +30,9 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 [ -d "$CMSSW_RELEASE" ] || scram project -n "$CMSSW_RELEASE" CMSSW "$CMSSW_RELEASE" > /dev/null || die "scram project"
 cd "$CMSSW_RELEASE/src" && eval "$(scram runtime -sh)" || die "scram runtime"
 cd "$TOP"
-W=$TOP/work; rm -rf "$W"; mkdir -p "$W"
+# the work area must be inside the release: genproductions calls "scram tool info" (LHAPDF,
+# Boost, Eigen) from there, which fails anywhere else
+W=$TOP/$CMSSW_RELEASE/work; rm -rf "$W"; mkdir -p "$W"
 cp -rp "$GP/bin/Powheg/." "$W/"
 mkdir -p "$W/cards"; cp -rp "$CARD" "$W/cards/"
 CARDIN=$W/cards/$(basename "$CARD")/powheg.input

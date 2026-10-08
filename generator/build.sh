@@ -13,7 +13,8 @@
 #
 # Output: <prefix>/ggxy (library install), <prefix>/bin/{pwhg_main,fo-ggllh,fo-ggzh},
 # <prefix>/env.sh (source it before running anything) and <prefix>/BUILD-MANIFEST.txt.
-set -eo pipefail
+set -Eeo pipefail
+trap 'echo "FATAL: build.sh line $LINENO: $BASH_COMMAND" >&2' ERR
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "$HERE/versions.sh"
 [ -n "$1" ] || { echo "usage: $0 <prefix> [make jobs]" >&2; exit 2; }
@@ -33,8 +34,8 @@ BOOST_ROOT=${BOOST_ROOT:-${LCG_VIEW:-}}
 EIGEN_ROOT=${EIGEN_ROOT:-${LCG_VIEW:-}}
 [ -f "$BOOST_ROOT/include/boost/version.hpp" ] || { echo "FATAL: Boost headers not found; set BOOST_ROOT" >&2; exit 2; }
 [ -d "$EIGEN_ROOT/include/eigen3" ] || { echo "FATAL: Eigen not found; set EIGEN_ROOT" >&2; exit 2; }
-EIGEN_CMAKE=$(ls -d "$EIGEN_ROOT"/share/eigen3/cmake "$EIGEN_ROOT"/lib*/cmake/eigen3 2>/dev/null | head -1)
-BOOST_CMAKE=$(ls -d "$BOOST_ROOT"/lib*/cmake/Boost-* 2>/dev/null | sort -V | tail -1)
+EIGEN_CMAKE=$(ls -d "$EIGEN_ROOT"/share/eigen3/cmake "$EIGEN_ROOT"/lib*/cmake/eigen3 2>/dev/null | head -1 || true)
+BOOST_CMAKE=$(ls -d "$BOOST_ROOT"/lib*/cmake/Boost-* 2>/dev/null | sort -V | tail -1 || true)
 # The LCG views also contain Recola and Collier (with CMake configs).  Recola's CMake looks
 # for Collier with find_package(collier HINTS <ggxy's>), and the CMAKE_PREFIX_PATH environment
 # variable takes precedence over HINTS: Recola would be compiled against the wrong Collier.
@@ -70,7 +71,7 @@ for l in ggxy crundec recola collier avhlib cuttools oneloop; do
   [ -f "$GGLIB/lib$l.so" ] || { echo "FATAL: $GGLIB/lib$l.so missing" >&2; exit 4; }
 done
 # Recola prints the Collier it was configured against; it must be ggxy's own
-CLL=$(grep -h "Collier library path" "$LOG/ggxy-make.log" | head -1)
+CLL=$(grep -h "Collier library path" "$LOG/ggxy-make.log" | head -1 || true)
 case "$CLL" in
   *"$PREFIX"*|*"$SRC/ggxy-release"*) echo "Recola uses ggxy's Collier: ${CLL##*: }";;
   "") echo "WARNING: could not find Recola's Collier path in the build log; check $LOG/ggxy-make.log" >&2;;

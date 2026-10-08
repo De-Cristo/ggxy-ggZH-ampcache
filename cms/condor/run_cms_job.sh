@@ -21,7 +21,7 @@ inner() {
       if [ -f genproductions.tgz ]; then mkdir -p genprod && tar xzf genproductions.tgz -C genprod --strip-components=1
       else git clone -q --branch "$GENPROD_REF" "$GENPROD_URL" genprod || { echo "FATAL: clone $GENPROD_URL"; exit 3; }; fi
       "$C/run/gridpack_single_node.sh" genprod "$C/card/$1" "$2" "${3:-16}" "${4:-3}"; rc=$?
-      tar czf out-gridpack.tgz work/*.log work/"$2"/run-st*-1.log work/"$2"/pwg-st*-0001-stat.dat 2>/dev/null
+      tar czf out-gridpack.tgz CMSSW_*/work/*.log CMSSW_*/work/"$2"/run-st*-1.log CMSSW_*/work/"$2"/pwg-st*-stat.dat 2>/dev/null
       exit $rc ;;
     nanogen)
       GPK=$(ls *.tgz | grep -v -e '^cms.tgz$' -e '^out-' | head -1)
