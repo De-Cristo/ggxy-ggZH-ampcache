@@ -1,0 +1,15 @@
+# POWHEG fixed-order LO at the seven scale points, 8 seeds on 8 cores (about 2.5 h).
+executable              = run_job.sh
+arguments               = lo 8
+transfer_input_files    = generator.tgz, ggzh-install.tgz
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = out-lo.tgz
+request_cpus            = 8
+request_memory          = 8 GB
+request_disk            = 10 GB
+environment             = "NCPU=8"
+output                  = logs/lo.out
+error                   = logs/lo.err
+log                     = logs/lo.log
+queue

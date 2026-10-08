@@ -1,7 +1,7 @@
 {
-  "title": "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH",
+  "title": "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH, and a reproduction package for gg -> ZH at NLO+PS",
   "upload_type": "software",
-  "description": "Patch and C++ hash map that memoise the one- and two-loop squared amplitudes of the POWHEG-BOX-V2 process ggxy_ggZH (gg -> ZH at NLO QCD, arXiv:2603.15762) across POWHEG's event reweighting. Event generation with a list of scale and PDF weights becomes about 24 times faster, with bit-identical events and weights (450 events, 397800 weights compared). Includes the generator of the patch and the closure-test tool with its results.",
+  "description": "Patch and C++ hash map that memoise the one- and two-loop squared amplitudes of the POWHEG-BOX-V2 process ggxy_ggZH (gg -> ZH at NLO QCD, arXiv:2603.15762) across POWHEG's event reweighting; merged into ggxy_ggZH on 2026-10-07. Event generation with a list of scale and PDF weights becomes about 24 times faster, with identical events and weights (450 events, 397800 weights compared). Version 2 adds a reproduction package for gg -> Z(ll)H at 13.6 TeV: a generator-level part without CMS software (build at pinned commits, fixed-order LO/NLO, POWHEG grids and events, cache closure, MCFM LO cross-check, reference results and checks) and a CMS part (gridpack card and recipe, Pythia8 fragments, NanoGEN validation chain with HTXS, reference results and checks).",
   "creators": [
     {
       "name": "Zhang, L.",
@@ -9,8 +9,20 @@
     }
   ],
   "license": "GPL-3.0-only",
-  "keywords": ["POWHEG", "ggxy", "gluon fusion", "ZH", "NLO", "event generation", "CMS"],
+  "keywords": [
+    "POWHEG",
+    "ggxy",
+    "gluon fusion",
+    "ZH",
+    "NLO",
+    "event generation",
+    "CMS"
+  ],
   "related_identifiers": [
-    {"identifier": "arXiv:2603.15762", "relation": "isSupplementTo", "scheme": "arxiv"}
+    {
+      "identifier": "arXiv:2603.15762",
+      "relation": "isSupplementTo",
+      "scheme": "arxiv"
+    }
   ]
 }

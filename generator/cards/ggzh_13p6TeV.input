@@ -1,0 +1,59 @@
+! POWHEG-BOX-V2 / ggxy_ggZH: gg -> Z(l+l-) H at NLO QCD + PS, 13.6 TeV
+! (arXiv:2603.15762; ggxy, CPC 320 (2026) 109933).  Physics settings of the authors' testrun
+! card: mu_R = mu_F = m_ZH/2 (process default), on-shell m_t = 172.5 GeV, extZ 1, hdamp 250;
+! Z -> l+l- (l = e, mu, tau; vdecaymode 11) with 15 < m_ll < 150 GeV (the two-loop amplitudes
+! are expanded in the external masses: m_ll and m_H must stay below 150 GeV); on-shell,
+! undecayed Higgs; NNPDF3.1 NNLO (LHAPDF 325300).  Integration settings as in the CMS gridpack.
+! The run scripts append the run-control lines (numevts, iseed, manyseeds, parallelstage,
+! xgriditeration, bornonly, scale factors, reweighting list).
+Zmass 91.1876
+Zwidth 2.4955
+Hmass 125.0
+topmass 172.5
+Wmass 80.385
+min_z_mass     15d0
+max_z_mass    150d0
+onshellhiggs 1
+Hwidth 4.07d-3
+min_h_mass    15d0
+max_h_mass   150d0
+vdecaymode  11
+hdecaymode -1
+chzz      1.0
+extZ 1
+mtscheme          0
+mtscale           1
+mutscfact         1d0
+crd_runLoops_as   5
+crd_runLoops_mt   5
+crd_convLoops_mt  4
+crd_as5mz         0.118d0
+crd_mz            91.1876d0
+ih1         1
+ih2         1
+ebeam1 6800d0
+ebeam2 6800d0
+lhans1 325300
+lhans2 325300
+use-old-grid    1
+use-old-ubound  1
+ncall1  20000
+itmx1       3
+ncall2  40000
+itmx2       2
+foldcsi     1
+foldy       1
+foldphi     1
+nubound 20000
+facscfact   1d0
+renscfact   1d0
+alphas_from_pdf 1
+LOevents          0
+bornonly          0
+fastbtlbound      1
+storemintupb      1
+ubexcess_correct  1
+withnegweights    1
+hdamp           250
+check_bad_st1 1
+check_bad_st2 1

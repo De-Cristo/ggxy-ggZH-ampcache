@@ -1,0 +1,118 @@
+<initrwgt>
+<weightgroup name='scale_variation' combine='envelope' >
+<weight id='1001'> lhapdf=325300 renscfact=1d0 facscfact=1d0 </weight>
+<weight id='1002'> lhapdf=325300 renscfact=1d0 facscfact=2d0 </weight>
+<weight id='1003'> lhapdf=325300 renscfact=1d0 facscfact=0.5d0 </weight>
+<weight id='1004'> lhapdf=325300 renscfact=2d0 facscfact=1d0 </weight>
+<weight id='1005'> lhapdf=325300 renscfact=2d0 facscfact=2d0 </weight>
+<weight id='1006'> lhapdf=325300 renscfact=2d0 facscfact=0.5d0 </weight>
+<weight id='1007'> lhapdf=325300 renscfact=0.5d0 facscfact=1d0 </weight>
+<weight id='1008'> lhapdf=325300 renscfact=0.5d0 facscfact=2d0 </weight>
+<weight id='1009'> lhapdf=325300 renscfact=0.5d0 facscfact=0.5d0 </weight>
+</weightgroup>
+<weightgroup name='PDF_variation1' combine='hessian' >
+<weight id='2000'> lhapdf=325300 </weight>
+<weight id='2001'> lhapdf=325301 </weight>
+<weight id='2002'> lhapdf=325302 </weight>
+<weight id='2003'> lhapdf=325303 </weight>
+<weight id='2004'> lhapdf=325304 </weight>
+<weight id='2005'> lhapdf=325305 </weight>
+<weight id='2006'> lhapdf=325306 </weight>
+<weight id='2007'> lhapdf=325307 </weight>
+<weight id='2008'> lhapdf=325308 </weight>
+<weight id='2009'> lhapdf=325309 </weight>
+<weight id='2010'> lhapdf=325310 </weight>
+<weight id='2011'> lhapdf=325311 </weight>
+<weight id='2012'> lhapdf=325312 </weight>
+<weight id='2013'> lhapdf=325313 </weight>
+<weight id='2014'> lhapdf=325314 </weight>
+<weight id='2015'> lhapdf=325315 </weight>
+<weight id='2016'> lhapdf=325316 </weight>
+<weight id='2017'> lhapdf=325317 </weight>
+<weight id='2018'> lhapdf=325318 </weight>
+<weight id='2019'> lhapdf=325319 </weight>
+<weight id='2020'> lhapdf=325320 </weight>
+<weight id='2021'> lhapdf=325321 </weight>
+<weight id='2022'> lhapdf=325322 </weight>
+<weight id='2023'> lhapdf=325323 </weight>
+<weight id='2024'> lhapdf=325324 </weight>
+<weight id='2025'> lhapdf=325325 </weight>
+<weight id='2026'> lhapdf=325326 </weight>
+<weight id='2027'> lhapdf=325327 </weight>
+<weight id='2028'> lhapdf=325328 </weight>
+<weight id='2029'> lhapdf=325329 </weight>
+<weight id='2030'> lhapdf=325330 </weight>
+<weight id='2031'> lhapdf=325331 </weight>
+<weight id='2032'> lhapdf=325332 </weight>
+<weight id='2033'> lhapdf=325333 </weight>
+<weight id='2034'> lhapdf=325334 </weight>
+<weight id='2035'> lhapdf=325335 </weight>
+<weight id='2036'> lhapdf=325336 </weight>
+<weight id='2037'> lhapdf=325337 </weight>
+<weight id='2038'> lhapdf=325338 </weight>
+<weight id='2039'> lhapdf=325339 </weight>
+<weight id='2040'> lhapdf=325340 </weight>
+<weight id='2041'> lhapdf=325341 </weight>
+<weight id='2042'> lhapdf=325342 </weight>
+<weight id='2043'> lhapdf=325343 </weight>
+<weight id='2044'> lhapdf=325344 </weight>
+<weight id='2045'> lhapdf=325345 </weight>
+<weight id='2046'> lhapdf=325346 </weight>
+<weight id='2047'> lhapdf=325347 </weight>
+<weight id='2048'> lhapdf=325348 </weight>
+<weight id='2049'> lhapdf=325349 </weight>
+<weight id='2050'> lhapdf=325350 </weight>
+<weight id='2051'> lhapdf=325351 </weight>
+<weight id='2052'> lhapdf=325352 </weight>
+<weight id='2053'> lhapdf=325353 </weight>
+<weight id='2054'> lhapdf=325354 </weight>
+<weight id='2055'> lhapdf=325355 </weight>
+<weight id='2056'> lhapdf=325356 </weight>
+<weight id='2057'> lhapdf=325357 </weight>
+<weight id='2058'> lhapdf=325358 </weight>
+<weight id='2059'> lhapdf=325359 </weight>
+<weight id='2060'> lhapdf=325360 </weight>
+<weight id='2061'> lhapdf=325361 </weight>
+<weight id='2062'> lhapdf=325362 </weight>
+<weight id='2063'> lhapdf=325363 </weight>
+<weight id='2064'> lhapdf=325364 </weight>
+<weight id='2065'> lhapdf=325365 </weight>
+<weight id='2066'> lhapdf=325366 </weight>
+<weight id='2067'> lhapdf=325367 </weight>
+<weight id='2068'> lhapdf=325368 </weight>
+<weight id='2069'> lhapdf=325369 </weight>
+<weight id='2070'> lhapdf=325370 </weight>
+<weight id='2071'> lhapdf=325371 </weight>
+<weight id='2072'> lhapdf=325372 </weight>
+<weight id='2073'> lhapdf=325373 </weight>
+<weight id='2074'> lhapdf=325374 </weight>
+<weight id='2075'> lhapdf=325375 </weight>
+<weight id='2076'> lhapdf=325376 </weight>
+<weight id='2077'> lhapdf=325377 </weight>
+<weight id='2078'> lhapdf=325378 </weight>
+<weight id='2079'> lhapdf=325379 </weight>
+<weight id='2080'> lhapdf=325380 </weight>
+<weight id='2081'> lhapdf=325381 </weight>
+<weight id='2082'> lhapdf=325382 </weight>
+<weight id='2083'> lhapdf=325383 </weight>
+<weight id='2084'> lhapdf=325384 </weight>
+<weight id='2085'> lhapdf=325385 </weight>
+<weight id='2086'> lhapdf=325386 </weight>
+<weight id='2087'> lhapdf=325387 </weight>
+<weight id='2088'> lhapdf=325388 </weight>
+<weight id='2089'> lhapdf=325389 </weight>
+<weight id='2090'> lhapdf=325390 </weight>
+<weight id='2091'> lhapdf=325391 </weight>
+<weight id='2092'> lhapdf=325392 </weight>
+<weight id='2093'> lhapdf=325393 </weight>
+<weight id='2094'> lhapdf=325394 </weight>
+<weight id='2095'> lhapdf=325395 </weight>
+<weight id='2096'> lhapdf=325396 </weight>
+<weight id='2097'> lhapdf=325397 </weight>
+<weight id='2098'> lhapdf=325398 </weight>
+<weight id='2099'> lhapdf=325399 </weight>
+<weight id='2100'> lhapdf=325400 </weight>
+<weight id='2101'> lhapdf=325401 </weight>
+<weight id='2102'> lhapdf=325402 </weight>
+</weightgroup>
+</initrwgt>

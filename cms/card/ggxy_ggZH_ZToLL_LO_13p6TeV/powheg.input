@@ -1,0 +1,72 @@
+! LO companion of ggxy_ggZH_ZToLL_13p6TeV: the same card with bornonly 1 and LOevents 1 (Born
+! kinematics only, no POWHEG emission; shower with Pythia8 without the POWHEG veto).
+! CMS gridpack card for POWHEG-BOX-V2/ggxy_ggZH: gg -> Z(l+l-)H at NLO QCD + PS
+! (ggxy two-loop amplitudes, Recola one-loop Born and reals; arXiv:2603.15762, CPC 320 (2026) 109933).
+! Physics settings of the process authors' testrun card (mu_R = mu_F = m_ZH/2, on-shell top mass,
+! hdamp 250, extZ 1); CMS Run-3 conventions for the rest (13.6 TeV, NNPDF31_nnlo_as_0118_mc_hessian_pdfas
+! 325300, vdecaymode 11 = e/mu/tau, undecayed Higgs).  The two-loop amplitudes are expanded in the
+! external masses: m_ll and m_H must stay below 150 GeV, hence max_z_mass 150.  Hadronic Z decays are
+! not available.  NEVENTS and SEED are set by runcmsgrid.sh.
+! ggZH production parameters:
+Zmass 91.1876
+Zwidth 2.4955
+Hmass 125.0
+topmass 172.5
+Wmass 80.385
+min_z_mass     15d0
+max_z_mass    150d0
+onshellhiggs 1
+Hwidth 4.07d-3
+min_h_mass    15d0
+max_h_mass   150d0
+vdecaymode  11
+hdecaymode -1
+chzz      1.0
+extZ 1
+mtscheme          0
+mtscale           1
+mutscfact         1d0
+crd_runLoops_as   5
+crd_runLoops_mt   5
+crd_convLoops_mt  4
+crd_as5mz         0.118d0
+crd_mz            91.1876d0
+! general parameters:
+numevts NEVENTS
+ih1         1
+ih2         1
+ebeam1 6800d0
+ebeam2 6800d0
+lhans1 325300
+lhans2 325300
+use-old-grid    1
+use-old-ubound  1
+ncall1  20000
+itmx1       3
+ncall2  40000
+itmx2       2
+foldcsi     1
+foldy       1
+foldphi     1
+nubound 20000
+! scale settings: process default mu_R = mu_F = m_ZH/2 (fixedscale 0)
+facscfact   1d0
+renscfact   1d0
+alphas_from_pdf 1
+! Born, plots and powheg strategy:
+LOevents          1
+bornonly          1
+testplots         1
+fastbtlbound      1
+storemintupb      1
+ubexcess_correct  1
+storeinfo_rwgt    1
+withnegweights    1
+hdamp           250
+iseed SEED
+manyseeds 1
+parallelstage 1
+xgriditeration 1
+maxseeds 1000
+check_bad_st1 1
+check_bad_st2 1

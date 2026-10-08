@@ -1,0 +1,15 @@
+# Amplitude-cache closure: the same 50 events with the cache on and off, one seed per job.
+executable              = run_job.sh
+seed                    = $(Process) + 51000
+arguments               = cache 50 $INT(seed)
+transfer_input_files    = generator.tgz, ggzh-install.tgz, grids.tgz
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = out-cache-$INT(seed).tgz
+request_cpus            = 1
+request_memory          = 4 GB
+request_disk            = 5 GB
+output                  = logs/cache-$(Process).out
+error                   = logs/cache-$(Process).err
+log                     = logs/cache.log
+queue 3

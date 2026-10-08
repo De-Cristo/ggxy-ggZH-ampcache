@@ -1,0 +1,438 @@
+{
+ "description": "Reference results of the generator-level reproduction: gg -> l+l- H (l = e, mu, tau), 13.6 TeV, 15 < m_ll < 150 GeV, mu_0 = m_ZH/2, on-shell m_t = 172.5 GeV, NNPDF3.1 NNLO (LHAPDF 325300) unless stated. Cross sections in fb; (value, MC error). Produced 2026-09-27 to 2026-10-02 with the pinned commits of versions.sh (ggxy_ggZH a22cb4f + the cache patch; 0fbaccf differs only by the authors' Born-key change, which has no effect for the on-shell top-mass scheme used here) in the CMSSW_12_4_11 toolchain (gcc 10.3, LHAPDF 6.4.0) on HTCondor workers. A rebuild with another compiler agrees statistically, not bit by bit.",
+ "fo_ggllh": {
+  "what": "ggxy fixed-order program fo-ggllh, x3 lepton flavours; LO 8 seeds x 2e6 points (2001-2008), NLO 40 seeds x 1e6 points (3001-3040); 7-point grid computed in the same run",
+  "lo": {
+   "sigma_fb": 7.0324,
+   "mc_err_fb": 0.001,
+   "band_rel": [
+    0.2677,
+    -0.2
+   ],
+   "points": [
+    {
+     "muR": 1.0,
+     "muF": 1.0,
+     "sigma_fb": 7.0324,
+     "mc_err_fb": 0.001
+    },
+    {
+     "muR": 0.5,
+     "muF": 0.5,
+     "sigma_fb": 8.9148,
+     "mc_err_fb": 0.0013
+    },
+    {
+     "muR": 2.0,
+     "muF": 2.0,
+     "sigma_fb": 5.6258,
+     "mc_err_fb": 0.0008
+    },
+    {
+     "muR": 2.0,
+     "muF": 1.0,
+     "sigma_fb": 5.881,
+     "mc_err_fb": 0.0008
+    },
+    {
+     "muR": 0.5,
+     "muF": 1.0,
+     "sigma_fb": 8.5659,
+     "mc_err_fb": 0.0012
+    },
+    {
+     "muR": 1.0,
+     "muF": 2.0,
+     "sigma_fb": 6.7277,
+     "mc_err_fb": 0.001
+    },
+    {
+     "muR": 1.0,
+     "muF": 0.5,
+     "sigma_fb": 7.3197,
+     "mc_err_fb": 0.0011
+    }
+   ]
+  },
+  "nlo": {
+   "sigma_fb": 13.0461,
+   "mc_err_fb": 0.0038,
+   "band_rel": [
+    0.1663,
+    -0.1403
+   ],
+   "points": [
+    {
+     "muR": 1.0,
+     "muF": 1.0,
+     "sigma_fb": 13.0461,
+     "mc_err_fb": 0.0038
+    },
+    {
+     "muR": 0.5,
+     "muF": 0.5,
+     "sigma_fb": 15.2162,
+     "mc_err_fb": 0.0051
+    },
+    {
+     "muR": 2.0,
+     "muF": 2.0,
+     "sigma_fb": 11.2153,
+     "mc_err_fb": 0.0031
+    },
+    {
+     "muR": 2.0,
+     "muF": 1.0,
+     "sigma_fb": 11.4372,
+     "mc_err_fb": 0.0032
+    },
+    {
+     "muR": 0.5,
+     "muF": 1.0,
+     "sigma_fb": 14.9703,
+     "mc_err_fb": 0.0049
+    },
+    {
+     "muR": 1.0,
+     "muF": 2.0,
+     "sigma_fb": 12.8388,
+     "mc_err_fb": 0.0037
+    },
+    {
+     "muR": 1.0,
+     "muF": 0.5,
+     "sigma_fb": 13.3065,
+     "mc_err_fb": 0.0039
+    }
+   ]
+  },
+  "K": 1.8552,
+  "K_err": 0.0006,
+  "K_mzh": {
+   "edges": [
+    150.0,
+    200.0,
+    225.0,
+    250.0,
+    275.0,
+    300.0,
+    325.0,
+    350.0,
+    375.0,
+    400.0,
+    450.0,
+    500.0,
+    550.0,
+    600.0,
+    700.0,
+    800.0,
+    1000.0,
+    1250.0
+   ],
+   "K": [
+    9.5978,
+    2.9391,
+    2.26,
+    2.0795,
+    2.0412,
+    2.0382,
+    2.1981,
+    1.8951,
+    1.7648,
+    1.6868,
+    1.6267,
+    1.5823,
+    1.5605,
+    1.5245,
+    1.5179,
+    1.5508,
+    1.6333
+   ],
+   "K_err": [
+    1.0983,
+    0.0562,
+    0.0072,
+    0.0045,
+    0.0035,
+    0.003,
+    0.0023,
+    0.0019,
+    0.0022,
+    0.0019,
+    0.0025,
+    0.0032,
+    0.0044,
+    0.0043,
+    0.0078,
+    0.0177,
+    0.0188
+   ]
+  },
+  "K_ptz": {
+   "edges": [
+    0.0,
+    25.0,
+    50.0,
+    75.0,
+    100.0,
+    125.0,
+    150.0,
+    175.0,
+    200.0,
+    250.0,
+    300.0,
+    350.0,
+    400.0,
+    500.0,
+    600.0,
+    800.0,
+    1000.0
+   ],
+   "K": [
+    2.1029,
+    2.0211,
+    1.9691,
+    1.9403,
+    1.8851,
+    1.7322,
+    1.7592,
+    1.7664,
+    1.7961,
+    1.9001,
+    1.9567,
+    1.9386,
+    2.136,
+    2.2486,
+    2.5568,
+    4.1031
+   ],
+   "K_err": [
+    0.0304,
+    0.0239,
+    0.0205,
+    0.0194,
+    0.0297,
+    0.026,
+    0.0227,
+    0.0341,
+    0.0175,
+    0.0258,
+    0.028,
+    0.0545,
+    0.0676,
+    0.0556,
+    0.0519,
+    0.0862
+   ]
+  }
+ },
+ "fo_ggzh_stable_lo": {
+  "what": "ggxy fixed-order program fo-ggzh (stable Z), LO, 2 seeds x 2e6 points (5001, 5002)",
+  "NNPDF31": {
+   "sigma_fb": 70.7046,
+   "mc_err_fb": 0.0069,
+   "band_rel": [
+    0.2677,
+    -0.2
+   ]
+  },
+  "PDF4LHC21": {
+   "sigma_fb": 70.6009,
+   "mc_err_fb": 0.0068,
+   "band_rel": [
+    0.2625,
+    -0.1972
+   ]
+  }
+ },
+ "powheg_lo": {
+  "what": "POWHEG-BOX-V2 fixed-order LO (bornonly 1), ncall1 50000 x 3, ncall2 200000 x 3, 8 seeds per point, error-weighted mean of the seeds' stage-2 results",
+  "points": [
+   {
+    "muR": 1.0,
+    "muF": 1.0,
+    "sigma_fb": 7.0306,
+    "mc_err_fb": 0.0019
+   },
+   {
+    "muR": 0.5,
+    "muF": 0.5,
+    "sigma_fb": 8.9127,
+    "mc_err_fb": 0.0024
+   },
+   {
+    "muR": 0.5,
+    "muF": 1.0,
+    "sigma_fb": 8.5638,
+    "mc_err_fb": 0.0023
+   },
+   {
+    "muR": 1.0,
+    "muF": 0.5,
+    "sigma_fb": 7.3179,
+    "mc_err_fb": 0.0019
+   },
+   {
+    "muR": 1.0,
+    "muF": 2.0,
+    "sigma_fb": 6.726,
+    "mc_err_fb": 0.0018
+   },
+   {
+    "muR": 2.0,
+    "muF": 1.0,
+    "sigma_fb": 5.8795,
+    "mc_err_fb": 0.0016
+   },
+   {
+    "muR": 2.0,
+    "muF": 2.0,
+    "sigma_fb": 5.6243,
+    "mc_err_fb": 0.0015
+   }
+  ],
+  "sigma_fb": 7.0306,
+  "mc_err_fb": 0.0019,
+  "band_rel": [
+   0.2677,
+   -0.2
+  ],
+  "note": "Earlier write-ups quoted 7.037(5) fb: that is the first seed alone."
+ },
+ "grids_nlo": {
+  "what": "NLO integral of the grids (16 seeds, settings of cards/ggzh_13p6TeV.input): error-weighted mean of the stage-2 results; POWHEG's stage-3 combination gives the same",
+  "sigma_fb": 13.0312,
+  "mc_err_fb": 0.007,
+  "note": "Earlier write-ups quoted 13.04 fb (13.038 +- 0.027): that is the first seed alone (pwg-stat.dat of the gridpack)."
+ },
+ "events_nlo": {
+  "what": "NLO event weights: 200 000 events (200 seeds x 1000) of the cached CMS gridpack, 9 scale weights; PDF and alpha_s from 450 events with the full CMS list (9 jobs x 50 events, cache closure)",
+  "events": 200000,
+  "sigma_fb": 13.0605,
+  "mc_err_fb": 0.0299,
+  "scale_points": [
+   {
+    "muR": 0.5,
+    "muF": 0.5,
+    "sigma_fb": 15.2365,
+    "mc_err_fb": 0.0355
+   },
+   {
+    "muR": 0.5,
+    "muF": 1,
+    "sigma_fb": 14.9929,
+    "mc_err_fb": 0.0348
+   },
+   {
+    "muR": 0.5,
+    "muF": 2,
+    "sigma_fb": 14.8269,
+    "mc_err_fb": 0.0345
+   },
+   {
+    "muR": 1,
+    "muF": 0.5,
+    "sigma_fb": 13.3202,
+    "mc_err_fb": 0.0307
+   },
+   {
+    "muR": 1,
+    "muF": 1,
+    "sigma_fb": 13.0605,
+    "mc_err_fb": 0.0299
+   },
+   {
+    "muR": 1,
+    "muF": 2,
+    "sigma_fb": 12.8555,
+    "mc_err_fb": 0.0294
+   },
+   {
+    "muR": 2,
+    "muF": 0.5,
+    "sigma_fb": 11.7055,
+    "mc_err_fb": 0.0269
+   },
+   {
+    "muR": 2,
+    "muF": 1,
+    "sigma_fb": 11.4479,
+    "mc_err_fb": 0.0262
+   },
+   {
+    "muR": 2,
+    "muF": 2,
+    "sigma_fb": 11.2271,
+    "mc_err_fb": 0.0256
+   }
+  ],
+  "scale7_band_rel": [
+   0.1666,
+   -0.1404
+  ],
+  "negative_weight_fraction": 0.00121,
+  "pdf_hessian_rel": 0.0095,
+  "pdf_hessian_rel_err": 0.0002,
+  "alphas_rel_for_0p002": 0.0278,
+  "alphas_rel_err": 0.0004
+ },
+ "cache_closure": {
+  "what": "same seed with GGXY_AMPCACHE=1 and 0, CMS 884-weight list (9 scale + 570 Hessian + 305 replica weights), 9 jobs x 50 events on 9 worker nodes",
+  "events": 450,
+  "kinematics_identical": 450,
+  "weights": 397800,
+  "weights_identical": 397800,
+  "cached_s_per_event": 3.31,
+  "uncached_s_per_event": 79.0,
+  "aggregate_speedup": 23.9,
+  "note": "identical = the same text in the LHE file (weights written with 5 significant digits); POWHEG's #rwgt comment line differs at 1e-15 relative"
+ },
+ "paper": {
+  "what": "arXiv:2603.15762 (PDF4LHC21_40_pdfas): Table 3 (gg -> l-l+H, 15 < m_ll < 150 GeV) and Table 1 (stable Z)",
+  "lo": {
+   "sigma_fb": 7.026,
+   "mc_err_fb": 0.004,
+   "band_rel": [
+    0.262,
+    -0.197
+   ]
+  },
+  "nlo": {
+   "sigma_fb": 13.02,
+   "mc_err_fb": 0.01,
+   "band_rel": [
+    0.164,
+    -0.138
+   ]
+  },
+  "K": 1.853,
+  "stable_lo": {
+   "sigma_fb": 70.59,
+   "mc_err_fb": 0.02,
+   "band_rel": [
+    0.263,
+    -0.197
+   ]
+  }
+ },
+ "mcfm_lo_stable": {
+  "what": "MCFM 10.3.1 gg -> ZH (gg_zh amplitudes, independent of Recola), stable Z, LO, removebr undone with 3 x BR(Z->ee); optional cross-check (mcfm/)",
+  "NNPDF31": {
+   "sigma_fb": 71.111,
+   "mc_err_fb": 0.018,
+   "band_rel": [
+    0.268,
+    -0.2
+   ]
+  },
+  "PDF4LHC21": {
+   "sigma_fb": 71.003,
+   "mc_err_fb": 0.017,
+   "band_rel": [
+    0.263,
+    -0.197
+   ]
+  },
+  "note": "+0.6 % above ggxy with either PDF set; not explained by m_b, BR(Z->ll) or alpha_s (open)"
+ }
+}

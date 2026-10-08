@@ -1,0 +1,114 @@
+# gg → ZH at NLO: generator-level reproduction (no CMS software)
+
+This directory rebuilds the public codes at pinned commits and reproduces the fixed-order and
+event-level results for gg → ℓ⁺ℓ⁻H (ℓ = e, μ, τ) at √s = 13.6 TeV, 15 < m_ℓℓ < 150 GeV,
+μ_R = μ_F = m_ZH/2, on-shell m_t = 172.5 GeV, NNPDF3.1 NNLO (LHAPDF 325300).  It needs only an
+LCG view from `/cvmfs/sft.cern.ch`, or any compiler + CMake + Boost + Eigen + LHAPDF stack.
+
+| Code | Commit | |
+|---|---|---|
+| [ggxy](https://gitlab.com/ggxy/ggxy-release) | `9edd1d5` | two-loop amplitudes; bundles Recola, Collier, CutTools, OneLOop, avhlib, CRunDec |
+| [POWHEG-BOX-V2](https://gitlab.com/POWHEG-BOX/V2/POWHEG-BOX-V2) | `6654ea3` | |
+| [ggxy_ggZH](https://gitlab.com/POWHEG-BOX/V2/User-Processes/ggxy_ggZH) | `0fbaccf` | includes the amplitude cache (merged 2026-10-07) |
+
+**Status.** These scripts are extracted from the workflow that produced the reference numbers and
+cleaned of site-specific paths. The analysis and check scripts have been run on the original
+outputs and reproduce every reference number (`check.py`: 46/46). The build and run scripts have
+**not yet been re-run end to end in this form**; the reference numbers come from the same code
+built with gcc 10 (CMSSW_12_4_11 toolchain), and the first rebuild with the LCG view is pending.
+
+## What is reproduced
+
+| Result | Reference (fb) | Steps |
+|---|---|---|
+| ggxy fixed order, LO | 7.0324(10), +26.8/−20.0 % | `run/fo.sh lo`, 8 seeds × 2·10⁶ points |
+| ggxy fixed order, NLO | 13.0461(38), +16.6/−14.0 % | `run/fo.sh nlo`, 40 seeds × 10⁶ points |
+| K = NLO/LO; K(m_ZH), K(p_T(Z)) | 1.8552(6); K(m_ZH) from 2.94 (200–225 GeV) to 1.52 (700–800 GeV) | `analysis/fo_combine.py` |
+| stable Z, LO (`fo-ggzh`) | 70.705(7) NNPDF3.1; 70.601(7) PDF4LHC21 (paper: 70.59(2)) | `run/fo.sh lo … fo-ggzh` |
+| POWHEG fixed-order LO, 7 points | 7.0306(19), +26.8/−20.0 % | `run/powheg_lo.sh` |
+| POWHEG NLO grids (integral) | 13.031(7) | `run/powheg_grids.sh` |
+| NLO events: σ from the weights, 9 scale points | 13.060(30), +16.7/−14.0 % (200 000 events) | `run/powheg_events.sh` |
+| NLO events: PDF (Hessian), α_s ± 0.002 | 0.95 %, 2.8 % | `run/powheg_events.sh` (112-weight list) |
+| Amplitude cache closure | identical events and weights, cache on vs off | `run/cache_ab.sh` |
+| MCFM LO, stable Z (optional) | 71.111(18) NNPDF3.1; 71.003(17) PDF4LHC21 | `mcfm/run_mcfm.sh` |
+| arXiv:2603.15762 (PDF4LHC21) | LO 7.026(4), NLO 13.02(1), K 1.853 | comparison only |
+
+All values with their errors are in `reference/generator.json`.  Two corrections to numbers
+quoted earlier: the POWHEG LO cross section 7.037(5) fb and the gridpack cross section
+13.04 fb were the first seed's results alone; combined over the seeds they are 7.0306(19) and
+13.031(7) fb.  The +0.6 % between MCFM and ggxy at LO is not explained (it is not from m_b,
+BR(Z→ℓℓ) or α_s).
+
+## Quick start (one machine, EL9, `/cvmfs/sft.cern.ch` mounted)
+
+Do not run any of this on a shared login node; use a batch job (below) or your own machine.
+
+```sh
+source env/lcg.sh                       # LCG_107, gcc 11 (LCG_VIEW=... for another view)
+./build.sh $PWD/install 8               # 20-40 min, ~20 GB memory at 8 jobs
+export GGZH_PREFIX=$PWD/install
+
+run/fo.sh lo  out/fo-lo  2001 8         # ggxy LO, 8 seeds in parallel
+run/fo.sh nlo out/fo-nlo 3001 40        # ggxy NLO (use 40 cores, or several machines with other first seeds)
+run/powheg_lo.sh out/powheg-lo 8        # POWHEG LO, 7 points x 8 seeds
+run/powheg_grids.sh out/grids 16        # NLO grids, 16 seeds (4-5 h on 16 cores)
+for s in $(seq 1001 1050); do run/powheg_events.sh out/grids/grids.tgz out/events 1000 $s; done
+run/cache_ab.sh out/grids/grids.tgz out/cache 50 51000
+
+python3 analysis/fo_combine.py --lo out/fo-lo/histo_lo_*.txt --nlo out/fo-nlo/histo_nlo_*.txt --out res/fo.json
+python3 analysis/powheg_stat.py --points $(for p in r1f1 r0p5f0p5 r0p5f1 r1f0p5 r1f2 r2f1 r2f2; do echo $p=out/powheg-lo/$p; done) --out res/powheg-lo.json
+python3 analysis/lhe_xsec.py --files out/events/events-*.lhe.gz --out res/events.json
+python3 check.py --fo res/fo.json --powheg-lo res/powheg-lo.json --grids out/grids/grids-xsec.json \
+                 --events res/events.json --cache out/cache/compare-51000.json
+```
+
+`check.py` passes a value if it agrees with the reference within three standard deviations
+(combined MC errors), at every scale point; it also compares the codes with each other
+(POWHEG LO vs ggxy LO, grids and events vs ggxy NLO).
+
+## On HTCondor
+
+`condor/run_job.sh` runs one step on an EL9 worker with `/cvmfs/sft.cern.ch`; the submit files
+are examples (add your site's runtime and accounting settings).
+
+```sh
+tar czf generator.tgz -C <this repository> generator
+mkdir -p logs
+condor_submit generator/condor/build.sub            # -> ggzh-install.tgz (needs gitlab.com, or sources.tgz)
+condor_submit generator/condor/grids.sub            # -> grids.tgz
+condor_submit generator/condor/fo.sub               # ggxy LO (2 jobs) and NLO (10 jobs)
+condor_submit generator/condor/lo.sub               # POWHEG LO
+condor_submit generator/condor/events.sub           # 50 x 1000 NLO events
+condor_submit generator/condor/cache.sub            # 3 x 50 events, cache on/off
+```
+
+If the workers cannot reach gitlab.com: `./fetch_sources.sh sources` on a machine that can,
+and add `sources.tgz` to the build job's input files.
+
+**Cost** (reference runs, core-hours): build ~4; ggxy LO 2 and NLO 60; POWHEG LO 20; grids 70;
+50 000 events with the 112-weight list ~40 (estimate); cache closure ~3; MCFM ~3.
+About 200 core-hours in total.
+
+## Notes
+
+- **Other Recola/Collier/CutTools/OneLOop builds.** ggxy bundles modified versions. LCG views
+  (and CMSSW) ship their own, which must not be used: `build.sh` configures ggxy without
+  `CMAKE_PREFIX_PATH` (otherwise Recola is compiled against the view's Collier), links every
+  program with an RPATH to the ggxy libraries, and checks with `ldd` where they resolve;
+  `env.sh` puts the ggxy libraries first in `LD_LIBRARY_PATH`.
+- **Compilers.** ggxy has been built with gcc 10 and 11. Fortran module files are compiler
+  specific: build ggxy and POWHEG with the same compiler.
+- **Event normalisation.** POWHEG events carry the weight σ_abs × sign; the cross section is the
+  sum of the weights over the number of events, for the nominal and every alternative weight
+  (`analysis/lhe_xsec.py`). Event generation reads the first seed's upper bounds
+  (`pwgubound.dat`), as CMS gridpacks do.
+- **Weight list.** `cards/pwg-rwl.dat`: 9 scale points and the 103 NNPDF3.1 members (Hessian +
+  α_s), 112 weights; stock POWHEG-BOX-V2 allows 500. The 884-weight CMS list needs the CMS
+  changes to POWHEG (see `../cms`).
+- **Cache.** On by default; `GGXY_AMPCACHE=0` disables it. Valid for reweighting PDFs, μ_R, μ_F
+  and the m_t scheme only. "Identical" means the same text in the LHE file (weights are written
+  with 5 significant digits); POWHEG's internal `#rwgt` line differs at the 10⁻¹⁵ level.
+- **Kinematic limits.** The two-loop amplitudes are expanded in the external masses: keep m_ℓℓ
+  and m_H below 150 GeV.
+- **ggxy output units.** `fo-ggllh` writes nb per unit of the observable for one lepton flavour;
+  `fo_combine.py --nlep 3` converts to fb for ℓ = e, μ, τ.

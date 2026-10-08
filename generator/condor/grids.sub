@@ -1,0 +1,15 @@
+# NLO grids, 16 seeds on one 16-core node (reference: 4 h 16 min).
+executable              = run_job.sh
+arguments               = grids 16 3
+transfer_input_files    = generator.tgz, ggzh-install.tgz
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = grids.tgz, out-grids.tgz
+request_cpus            = 16
+request_memory          = 16 GB
+request_disk            = 20 GB
+environment             = "NCPU=16"
+output                  = logs/grids.out
+error                   = logs/grids.err
+log                     = logs/grids.log
+queue

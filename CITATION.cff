@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this amplitude cache, please cite it as below, together with arXiv:2603.15762."
-title: "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH"
+title: "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH, and a reproduction package for gg -> ZH at NLO+PS"
 type: software
 authors:
   # TODO: full given name and ORCID
@@ -8,7 +8,7 @@ authors:
     given-names: "Licheng"
     affiliation: "University of Maryland"
     # orcid: "https://orcid.org/0000-0001-7947-9007"
-version: "1.0.0"
+version: "2.0.0"
 license: GPL-3.0-only
 repository-code: "https://github.com/De-Cristo/ggxy-ggZH-ampcache"
 keywords:

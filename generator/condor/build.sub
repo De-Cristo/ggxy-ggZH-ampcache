@@ -1,0 +1,17 @@
+# Build once; the product ggzh-install.tgz is an input of every other step.
+# Needs about 2.5 GB of memory per core for the ggxy build.
+executable              = run_job.sh
+arguments               = build
+transfer_input_files    = generator.tgz
+# transfer_input_files  = generator.tgz, sources.tgz      (worker without access to gitlab.com)
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = ggzh-install.tgz, out-build.tgz
+request_cpus            = 8
+request_memory          = 24 GB
+request_disk            = 20 GB
+environment             = "NCPU=8"
+output                  = logs/build.out
+error                   = logs/build.err
+log                     = logs/build.log
+queue

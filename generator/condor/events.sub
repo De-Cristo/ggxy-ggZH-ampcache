@@ -1,0 +1,16 @@
+# NLO events with the 112-weight list, one seed per job: seeds 1001..1000+N.
+# 20 jobs x 1000 events give 13.06 fb with an MC error of about 0.4 %.
+executable              = run_job.sh
+seed                    = $(Process) + 1001
+arguments               = events 1000 $INT(seed)
+transfer_input_files    = generator.tgz, ggzh-install.tgz, grids.tgz
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = out-events-$INT(seed).tgz
+request_cpus            = 1
+request_memory          = 4 GB
+request_disk            = 5 GB
+output                  = logs/events-$(Process).out
+error                   = logs/events-$(Process).err
+log                     = logs/events.log
+queue 20

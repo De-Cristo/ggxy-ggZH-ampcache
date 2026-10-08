@@ -1,0 +1,93 @@
+diff -ruN a/src/Mods/CMakeLists.txt b/src/Mods/CMakeLists.txt
+--- a/src/Mods/CMakeLists.txt
++++ b/src/Mods/CMakeLists.txt
+@@ -24,6 +24,7 @@
+ mod_SCET_Beamfunctions.f90
+ mod_sobseq.f
+ mod_Superhisto.f90
++mod_ggzh_only.f90
+ qsort_c.f
+ scaleset_m.f
+ types_mod.f
+diff -ruN a/src/Mods/mod_ggzh_only.f90 b/src/Mods/mod_ggzh_only.f90
+--- a/src/Mods/mod_ggzh_only.f90
++++ b/src/Mods/mod_ggzh_only.f90
+@@ -0,0 +1,7 @@
++!  extra%only_ggzh = .true.: the LO ZH matrix element (qqb_zh) returns only the loop-induced
++!  gg -> ZH term (gg_zh).  For an LO cross-check of gg -> ZH (part = lo); added for
++!  ggxy-ggZH-ampcache/generator/mcfm.
++module ggzh_only
++  implicit none
++  logical, public, save :: only_ggzh = .false.
++end module ggzh_only
+diff -ruN a/src/Need/parseinput.f90 b/src/Need/parseinput.f90
+--- a/src/Need/parseinput.f90
++++ b/src/Need/parseinput.f90
+@@ -248,6 +248,7 @@
+     call cfg_add(cfg, "extra%pdfchannels", "", "constraints for PDF channels")
+     call cfg_add(cfg, "extra%griddebug", .false., "print grid")
+     call cfg_add(cfg, "extra%dummypdf", .false., "dummy pdfs x^0.1*(1-x)")
++    call cfg_add(cfg, "extra%only_ggzh", .false., "LO ZH matrix element = loop-induced gg to ZH only")
+   end subroutine default_config
+ 
+   subroutine read_config()
+@@ -271,6 +272,7 @@
+     use ggHwilson, only: expansionorder, Wilsonorder
+     use SCET, only: useQT
+     use ptveto
++    use ggzh_only, only: only_ggzh
+ 
+     implicit none
+     include 'cplx.h'
+@@ -703,6 +705,8 @@
+ 
+     call cfg_get(cfg, "extra%griddebug", gridDebug)
+     call cfg_get(cfg, "extra%dummypdf", dummypdf)
++    call cfg_get(cfg, "extra%only_ggzh", only_ggzh)
++    if (only_ggzh) write (*,*) "only_ggzh: LO ZH = loop-induced gg -> ZH only"
+ 
+     call cfg_get_add(cfg, "singletop%nnlo_enable_light", singletop2_nnlo_enable_light, .true., "")
+     call cfg_get_add(cfg, "singletop%nnlo_enable_heavy_prod", singletop2_nnlo_enable_heavy_prod, .true., "")
+diff -ruN a/src/ZHbbar/qqb_zh.f b/src/ZHbbar/qqb_zh.f
+--- a/src/ZHbbar/qqb_zh.f
++++ b/src/ZHbbar/qqb_zh.f
+@@ -4,6 +4,7 @@
+ !
+ 
+       subroutine qqb_zh(p,msq)
++      use ggzh_only, only: only_ggzh
+       implicit none
+       include 'types.f'
+ c***********************************************************************
+@@ -28,6 +29,9 @@
+       real(dp):: p(mxpart,4)
+       real(dp):: s,prop,fac,q1423,q2413,s56,v2(2)
+       real(dp):: msq(-nf:nf,-nf:nf),hdecay,msqhgamgam
++      complex(dp):: za(mxpart,mxpart),zb(mxpart,mxpart)
++      real(dp):: brwen,brzee,brznn,brtau,brtop,brcharm
++      logical, save:: firstgg=.true.
+ 
+       s(j,k)=2*(p(j,4)*p(k,4)-p(j,1)*p(k,1)-p(j,2)*p(k,2)-p(j,3)*p(k,3))
+ 
+@@ -36,6 +40,21 @@
+ 
+       msq(:,:)=0._dp
+ 
++c--- only_ggzh: loop-induced gg -> ZH only (LO cross-check of gg -> ZH).
++c--- gg_zh reads s(5,6) for the Higgs decay from sprods_com, so fill it
++c--- for all six particles first.  BR(Z->ee) is printed so that a run
++c--- with removebr can be converted back to Z -> e+ e- in the m34 window.
++      if (only_ggzh) then
++        if (firstgg) then
++          firstgg=.false.
++          call branch(brwen,brzee,brznn,brtau,brtop,brcharm)
++          write(6,*) 'only_ggzh: brzee = ',brzee
++        endif
++        call spinoru(6,p,za,zb)
++        call gg_zh(p,msq(0,0))
++        return
++      endif
++
+ c---calculate the 2 Z propagators
+       prop=     ((s(1,2)-zmass**2)**2+(zmass*zwidth)**2)
+       prop=prop*((s(3,4)-zmass**2)**2+(zmass*zwidth)**2)
