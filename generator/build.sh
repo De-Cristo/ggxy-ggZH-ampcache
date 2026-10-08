@@ -84,18 +84,23 @@ fetch "$SRC/POWHEG-BOX-V2/ggxy_ggZH" "$GGZH_URL" "$GGZH_COMMIT"
 P=$SRC/POWHEG-BOX-V2/ggxy_ggZH
 git -C "$P" checkout -q -- Makefile
 grep -q '^ANALYSIS = default' "$P/Makefile" && grep -q '^LIBS+=-L$(GGXYLIB) -lggxy' "$P/Makefile" && grep -q '^CFLAGS=' "$P/Makefile" \
+  && grep -q '^LIBHEPMC=' "$P/Makefile" \
   || { echo "FATAL: unexpected ggxy_ggZH Makefile; the edits below need revisiting" >&2; exit 5; }
 # - no analysis (no FastJet); the results come from the LHE files and the stat files
 # - RPATH to the ggxy libraries, as DT_RPATH, so that other Recola/CutTools/Collier/OneLOop
 #   libraries in LD_LIBRARY_PATH (LCG views, CMSSW) are not picked up
 # - LHAPDF include directory (ggxy headers include LHAPDF/LHAPDF.h)
+# - no HepMC flags: they are only for the Pythia8 interface, and "pythia8-config --hepmc" of
+#   some installations (LCG views) prints a warning that would end up on the compiler line
 sed -i -e 's|^ANALYSIS = default|ANALYSIS = none|' \
+       -e 's|^LIBHEPMC=.*|LIBHEPMC=|' \
        -e 's|^LIBS+=-L$(GGXYLIB) |LIBS+=-L$(GGXYLIB) -Wl,-rpath,$(GGXYLIB) -Wl,--disable-new-dtags |' \
        -e 's|^CFLAGS=\(.*\)$|CFLAGS=\1 -I$(shell $(LHAPDF_CONFIG) --incdir)|' "$P/Makefile"
 (
   cd "$P"
   export GGXYPATH=$PREFIX/ggxy LD_LIBRARY_PATH=$GGLIB:${LD_LIBRARY_PATH:-}
   make clean > /dev/null 2>&1 || true
+  mkdir -p obj-gfortran mod-gfortran              # the .f90 rule does not create the module directory
   make ggxy.o > "$LOG/pwhg-make.log" 2>&1        # Fortran module first, other objects use it
   make -j "$JOBS" pwhg_main >> "$LOG/pwhg-make.log" 2>&1
 ) || { echo "FATAL: pwhg_main build failed, see $LOG/pwhg-make.log" >&2; grep -n -i error "$LOG/pwhg-make.log" | head >&2; exit 6; }
