@@ -21,19 +21,26 @@
 #   events-nlo-nnpdf31.json, events-lo-nnpdf31.json   (13600, 13000: PDF uncertainty with the
 #                               NNPDF3.1 weights of the same events)
 #   events-nlo-bs250.json       (verify: weighted events with Born suppression)
-#   cache/compare-<seed>.json   cache closure
+#   cache/compare-<seed>.json   cache closure (file names relative to the job)
+#   cache/speedup.json          per seed, same events with and without the amplitude cache:
+#                               "evaluations" = one-loop amplitude evaluations without / with the cache
+#                               (from the cache counters: (hits + misses) / misses; independent of the
+#                               machine), "wall" = wall time without / with (both runs in the same job;
+#                               depends on the load of the machine)
 #   shower-<variant>.json       showers, exact sums over all jobs (pb, analysis/yoda_summary.py)
 #   check-shower-<variant>.json shower/check_shower.py of each shower against its events
 #   lops-<tune>.json            rescaled LO+PS against NLO+PS (analysis/compare_orders.py)
 #   bornsupp-shower.json        (verify: NLO+PS from weighted against unweighted events)
 #   check-generator.json        generator/check.py (13600, 13000: --paper-energy)
 #   SHA256SUMS                  of every file above
+# The outputs record no absolute paths (file names only), so they can be published as they are.
 # Exit status 1 if a step or a check failed (listed at the end of STATUS.txt).
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd); PKG=$(cd "$HERE/.." && pwd)
 SET=${1:?set}; RES=${2:?results directory}; OUT=${3:?output directory}
 RES=$(cd "$RES" && pwd) || exit 2
 mkdir -p "$OUT/work" "$OUT/cache" || exit 2; OUT=$(cd "$OUT" && pwd); W=$OUT/work
+cd "$OUT" || exit 2                     # inputs of the comparison scripts by relative name
 GA=$PKG/generator/analysis; SA=$PKG/shower/analysis
 if [ "$SET" = verify ]; then PDFID=325300; NMEM=100; PDFW=2000      # pwg-rwl.dat: NNPDF3.1
 else PDFID=93300; NMEM=40; PDFW=3000; fi                             # pwg-rwl-pdf4lhc21.dat: PDF4LHC21
@@ -46,7 +53,6 @@ present() { local n=0 p; for p in $(seq 0 $((NJOBS[$1] - 1))); do [ -d "$RES/$1/
 # ---------------------------------------------------------------- status of the results
 {
   echo "production/analyze.sh set $SET, package $(head -1 "$PKG/VERSION")"
-  echo "results $RES"
   for r in "${RUNS[@]}"; do
     n=$(present "$r")
     c=$(cat "$RES/$r"/*/VERSION 2>/dev/null | awk '{print substr($1, 1, 12)}' | sort -u | tr '\n' ' ')
@@ -123,7 +129,20 @@ else
   events events-nlo events-nlo-nnpdf31 325300 100
   events events-lo events-lo-nnpdf31 325300 100
 fi
-if have cache; then unpack cache 'out/compare-*.json'; step cache cp "$W"/cache/*/out/compare-*.json "$OUT/cache/"; fi
+if have cache; then
+  unpack cache 'out/compare-*.json' 'out/timing.txt'
+  for f in "$W"/cache/*/out/compare-*.json; do
+    sed -E 's#"(a|b)": "[^"]*/(cached|uncached)/#"\1": "\2/#' "$f" > "$OUT/cache/${f##*/}" || FAILED+=(cache)
+  done
+  # timing.txt: "seed <s> cache=<0|1> events <n> wall <t>s per_event <x>s ggxy ampcache: ... hits=<h> misses=<m> ..."
+  cat "$W"/cache/*/out/timing.txt 2>/dev/null | awk '
+    $3 == "cache=1" { c[$2] = $7 + 0; for (i = 1; i <= NF; i++) { split($i, kv, "="); if (kv[1] == "hits") h[$2] = kv[2]; if (kv[1] == "misses") m[$2] = kv[2] } }
+    $3 == "cache=0" { u[$2] = $7 + 0 }
+    END { printf "{"; n = 0
+          for (s in c) if (s in u && c[s] > 0 && m[s] > 0)
+            printf "%s\n \"%s\": {\"evaluations\": %.3f, \"wall\": %.3f}", (n++ ? "," : ""), s, (h[s] + m[s]) / m[s], u[s] / c[s]
+          print "\n}" }' > "$OUT/cache/speedup.json"
+fi
 
 # ---------------------------------------------------------------- showers
 for r in "${RUNS[@]}"; do
@@ -141,11 +160,11 @@ for f in "$OUT"/shower-nlo-*.json; do
   t=${f##*/shower-nlo-}; t=${t%.json}
   case $t in bs250-*) continue ;; esac
   los=(); for g in "$OUT"/shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
-  [ ${#los[@]} = 0 ] || step "lops-$t" python3 "$SA/compare_orders.py" --nlo "$f" --lo "${los[@]}" --out "$OUT/lops-$t.json"
+  [ ${#los[@]} = 0 ] || step "lops-$t" python3 "$SA/compare_orders.py" --nlo "${f##*/}" --lo "${los[@]##*/}" --out "lops-$t.json"
 done
 if [ -f "$OUT/shower-nlo-bs250-monash.json" ] && [ -f "$OUT/shower-nlo-monash.json" ]; then
-  step bornsupp-shower python3 "$SA/compare_samples.py" --a "$OUT/shower-nlo-bs250-monash.json" \
-    --b "$OUT/shower-nlo-monash.json" --out "$OUT/bornsupp-shower.json"
+  step bornsupp-shower python3 "$SA/compare_samples.py" --a shower-nlo-bs250-monash.json \
+    --b shower-nlo-monash.json --out bornsupp-shower.json
 fi
 
 # ---------------------------------------------------------------- generator checks
