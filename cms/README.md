@@ -21,13 +21,15 @@ libraries in `lib/`) is on the branch `powheg_ggxy_ggzh` of
 **Status.** The reference (`reference/cms.json`) comes from a gridpack built with the same card
 and the same process code (`ggxy_ggZH` `a22cb4f` + the cache; `0fbaccf` differs only by the
 authors' Born-key change, which has no effect for the on-shell top-mass scheme), but with a
-POWHEG-BOX-V2 core repacked from git `6654ea3`; CMS genproductions uses its own POWHEG-BOX-V2
-source tarball (`powhegboxV2_rev4122_date20250213`). The genproductions recipe has been compiled
-(CMSSW_13_0_13) but has **not yet produced a gridpack**: the first one must pass `check_cms.py`
-(and its grid integral must agree with 13.031(7) fb) before it is used. The scripts here are
-extracted from the validated workflow; `nanogen_summary.py` and `check_cms.py` were run on the
-original NanoGEN files (a subset passes 21/21 checks; the LO subset checked against the NLO
-reference fails 19 checks, as it should).
+POWHEG-BOX-V2 core repacked from git `6654ea3`. The genproductions recipe (fork branch
+`powheg_ggxy_ggzh`: `0fbaccf`, ggxy built in the release, CMS's own POWHEG-BOX-V2 tarball
+`powhegboxV2_rev4122_date20250213`) was verified on 2026-10-09 with `run/gridpack_single_node.sh`
+(CMSSW_12_4_11, 16 seeds): it compiles, integrates and packs a gridpack whose grid integral is
+13.0315(70) fb, equal to the reference gridpack's to 10⁻⁷. The NanoGEN validation of that
+gridpack (`check_cms.py`) has not been run yet. The scripts here are extracted from the validated
+workflow; `nanogen_summary.py` and `check_cms.py` were run on the original NanoGEN files (a
+subset passes 21/21 checks; the LO subset checked against the NLO reference fails 19 checks, as
+it should).
 
 ## 1. Gridpack
 
