@@ -3,6 +3,7 @@
 
     check.py [--fo fo.json] [--stable-nnpdf31 st.json] [--stable-pdf4lhc21 st.json]
              [--powheg-lo powheg-lo.json] [--grids grids-xsec.json] [--events events.json]
+             [--events-lo events-lo.json]
              [--cache compare-*.json ...] [--mcfm-stable-nnpdf31 m.json] [--mcfm-stable-pdf4lhc21 m.json]
              [--out report.json]
 
@@ -80,7 +81,7 @@ def kfactor(name, got, ref, skip_first=True):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    for opt in ("fo", "stable-nnpdf31", "stable-pdf4lhc21", "powheg-lo", "grids", "events",
+    for opt in ("fo", "stable-nnpdf31", "stable-pdf4lhc21", "powheg-lo", "grids", "events", "events-lo",
                 "mcfm-stable-nnpdf31", "mcfm-stable-pdf4lhc21"):
         ap.add_argument(f"--{opt}", type=Path)
     ap.add_argument("--cache", nargs="*", type=Path, default=[])
@@ -136,6 +137,9 @@ def main(argv=None) -> int:
         if a.fo and "nlo" in load(a.fo):
             n = load(a.fo)["nlo"]
             pull("events NLO vs ggxy NLO", ev["sigma_fb"], ev["mc_err_fb"], n["sigma_fb"], n["mc_err_fb"], "two codes, same run")
+    if a.events_lo:
+        # LO (Born-only) events from LO grids: the event weights against the ggxy LO at all 7 points
+        points("LO events vs ggxy LO", load(a.events_lo)["scale_points"], REF["fo_ggllh"]["lo"]["points"])
     for opt, key in (("mcfm_stable_nnpdf31", "NNPDF31"), ("mcfm_stable_pdf4lhc21", "PDF4LHC21")):
         p = getattr(a, opt)
         if p:
