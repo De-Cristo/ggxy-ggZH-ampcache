@@ -127,7 +127,7 @@ if have cache; then unpack cache 'out/compare-*.json'; step cache cp "$W"/cache/
 
 # ---------------------------------------------------------------- showers
 for r in "${RUNS[@]}"; do
-  case $r in shower-*) ;; *) continue ;; esac
+  case $r in shower-nlo-*|shower-lo-*) ;; *) continue ;; esac
   have "$r" || continue
   x=${r#shower-}
   step "$r" python3 "$SA/yoda_summary.py" --merge "$RES/$r"/*/"$r"-*.raw.json --out "$OUT/shower-$x.json" || continue
