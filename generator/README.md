@@ -98,7 +98,7 @@ If the workers cannot reach gitlab.com: `./fetch_sources.sh sources` on a machin
 and add `sources.tgz` to the build job's input files.
 
 **Cost** (core-hours, measured in the verification): build 2.3 (17 min on 8 cores for ggxy);
-ggxy LO 2 and NLO 60; POWHEG LO 20; grids 70–140 (16 seeds; 4.3 h on fast, 9.6 h on slow
+ggxy LO 2 and NLO 60; POWHEG LO 20; grids 70–155 (16 seeds; 4.3 h on fast, 9.6 h on slow
 cores); 50 000 NLO events with 112 weights 18 (1.3 s per event with the cache); cache closure 3;
 MCFM 2. About 200 core-hours in total.
 
