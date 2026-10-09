@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Validation of the shower and analysis step on one sample (README "Tests").
 
-    check_shower.py --summary summary.json --lhe lhe.json [--noshower] [--out report.json]
+    check_shower.py --summary summary.json --lhe lhe.json [--noshower] [--pdf-weight 2000 --pdf-nmem 100]
+                    [--out report.json]
 
 summary.json: analysis/yoda_summary.py of the showered (or noshower) events; lhe.json:
 generator/analysis/lhe_xsec.py of the same LHE files.  Checks:
@@ -10,7 +11,10 @@ generator/analysis/lhe_xsec.py of the same LHE files.  Checks:
   2. the STXS routine leaves no event unclassified;
   3. the routine's 19 Stage 1.3 fine bins (FWDH + 18) equal GGZH_NLOPS's own classification
      (same definitions of Z, Higgs boson and jets) for every weight variation;
-  4. the PDF weights are present and give the LHE PDF uncertainty (relative 1e-5).
+  4. the PDF weights are present and give the LHE PDF uncertainty (relative 1e-5): --pdf-weight is
+     the weight id of the central member, followed by --pdf-nmem Hessian members (pwg-rwl.dat:
+     NNPDF3.1, 2000 and 100; pwg-rwl-pdf4lhc21.dat: PDF4LHC21, 3000 and 40); lhe.json must hold the
+     uncertainty of the same set (lhe_xsec.py --pdf-id).
 With --noshower (test mode without parton level) checks 2 and 3 do not apply: the Higgs boson is
 not decayed, and the STXS routine only classifies events with a decayed Higgs boson.
 Exit status 1 if a check fails.
@@ -28,6 +32,8 @@ def main(argv=None) -> int:
     ap.add_argument("--summary", type=Path, required=True)
     ap.add_argument("--lhe", type=Path, required=True)
     ap.add_argument("--noshower", action="store_true")
+    ap.add_argument("--pdf-weight", type=int, default=2000, help="weight id of the central PDF member")
+    ap.add_argument("--pdf-nmem", type=int, default=100)
     ap.add_argument("--out", type=Path)
     a = ap.parse_args(argv)
     s, l = json.loads(a.summary.read_text()), json.loads(a.lhe.read_text())
@@ -58,10 +64,11 @@ def main(argv=None) -> int:
     if not a.noshower:
         add("STXS routine vs own classification", nvar > 0 and worst < 1e-6, f"{nvar} variations, max relative difference {worst:.2e}")
     if "pdf_hessian_rel" in l:
-        s0 = tot("2000") if "2000" in sig else float("nan")
-        members = [tot(str(2000 + k)) for k in range(1, 101) if str(2000 + k) in sig]
-        pdf = math.sqrt(sum((m - s0) ** 2 for m in members)) / s0 if len(members) == 100 else float("nan")
-        add("PDF weights", len(members) == 100 and rel(pdf, l["pdf_hessian_rel"]) < 1e-4,
+        w0, nm = a.pdf_weight, a.pdf_nmem
+        s0 = tot(str(w0)) if str(w0) in sig else float("nan")
+        members = [tot(str(w0 + k)) for k in range(1, nm + 1) if str(w0 + k) in sig]
+        pdf = math.sqrt(sum((m - s0) ** 2 for m in members)) / s0 if len(members) == nm else float("nan")
+        add("PDF weights", len(members) == nm and rel(pdf, l["pdf_hessian_rel"]) < 1e-4,
             f"{100 * pdf:.4f} % vs LHE {100 * l['pdf_hessian_rel']:.4f} %")
     shower_vars = [v for v in sig if v.startswith(("isr", "fsr"))]
     add("shower-variation weights", True, f"{len(shower_vars)} present (informational)")

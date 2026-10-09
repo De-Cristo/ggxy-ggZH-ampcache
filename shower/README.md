@@ -17,6 +17,9 @@ Pythia's shower-variation weights are carried to every histogram.
 | `cards/` | `common`, `tune-monash`/`tune-cp5`/`tune-a14`, `nlo` (POWHEG veto), `lo-*` (shower-start variants for LO+PS), `ps-variations`, `noshower` (test) |
 | `run/shower.sh` | one LHE file → `<name>.<mode>.<tune>.yoda` |
 | `analysis/yoda_summary.py` | YODA (text) → JSON from Rivet's RAW sums: all histograms and weight variations with under/overflow, gg → ZH(ℓℓ) STXS bins; per job (`--raw`) and combined (`--merge`); plain Python |
+| `analysis/compare_orders.py` | rescaled LO+PS (K × LO+PS, one or more shower starts) against NLO+PS in the 18 STXS Stage 1.3 fine bins and the p_T(Z) tail |
+| `analysis/compare_samples.py` | two independent samples of the same prediction bin by bin (σ, STXS fine bins, p_T(Z)); the Born-suppression test |
+| `check_shower.py` | tests of one showered sample against its LHE files (`--pdf-weight 3000 --pdf-nmem 40` for `pwg-rwl-pdf4lhc21.dat`) |
 
 ```sh
 ./build.sh $PWD/shower-install

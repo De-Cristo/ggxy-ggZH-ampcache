@@ -36,8 +36,16 @@ and the shower seed of a file is fixed by the file, so any distribution of the w
 same results (NLO integrations: statistically the same across compilers and CPUs, see
 `generator/README.md`).
 
-**Results.** The analysis scripts combine the job results: `generator/analysis/fo_combine.py`,
-`powheg_stat.py`, `lhe_xsec.py --merge`, `mcfm_xsec.py`; `shower/analysis/yoda_summary.py --raw
---merge` (exact sums over jobs), `compare_orders.py`; checks `generator/check.py
---paper-energy <sqrt(s)>` and `shower/check_shower.py`.  *To add: one script that runs these on
-the results of a set and writes the files the paper quotes.*
+**Results.**  `analyze.sh <set> <results> <outdir>` combines the job results of a set into the
+files the paper quotes and runs every check: `<results>/<run>/<p>/` holds what job p left
+(`run_local.sh`'s `<workdir>/jobs/<set>` has this layout).  It calls the analysis scripts
+(`generator/analysis/fo_combine.py`, `powheg_stat.py`, `lhe_xsec.py --merge`;
+`shower/analysis/yoda_summary.py --merge` with exact sums over jobs, `compare_orders.py`,
+`compare_samples.py`) and the checks (`generator/check.py`, with `--paper-energy` for the
+production sets, and `shower/check_shower.py` for every shower).  `STATUS.txt` lists every run with
+its jobs and the package commits they ran with; a run is used only when all its jobs are present.
+Minutes on one core.
+
+```sh
+production/run_local.sh 13600 work && production/analyze.sh 13600 work/jobs/13600 results/13600
+```
