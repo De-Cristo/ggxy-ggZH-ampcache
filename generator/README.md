@@ -84,7 +84,7 @@ python3 check.py --fo res/fo.json --powheg-lo res/powheg-lo.json --grids out/gri
 are examples (add your site's runtime and accounting settings).
 
 ```sh
-tar czf generator.tgz -C <this repository> generator
+git -C <this repository> archive HEAD VERSION generator | gzip > generator.tgz   # VERSION records the commit
 mkdir -p logs
 condor_submit generator/condor/build.sub            # -> ggzh-install.tgz (needs gitlab.com, or sources.tgz)
 condor_submit generator/condor/grids.sub            # -> grids.tgz

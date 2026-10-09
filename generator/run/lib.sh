@@ -33,7 +33,15 @@ run_parallel() {
   return $rc
 }
 
+# commit of this package: VERSION as written by git archive (export-subst), else the git checkout
+package_version() {
+  local v; v=$(head -1 "$GEN/../VERSION" 2>/dev/null)
+  case $v in ''|*Format*) v="$(git -C "$GEN" rev-parse HEAD 2>/dev/null || echo unknown)$(git -C "$GEN" status --porcelain 2>/dev/null | grep -q . && echo ' modified')";; esac
+  echo "$v"
+}
+
 # record what ran where
 manifest() {  # manifest <file> <text...>
-  { echo "$(stamp) $*"; echo "host $(hostname)"; head -5 "$GGZH_PREFIX/BUILD-MANIFEST.txt" 2>/dev/null; } >> "$1"
+  { echo "$(stamp) $*"; echo "host $(hostname)"; echo "package $(package_version)"
+    head -6 "$GGZH_PREFIX/BUILD-MANIFEST.txt" 2>/dev/null; } >> "$1"
 }

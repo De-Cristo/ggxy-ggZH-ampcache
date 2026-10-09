@@ -51,6 +51,9 @@ rivet --list-analyses 2>/dev/null | grep -E '^(GGZH_NLOPS|SimplifiedTemplateCros
   || { echo "FATAL: the analyses are not visible to Rivet" >&2; exit 5; }
 {
   echo "built $(date -u +%FT%TZ) on $(hostname)"
+  v=$(head -1 "$HERE/../VERSION" 2>/dev/null)
+  case $v in ''|*Format*) v="$(git -C "$HERE" rev-parse HEAD 2>/dev/null || echo unknown)";; esac
+  echo "package $v"
   echo "LCG view $SHOWER_LCG_VIEW"
   echo "g++ $(g++ --version | head -1)"
   echo "Pythia $(pythia8-config --version 2>/dev/null || basename "$(dirname "$(dirname "$(readlink -f "$(command -v pythia8-config)")")")")"

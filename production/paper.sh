@@ -1,0 +1,176 @@
+#!/bin/bash
+# The production of the gg -> ZH NLO+PS paper: every run, its jobs, seeds, statistics and
+# settings.  This file is the only definition of them.  The results are made by executing these
+# jobs at the package commit recorded in VERSION, on any HTCondor pool or one after another
+# (production/run_local.sh); the outputs of the jobs are independent of where they run, except
+# that NLO integrations agree only statistically across compilers and CPUs (generator/README.md).
+#
+#   production/paper.sh list    <set>               runs of the set in execution order:
+#                                                   <run> <jobs> <cpus> <memory GB> <hours>
+#   production/paper.sh inputs  <set> <run> <p>     files job p needs:    <file in the job directory> <product>
+#   production/paper.sh outputs <set> <run> <p>     products job p makes: <file in the job directory> <product>
+#   production/paper.sh show    <set> <run> <p>     the environment and command of job p
+#   production/paper.sh run     <set> <run> <p>     execute job p in the current directory
+#
+# Sets
+#   common   the generator and shower builds (used by every other set)
+#   13600    PDF4LHC21, sqrt(s) = 13.6 TeV: fixed order, POWHEG LO, grids, events, cache closure,
+#            MCFM, showers (NLO+PS and five LO+PS shower starts, tunes Monash, CP5, A14)
+#   13000    the same runs, seeds and statistics at sqrt(s) = 13 TeV
+#   verify   NNPDF3.1, 13.6 TeV: the verification runs of generator/reference (48 checks), the
+#            unweighted validation samples and their showers, the Born-suppression test
+# Jobs p = 0 .. <jobs>-1; seeds are fixed functions of p (below), identical in 13600 and 13000.
+#
+# A job directory contains the unpacked package (VERSION, production/, generator/, shower/) and
+# the files listed by "inputs".  Products have storage-independent names: install/<name>.tgz,
+# grids/<name>.tgz, lhe/<sample>/events-<seed>.lhe.gz.  Everything else a job writes (out-*.tgz,
+# *.json, logs) is its result and stays in the job directory.
+set -o pipefail
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PKG=$(cd "$HERE/.." && pwd)
+CMD_=${1:?list|inputs|outputs|show|run}; SET=${2:?set: common|13600|13000|verify}
+
+TUNES=(monash cp5 a14)
+LOMODES=(default scalup scalup-half scalup-quarter power)
+
+case $SET in
+  common) ;;
+  13600|13000)
+    E=$SET; EB=$([ "$E" = 13600 ] && echo 6800d0 || echo 6500d0)
+    PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB"
+    RWL=pwg-rwl-pdf4lhc21.dat ;;
+  verify)
+    E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
+    CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
+    RWL=pwg-rwl.dat ;;
+  *) echo "unknown set $SET" >&2; exit 2 ;;
+esac
+
+# ---------------------------------------------------------------- runs of each set
+runs() {
+  case $SET in
+    common) echo build shower-build ;;
+    13600|13000)
+      echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-nlo powheg-lo grids-lo grids-nlo mcfm \
+           events-nlo events-lo cache
+      for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
+      for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done ;;
+    verify)
+      echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
+           grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
+      for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
+      for m in "${LOMODES[@]}"; do echo "shower-lo-$m-monash"; done
+      echo shower-lo-default-cp5 shower-lo-scalup-half-cp5 shower-lo-default-a14 shower-lo-scalup-half-a14
+      echo shower-nlo-bs250-monash ;;
+  esac
+}
+
+# ---------------------------------------------------------------- one job
+# def <run> <p>: sets JOBS CPUS MEM HOURS, ENVS (VAR=value ...), STEP (command), IN and OUTP
+# ("<file> <product>" lines).  G = generator/, S = shower/ of the job directory.
+G=generator; S=shower
+INSTALL=install/ggzh-install; SHOWER_INSTALL=install/shower-install
+need_install() { IN+=("ggzh-install.tgz $INSTALL.tgz"); }
+need_grids()   { IN+=("grids.tgz grids/$1.tgz"); }
+# shower job p of a sample: <nper> LHE files of seeds first + nper*p ...
+need_lhe() {  # need_lhe <sample> <first seed> <files per job> <p>
+  local k s
+  for k in $(seq 0 $(($3 - 1))); do s=$(($2 + $3 * $4 + k)); IN+=("lhe/events-$s.lhe.gz lhe/$1/events-$s.lhe.gz"); done
+  IN+=("shower-install.tgz $SHOWER_INSTALL.tgz")
+}
+res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
+
+# sample names: production lhe/<nlo|lo>-<sqrt(s)>, verification lhe/<...>-nnpdf31-13600
+sname() { [ "$SET" = verify ] && echo "$1-nnpdf31-13600" || echo "$1-$E"; }
+
+def() {
+  local run=$1 p=$2 m t
+  ENVS=(); STEP=(); IN=(); OUTP=()
+  case $run in
+    # ---- builds
+    build)        res 1 8 24 6;  STEP=("$G/condor/run_job.sh" build); OUTP=("ggzh-install.tgz $INSTALL.tgz") ;;
+    shower-build) res 1 2 4 2;   STEP=(bash -c "$S/build.sh shower-install && tar czf shower-install.tgz -C shower-install bin lib env.sh BUILD-MANIFEST.txt")
+                  OUTP=("shower-install.tgz $SHOWER_INSTALL.tgz") ;;
+    # ---- fixed order, ggxy Monte Carlo: LO 8 seeds x 2e6 points (2e5 for the optimisation), NLO 40 x 1e6 (1.5e5)
+    fo-llh-lo)    res 2 4 8 6;   need_install; STEP=("$G/condor/run_job.sh" fo lo  $((2001 + 4 * p)) 4 2000000 200000 "$PDF" fo-ggllh "$E") ;;
+    fo-llh-nlo)   res 10 4 8 16; need_install; STEP=("$G/condor/run_job.sh" fo nlo $((3001 + 4 * p)) 4 1000000 150000 "$PDF" fo-ggllh "$E") ;;
+    fo-zh-lo)     res 1 2 4 6;   need_install; STEP=("$G/condor/run_job.sh" fo lo  $((5001 + 2 * p)) 2 2000000 200000 "$PDF" fo-ggzh "$E") ;;
+    fo-zh-lo-pdf4lhc21)          # verification: the stable-Z LO of arXiv:2603.15762, Table 1
+                  res 1 2 4 6;   need_install; STEP=("$G/condor/run_job.sh" fo lo  $((5001 + 2 * p)) 2 2000000 200000 PDF4LHC21_40_pdfas fo-ggzh 13600) ;;
+    fo-zh-nlo)    res 10 4 8 16; need_install; STEP=("$G/condor/run_job.sh" fo nlo $((6001 + 4 * p)) 4 1000000 150000 "$PDF" fo-ggzh "$E") ;;
+    # ---- POWHEG fixed-order LO at the 7 scale points, 8 seeds
+    powheg-lo)    res 1 8 8 12;  need_install; ENVS=("GRID_SETTINGS=$CARD"); STEP=("$G/condor/run_job.sh" lo 8) ;;
+    # ---- grids: NLO 16 seeds (production with Born suppression L = 250 GeV), LO 8 seeds; 3 x-grid iterations
+    grids-nlo)    res 1 16 32 20; need_install; ENVS=("GRID_SETTINGS=$CARD${CARD:+ }$([ "$SET" = verify ] || echo bornsuppfact=250)")
+                  STEP=("$G/condor/run_job.sh" grids 16 3); OUTP=("grids.tgz grids/$(sname grids-nlo).tgz") ;;
+    grids-nlo-bs250)             # verification: Born suppression with NNPDF3.1, against the unweighted grids-nlo
+                  res 1 16 32 20; need_install; ENVS=("GRID_SETTINGS=bornsuppfact=250")
+                  STEP=("$G/condor/run_job.sh" grids 16 3); OUTP=("grids.tgz grids/$(sname grids-nlo-bs250).tgz") ;;
+    grids-lo)     res 1 8 16 12; need_install; ENVS=("GRID_SETTINGS=$CARD${CARD:+ }bornonly=1 LOevents=1")
+                  STEP=("$G/condor/run_job.sh" grids 8 3); OUTP=("grids.tgz grids/$(sname grids-lo).tgz") ;;
+    # ---- MCFM LO, stable Z, all cards of generator/mcfm/cards
+    mcfm)         res 1 8 8 4;   ENVS=("MCFM_SQRTS=$E"); STEP=("$G/condor/run_job.sh" mcfm) ;;
+    # ---- events, one seed per job; production NLO 200 x 2500 (weighted), LO 100 x 5000;
+    #      verification NLO 50 x 1000 (unweighted and with Born suppression, same seeds), LO 25 x 2000
+    events-nlo)   if [ "$SET" = verify ]; then res 50 1 4 8; m=1000; s0=1001; else res 200 1 4 12; m=2500; s0=10001; fi
+                  need_install; need_grids "$(sname grids-nlo)"
+                  STEP=("$G/condor/run_job.sh" events $m $((s0 + p)) "$G/cards/$RWL")
+                  OUTP=("events-$((s0 + p)).lhe.gz lhe/$(sname nlo)/events-$((s0 + p)).lhe.gz") ;;
+    events-nlo-bs250)
+                  res 50 1 4 8; need_install; need_grids "$(sname grids-nlo-bs250)"
+                  STEP=("$G/condor/run_job.sh" events 1000 $((1001 + p)) "$G/cards/$RWL")
+                  OUTP=("events-$((1001 + p)).lhe.gz lhe/$(sname nlo-bs250)/events-$((1001 + p)).lhe.gz") ;;
+    events-lo)    if [ "$SET" = verify ]; then res 25 1 4 8; m=2000; s0=2001; else res 100 1 4 12; m=5000; s0=20001; fi
+                  need_install; need_grids "$(sname grids-lo)"
+                  STEP=("$G/condor/run_job.sh" events $m $((s0 + p)) "$G/cards/$RWL")
+                  OUTP=("events-$((s0 + p)).lhe.gz lhe/$(sname lo)/events-$((s0 + p)).lhe.gz") ;;
+    # ---- cache closure: the same 50 events with the cache on and off, 3 seeds
+    cache)        res 3 1 4 12; need_install; need_grids "$(sname grids-nlo)"
+                  s0=$([ "$SET" = verify ] && echo 51000 || echo 52000)
+                  STEP=("$G/condor/run_job.sh" cache 50 $((s0 + p)) "$G/cards/$RWL") ;;
+    # ---- showers: NLO+PS (POWHEG veto) with shower-scale variation weights; LO+PS shower starts
+    shower-nlo-bs250-monash)
+                  res 1 8 16 4; need_lhe "$(sname nlo-bs250)" 1001 50 "$p"
+                  STEP=("$S/run/shower_batch.sh" shower-out nlo monash ps-variations -- lhe/*.lhe.gz) ;;
+    shower-nlo-*) t=${run#shower-nlo-}
+                  if [ "$SET" = verify ]; then res 1 8 16 4; need_lhe "$(sname nlo)" 1001 50 "$p"
+                  else res 10 8 16 6; need_lhe "$(sname nlo)" 10001 20 "$p"; fi
+                  STEP=("$S/run/shower_batch.sh" shower-out nlo "$t" ps-variations -- lhe/*.lhe.gz) ;;
+    shower-lo-*)  t=${run##*-}; m=${run#shower-lo-}; m=${m%-"$t"}
+                  if [ "$SET" = verify ]; then res 1 8 16 4; need_lhe "$(sname lo)" 2001 25 "$p"
+                  else res 5 8 16 6; need_lhe "$(sname lo)" 20001 20 "$p"; fi
+                  STEP=("$S/run/shower_batch.sh" shower-out "lo-$m" "$t" -- lhe/*.lhe.gz) ;;
+    *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
+  esac
+}
+
+known() { runs | tr ' ' '\n' | grep -qx "$1" || { echo "run $1 is not in set $SET" >&2; exit 2; }; }
+
+case $CMD_ in
+  list)
+    for r in $(runs); do def "$r" 0; echo "$r $JOBS $CPUS $MEM $HOURS"; done ;;
+  inputs|outputs|show|run)
+    RUN=${3:?run}; P=${4:?job index}; known "$RUN"; def "$RUN" "$P"
+    [ "$P" -ge 0 ] && [ "$P" -lt "$JOBS" ] || { echo "job index $P outside 0..$((JOBS - 1))" >&2; exit 2; }
+    case $CMD_ in
+      inputs)  for x in "${IN[@]}"; do echo "$x"; done ;;
+      outputs) for x in "${OUTP[@]}"; do echo "$x"; done ;;
+      show)    echo "set $SET run $RUN job $P/$JOBS cpus $CPUS memory ${MEM}GB hours $HOURS"
+               for x in "${ENVS[@]}"; do echo "env $x"; done; echo "cmd ${STEP[*]}" ;;
+      run)
+        echo "production/paper.sh: set $SET run $RUN job $P/$JOBS, package $(head -1 "$PKG/VERSION")"
+        for x in "${IN[@]}"; do f=${x%% *}; [ -e "$f" ] || { echo "FATAL: input $f missing (${x#* })" >&2; exit 2; }; done
+        export NCPU=$CPUS
+        for x in "${ENVS[@]}"; do export "$x"; done
+        if [ -f shower-install.tgz ]; then
+          mkdir -p shower-install && tar xzf shower-install.tgz -C shower-install || exit 2
+          export GGZH_SHOWER_PREFIX=$PWD/shower-install
+        fi
+        "${STEP[@]}"; rc=$?
+        if [ -d shower-out ]; then cp -p shower-out/sum.raw.json "$RUN-$P.raw.json" 2>/dev/null; tar czf "out-$RUN-$P.tgz" shower-out; fi
+        for x in "${OUTP[@]}"; do f=${x%% *}; [ "$rc" != 0 ] || [ -e "$f" ] || { echo "FATAL: product $f missing" >&2; rc=3; }; done
+        exit $rc ;;
+    esac ;;
+  *) echo "unknown command $CMD_" >&2; exit 2 ;;
+esac

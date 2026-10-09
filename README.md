@@ -14,6 +14,7 @@ only needed for the original release `a22cb4f`.
 |---|---|
 | `src/`, `patch/`, `tools/`, `validation/` | the cache: source, patch for `a22cb4f`, patch generator, closure test of the cache |
 | [`generator/`](generator/README.md) | generator-level reproduction without CMS software: build of ggxy, POWHEG-BOX-V2 and `ggxy_ggZH` at pinned commits; fixed-order LO/NLO with the ggxy program, POWHEG LO, NLO grids and events, cache closure, optional MCFM LO cross-check; reference results and a check script |
+| [`production/`](production/README.md) | the production of the gg → ZH NLO+PS paper: `paper.sh` defines every run (jobs, statistics, seeds, settings) at 13.6 and 13 TeV and the verification; `run_local.sh` executes a set |
 | [`cms/`](cms/README.md) | CMS usage: gridpack card and recipe, Pythia8 fragments, LHE → NanoGEN validation chain with HTXS, reference results and a check script |
 
 ## Why the cache

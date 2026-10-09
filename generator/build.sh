@@ -153,6 +153,9 @@ for b in pwhg_main fo-ggllh fo-ggzh; do
 done
 {
   echo "built $(stamp) on $(hostname)"
+  v=$(head -1 "$HERE/../VERSION" 2>/dev/null)
+  case $v in ''|*Format*) v="$(git -C "$HERE" rev-parse HEAD 2>/dev/null || echo unknown)";; esac
+  echo "package $v"
   echo "ggxy $(git -C "$SRC/ggxy-release" rev-parse HEAD)"
   echo "POWHEG-BOX-V2 $(git -C "$SRC/POWHEG-BOX-V2" rev-parse HEAD)"
   echo "ggxy_ggZH $(git -C "$P" rev-parse HEAD)"
