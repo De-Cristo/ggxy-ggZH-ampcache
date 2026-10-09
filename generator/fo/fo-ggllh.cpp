@@ -5,7 +5,7 @@
 // (pT(Z), pT(H) and m_ZH in 25 GeV bins, pT(ZH) in 10 GeV bins, wide pT(Z)).  Physics
 // settings unchanged: 13.6 TeV, mu_R = mu_F = m_ZH/2, on-shell m_t = 172.5 GeV,
 // 15 < m_ll < 150 GeV, Z radiation off the external quark lines on.
-//   fo-ggllh <lo|nlo> <seed> <outdir/> [np] [np_opt] [pdf]
+//   fo-ggllh <lo|nlo> <seed> <outdir/> [np] [np_opt] [pdf] [sqrt(s) in GeV, default 13600]
 // Histograms are written in nb per unit of the observable, for ONE lepton flavour.
 #include <iostream>
 #include <iomanip>
@@ -189,7 +189,8 @@ int main(int argc, char* argv[])
    if(argc >= 5) np=atoi(argv[4]);
    if(argc >= 6) np_opt=atoi(argv[5]);
    if(argc >= 7) pdf_name=std::string(argv[6]);
-   std::cout<<"fo-ggllh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<std::endl;
+   if(argc >= 8) ss=atof(argv[7]);                  //centre-of-mass energy [GeV]
+   std::cout<<"fo-ggllh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<std::endl;
 
    std::string outfile=path+"histo_"+mode+"_"+std::to_string(seed)+".txt";  //output file for histograms
 

@@ -2,7 +2,7 @@
 # Optional LO cross-check with MCFM 10.3.1: loop-induced gg -> ZH with MCFM's own one-loop
 # amplitudes (gg_zh), independent of the Recola amplitudes of ggxy_ggZH.
 #
-#   run_mcfm.sh <workdir> [threads = 8] [cards = cards/*.ini]
+#   [MCFM_SQRTS=<GeV>] run_mcfm.sh <workdir> [threads = 8] [cards = cards/*.ini]
 #
 # Downloads MCFM-10.3.1.tar.gz (or uses one in <workdir>), checks its sha256, applies
 # mcfm-10.3.1-only-ggzh.patch (input switch extra%only_ggzh: the LO ZH matrix element returns
@@ -55,6 +55,8 @@ for C in "${CARDS[@]}"; do
   N=$(basename "$C" .ini); R=run-$N; mkdir -p "$R/runs" "out/$N"
   cp -p MCFM-10.3.1/Bin/br.sm1 MCFM-10.3.1/Bin/br.sm2 MCFM-10.3.1/Bin/hto_output.dat MCFM-10.3.1/Bin/process.DAT "$R/"
   cp -p "$C" "$R/input.ini"
+  [ -n "${MCFM_SQRTS:-}" ] && sed -i "s/^\([[:space:]]*sqrts[[:space:]]*=\).*/\1 ${MCFM_SQRTS}/" "$R/input.ini"
+  grep -m1 sqrts "$R/input.ini"
   ( cd "$R" && "$WD/MCFM-10.3.1/build/mcfm" input.ini > "$WD/out/$N/stdout.log" 2> "$WD/out/$N/stderr.log" ) || RC=1
   find "$R/runs" -name "*total_cross*.txt" -exec cp -p {} "out/$N/" \;
   grep -a "only_ggzh\|Value of integral" "out/$N/stdout.log" | tail -2

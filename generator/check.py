@@ -3,7 +3,7 @@
 
     check.py [--fo fo.json] [--stable-nnpdf31 st.json] [--stable-pdf4lhc21 st.json]
              [--powheg-lo powheg-lo.json] [--grids grids-xsec.json] [--events events.json]
-             [--events-lo events-lo.json]
+             [--events-lo events-lo.json] [--paper-energy 13600|13000]
              [--cache compare-*.json ...] [--mcfm-stable-nnpdf31 m.json] [--mcfm-stable-pdf4lhc21 m.json]
              [--out report.json]
 
@@ -15,7 +15,13 @@ compare_lhe.py (and mcfm_xsec.py); give whichever exist.  Criteria:
   * PDF and alpha_s uncertainties (from the event weights): within 0.3 and 0.5 percentage points;
   * cache closure: every compared file identical.
 A rebuild with another compiler or library versions is expected to agree within these
-statistical criteria, not bit by bit.  Exit status 1 if anything fails.
+statistical criteria, not bit by bit.
+
+--paper-energy: production setup (PDF4LHC21_40_pdfas, the given energy).  The results are then
+compared with the ggxy paper (arXiv:2603.15762, Tables 1 and 3: cross sections with the pull
+criterion, seven-point bands within 1 percentage point) and with each other (POWHEG LO, grids,
+NLO and LO events against the ggxy program of the same run); the NNPDF3.1 reference values of
+the verification are not used.  Exit status 1 if anything fails.
 """
 from __future__ import annotations
 
@@ -79,15 +85,78 @@ def kfactor(name, got, ref, skip_first=True):
     ROWS.append({"check": name, "what": f"chi2 {chi2:.1f} / {ndf}", "pvalue": p, "pass": p > 1e-3})
 
 
+def band_check(name, got, ref, what):
+    within(f"{name} band up", got[0], ref[0], 0.01, what)
+    within(f"{name} band down", got[1], ref[1], 0.01, what)
+
+
+def paper_mode(a, load) -> int:
+    E = a.paper_energy
+    P = REF["paper_by_energy"][E]
+    tag = f"{int(E) / 1000:g} TeV vs arXiv:2603.15762"
+    fo = load(a.fo) if a.fo else None
+    if fo:
+        for o in ("lo", "nlo"):
+            if o in fo:
+                pull(f"ggxy l-l+H {o.upper()} {E}", fo[o]["sigma_fb"], fo[o]["mc_err_fb"], P[f"llh_{o}"]["sigma_fb"], P[f"llh_{o}"]["mc_err_fb"], tag)
+                band_check(f"ggxy l-l+H {o.upper()} {E}", fo[o]["band_rel"], P[f"llh_{o}"]["band_rel"], tag)
+    if a.stable_pdf4lhc21:
+        st = load(a.stable_pdf4lhc21)
+        for o in ("lo", "nlo"):
+            if o in st:
+                pull(f"ggxy stable-Z {o.upper()} {E}", st[o]["sigma_fb"], st[o]["mc_err_fb"], P[f"stable_{o}"]["sigma_fb"], P[f"stable_{o}"]["mc_err_fb"], tag)
+                band_check(f"ggxy stable-Z {o.upper()} {E}", st[o]["band_rel"], P[f"stable_{o}"]["band_rel"], tag)
+    if a.powheg_lo and fo and "lo" in fo:
+        pl = load(a.powheg_lo)
+        pull(f"POWHEG LO vs ggxy LO {E}", pl["sigma_fb"], pl["mc_err_fb"], fo["lo"]["sigma_fb"], fo["lo"]["mc_err_fb"], "same run")
+    if a.grids and fo and "nlo" in fo:
+        g = load(a.grids)
+        if "sigma_fb" in g:
+            pull(f"grids NLO vs ggxy NLO {E}", g["sigma_fb"], g["mc_err_fb"], fo["nlo"]["sigma_fb"], fo["nlo"]["mc_err_fb"], "same run (without Born suppression)")
+    if a.events and fo and "nlo" in fo:
+        ev = load(a.events)
+        if "scale_points" in ev:
+            points(f"NLO events vs ggxy NLO {E}", ev["scale_points"], fo["nlo"]["points"])
+    if a.events_lo and fo and "lo" in fo:
+        points(f"LO events vs ggxy LO {E}", load(a.events_lo)["scale_points"], fo["lo"]["points"])
+    for c in a.cache:
+        d = load(c)
+        flag(f"cache closure {c.name}", d.get("identical") and d.get("compared", 0) > 0,
+             f"{d.get('kinematics_identical')}/{d.get('compared')} events, {d.get('weights_identical')}/{d.get('weights')} weights")
+    return report(a)
+
+
+def report(a) -> int:
+    if not ROWS:
+        raise SystemExit("nothing to check: give at least one result file")
+    for r in ROWS:
+        s = "PASS" if r["pass"] else "FAIL"
+        if "pull" in r:
+            print(f"{s}  {r['check']:40s} {r['value']:10.4f} +- {r['err']:.4f}  ref {r['ref']:10.4f} +- {r['ref_err']:.4f}  pull {r['pull']:+5.2f}  ({r['what']})")
+        elif "tol" in r:
+            print(f"{s}  {r['check']:40s} {r['value']:10.4f}  ref {r['ref']:10.4f}  tolerance {r['tol']}  ({r['what']})")
+        else:
+            print(f"{s}  {r['check']:40s} {r['what']}" + (f"  p = {r['pvalue']:.3g}" if "pvalue" in r else ""))
+    nfail = sum(not r["pass"] for r in ROWS)
+    print(f"{len(ROWS) - nfail}/{len(ROWS)} checks pass")
+    if a.out:
+        a.out.write_text(json.dumps(ROWS, indent=1) + "\n")
+    return 1 if nfail else 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     for opt in ("fo", "stable-nnpdf31", "stable-pdf4lhc21", "powheg-lo", "grids", "events", "events-lo",
                 "mcfm-stable-nnpdf31", "mcfm-stable-pdf4lhc21"):
         ap.add_argument(f"--{opt}", type=Path)
     ap.add_argument("--cache", nargs="*", type=Path, default=[])
+    ap.add_argument("--paper-energy", choices=["13600", "13000"])
     ap.add_argument("--out", type=Path)
     a = ap.parse_args(argv)
     load = lambda p: json.loads(p.read_text())
+
+    if a.paper_energy:
+        return paper_mode(a, load)
 
     if a.fo:
         fo, r = load(a.fo), REF["fo_ggllh"]
@@ -150,21 +219,7 @@ def main(argv=None) -> int:
         flag(f"cache closure {c.name}", d.get("identical") and d.get("compared", 0) > 0,
              f"{d.get('kinematics_identical')}/{d.get('compared')} events, {d.get('weights_identical')}/{d.get('weights')} weights")
 
-    if not ROWS:
-        raise SystemExit("nothing to check: give at least one result file")
-    for r in ROWS:
-        s = "PASS" if r["pass"] else "FAIL"
-        if "pull" in r:
-            print(f"{s}  {r['check']:40s} {r['value']:10.4f} +- {r['err']:.4f}  ref {r['ref']:10.4f} +- {r['ref_err']:.4f}  pull {r['pull']:+5.2f}  ({r['what']})")
-        elif "tol" in r:
-            print(f"{s}  {r['check']:40s} {r['value']:10.4f}  ref {r['ref']:10.4f}  tolerance {r['tol']}  ({r['what']})")
-        else:
-            print(f"{s}  {r['check']:40s} {r['what']}" + (f"  p = {r['pvalue']:.3g}" if "pvalue" in r else ""))
-    nfail = sum(not r["pass"] for r in ROWS)
-    print(f"{len(ROWS) - nfail}/{len(ROWS)} checks pass")
-    if a.out:
-        a.out.write_text(json.dumps(ROWS, indent=1) + "\n")
-    return 1 if nfail else 0
+    return report(a)
 
 
 if __name__ == "__main__":

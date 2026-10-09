@@ -2,7 +2,7 @@
 // Derived from ggxy-release examples/ggzh-nlo/nlo-ggzh.cpp (commit 9edd1d5),
 // arXiv:2603.15762, Table 1.  Changes: PDF set, number of points and seed from the command
 // line (default NNPDF3.1, LHAPDF 325300).  Physics settings unchanged.
-//   fo-ggzh <lo|nlo> <seed> <outdir/> [np] [np_opt] [pdf]
+//   fo-ggzh <lo|nlo> <seed> <outdir/> [np] [np_opt] [pdf] [sqrt(s) in GeV, default 13600]
 // Histograms are written in nb.
 #include <iostream>
 #include <iomanip>
@@ -125,7 +125,8 @@ int main(int argc, char* argv[])
    if(argc >= 5) np=atoi(argv[4]);
    if(argc >= 6) np_opt=atoi(argv[5]);
    if(argc >= 7) pdf_name=std::string(argv[6]);
-   std::cout<<"fo-ggzh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<std::endl;
+   if(argc >= 8) ss=atof(argv[7]);                  //centre-of-mass energy [GeV]
+   std::cout<<"fo-ggzh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<std::endl;
 
    std::string outfile=path+"histo_"+mode+"_"+std::to_string(seed)+".txt";  //output file for histograms
 

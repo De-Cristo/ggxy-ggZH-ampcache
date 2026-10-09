@@ -20,6 +20,13 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/ggzh-shower.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 case $LHE in *.gz) gunzip -c "$LHE" > "$work/events.lhe";; *) ln -s "$(readlink -f "$LHE")" "$work/events.lhe";; esac
 cmnds=(--cmnd "$HERE/cards/common.cmnd" --cmnd "$HERE/cards/tune-$TUNE.cmnd")
+# energy-dependent part of a tune (CP5: total cross sections), from the beams of the LHE file
+ECM=$(awk '/<init>/{getline; printf "%d", $3 + $4; exit}' "$work/events.lhe")
+[ -n "$ECM" ] && [ "$ECM" -gt 0 ] || { echo "FATAL: no beam energies in $LHE" >&2; exit 2; }
+if ls "$HERE/cards/tune-$TUNE"-ecm*.cmnd > /dev/null 2>&1; then
+  [ -f "$HERE/cards/tune-$TUNE-ecm$ECM.cmnd" ] || { echo "FATAL: no cards/tune-$TUNE-ecm$ECM.cmnd" >&2; exit 2; }
+  cmnds+=(--cmnd "$HERE/cards/tune-$TUNE-ecm$ECM.cmnd")
+fi
 case $MODE in
   noshower) cmnds+=(--cmnd "$HERE/cards/lo-default.cmnd" --cmnd "$HERE/cards/noshower.cmnd");;
   *) [ -f "$HERE/cards/$MODE.cmnd" ] || { echo "FATAL: no cards/$MODE.cmnd" >&2; exit 2; }

@@ -434,5 +434,76 @@
    ]
   },
   "note": "+0.6 % above ggxy with either PDF set; not explained by m_b, BR(Z->ll) or alpha_s (open)"
+ },
+ "paper_by_energy": {
+  "what": "arXiv:2603.15762 with PDF4LHC21_40_pdfas, mu_0 = m_ZH/2, on-shell m_t: Table 3 (gg -> l-l+H, l = e, mu, tau, 15 < m_ll < 150 GeV) and Table 1 (stable Z, ggxy column); seven-point bands",
+  "13600": {
+   "llh_lo": {
+    "sigma_fb": 7.026,
+    "mc_err_fb": 0.004,
+    "band_rel": [
+     0.262,
+     -0.197
+    ]
+   },
+   "llh_nlo": {
+    "sigma_fb": 13.02,
+    "mc_err_fb": 0.01,
+    "band_rel": [
+     0.164,
+     -0.138
+    ]
+   },
+   "stable_lo": {
+    "sigma_fb": 70.59,
+    "mc_err_fb": 0.02,
+    "band_rel": [
+     0.263,
+     -0.197
+    ]
+   },
+   "stable_nlo": {
+    "sigma_fb": 130.5,
+    "mc_err_fb": 0.09,
+    "band_rel": [
+     0.163,
+     -0.138
+    ]
+   }
+  },
+  "13000": {
+   "llh_lo": {
+    "sigma_fb": 6.366,
+    "mc_err_fb": 0.004,
+    "band_rel": [
+     0.267,
+     -0.2
+    ]
+   },
+   "llh_nlo": {
+    "sigma_fb": 11.8,
+    "mc_err_fb": 0.01,
+    "band_rel": [
+     0.166,
+     -0.14
+    ]
+   },
+   "stable_lo": {
+    "sigma_fb": 63.97,
+    "mc_err_fb": 0.02,
+    "band_rel": [
+     0.267,
+     -0.2
+    ]
+   },
+   "stable_nlo": {
+    "sigma_fb": 118.4,
+    "mc_err_fb": 0.08,
+    "band_rel": [
+     0.165,
+     -0.14
+    ]
+   }
+  }
  }
 }

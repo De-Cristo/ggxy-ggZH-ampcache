@@ -50,7 +50,8 @@ python3 analysis/yoda_summary.py out/*.nlo.monash.yoda --out nlo.json           
 ## Tunes
 
 `tune-monash` (nominal; Pythia's default Monash 2013), `tune-cp5` (CMS CP5, arXiv:1903.12179, with
-NNPDF3.1 NNLO for shower and MPI and the 13.6 TeV total cross sections of CMS's public Run-3
-implementation), `tune-a14` (ATLAS A14 central with NNPDF2.3 LO, built into Pythia as
+NNPDF3.1 NNLO for shower and MPI; the total and elastic cross sections are set per energy,
+`tune-cp5-ecm13600` and `tune-cp5-ecm13000`, which `run/shower.sh` picks from the beams of the LHE
+file), `tune-a14` (ATLAS A14 central with NNPDF2.3 LO, built into Pythia as
 `Tune:pp = 21`). The tune's PDF serves the shower and MPI only; the hard process keeps the PDF of
 the POWHEG events.
