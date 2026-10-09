@@ -11,8 +11,10 @@ sqrt(sum w_k^2) / N.  The meaning of each weight id is read from the <initrwgt> 
   scale:   the 9 (mu_R, mu_F) points at the nominal PDF; 7-point envelope without (1/2, 2), (2, 1/2)
   PDF:     Hessian, sqrt(sum_k (sigma_k - sigma_0)^2) / sigma_0 over the members 1..--pdf-nmem of
            --pdf-id (default NNPDF3.1, LHAPDF 325300: 100 eigenvectors)
-  alpha_s: half the difference of the two alpha_s members (325401: 0.116, 325402: 0.120),
-           i.e. the change for delta alpha_s = 0.002
+  alpha_s: half the difference of the two alpha_s members after the Hessian ones, i.e. the change
+           for the set's own alpha_s step: NNPDF3.1 (325401/325402: 0.116/0.120) delta = 0.002;
+           PDF4LHC21_40_pdfas (93341/93342: 0.117/0.119) delta = 0.001 (the PDF4LHC21
+           recommendation, delta = 0.0015, is 1.5 times this)
 
     lhe_xsec.py --files out/events-*.lhe.gz --out events.json
     lhe_xsec.py --files events-1001.lhe.gz --raw --out raw-1001.json      (per job)
@@ -28,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+ALPHAS_STEP = {325300: 0.002, 93300: 0.001}      # half the alpha_s difference of the two alpha_s members
 WDEF = re.compile(r"<weight\s+id=['\"]([^'\"]+)['\"]\s*>\s*lhapdf=(\d+)(?:\s+renscfact=(\S+)\s+facscfact=(\S+))?")
 WGT = re.compile(r"<wgt\s+id=['\"]([^'\"]+)['\"]\s*>\s*([^<\s]+)\s*</wgt>")
 
@@ -134,7 +137,11 @@ def finish(r: dict, label: str, pdf_id: int, pdf_nmem: int) -> dict:
         out["pdf_hessian_rel"] = float(np.sqrt(sum((s[member[pdf_id + k]] - s0) ** 2 for k in range(1, pdf_nmem + 1))) / s0)
         a_lo, a_hi = member.get(pdf_id + pdf_nmem + 1), member.get(pdf_id + pdf_nmem + 2)
         if a_lo is not None and a_hi is not None:
-            out["alphas_rel_for_0p002"] = float(0.5 * (s[a_hi] - s[a_lo]) / s0)
+            half = float(0.5 * (s[a_hi] - s[a_lo]) / s0)
+            out["alphas_rel_half_difference"] = half
+            out["alphas_delta"] = ALPHAS_STEP.get(pdf_id)
+            if pdf_id == 325300:
+                out["alphas_rel_for_0p002"] = half
     return out
 
 
@@ -167,7 +174,8 @@ def main(argv=None) -> int:
         print(f"  7-point band {100 * out['scale7_band_rel'][0]:+.1f}/{100 * out['scale7_band_rel'][1]:+.1f} %")
     if "pdf_hessian_rel" in out:
         print(f"  PDF (Hessian) {100 * out['pdf_hessian_rel']:.2f} %", end="")
-        print(f", alpha_s (+-0.002) {100 * out['alphas_rel_for_0p002']:+.2f} %" if "alphas_rel_for_0p002" in out else "")
+        print(f", alpha_s (+-{out['alphas_delta']}) {100 * out['alphas_rel_half_difference']:+.2f} %"
+              if "alphas_rel_half_difference" in out else "")
     return 0
 
 
