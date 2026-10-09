@@ -1,0 +1,519 @@
+{
+ "description": "Verification of generator/ by a full re-run from scratch, 2026-10-08/09: fresh build of the pinned commits with LCG_107 x86_64-el9-gcc11-opt (gcc 11.3.0, LHAPDF 6.5.5, Boost 1.87) on HTCondor workers (EL9 container); same seeds as the reference, which was produced with gcc 10.3 / LHAPDF 6.4.0. check.py: all checks pass.",
+ "package_commit_runs": "975d0f4 (build), 1cc2281 + path fix (events)",
+ "results": {
+  "fo_lo_fb": [
+   7.032357631646654,
+   0.0010113575292591602
+  ],
+  "fo_nlo_fb": [
+   13.04315941074506,
+   0.0038150558758918637
+  ],
+  "K": [
+   1.85473494010727,
+   0.0006045295159588272
+  ],
+  "powheg_lo_fb": [
+   7.030580239850916,
+   0.0018719511063867024
+  ],
+  "grids_nlo_fb": [
+   13.031219483612155,
+   0.006965986744536624
+  ],
+  "events_nlo": {
+   "events": 50000,
+   "sigma_fb": [
+    13.054132322000006,
+    0.05906795878438933
+   ],
+   "scale7_band_rel": [
+    0.16667764651099137,
+    -0.14042552377716488
+   ],
+   "pdf_hessian_rel": 0.009607271546971032,
+   "alphas_rel_for_0p002": 0.027736200180603264,
+   "negative_weight_fraction": 0.00142
+  },
+  "events_cost_s_per_event_112_weights_cached": {
+   "mean": 1.321,
+   "min": 0.59,
+   "max": 2.94,
+   "jobs": 50
+  },
+  "cache_closure": {
+   "events": 150,
+   "weights_identical": "16800/16800",
+   "timing": [
+    {
+     "seed": 51000,
+     "cached_s_per_event": 1.08,
+     "uncached_s_per_event": 5.98
+    },
+    {
+     "seed": 51001,
+     "cached_s_per_event": 2.1,
+     "uncached_s_per_event": 98.32
+    },
+    {
+     "seed": 51002,
+     "cached_s_per_event": 1.54,
+     "uncached_s_per_event": 9.62
+    }
+   ],
+   "note": "seed 51001: the uncached run (98 s/event) was slowed by its node; 51000 and 51002 give 5.5x and 6.2x with 112 weights"
+  },
+  "reproducibility": "LO (ggxy, stable Z, POWHEG LO) identical to 1e-15 with the same seeds; NLO statistically equal (ggxy NLO 13.0432(38) vs 13.0461(38) fb; per seed up to 0.5 %)"
+ },
+ "checks": [
+  {
+   "check": "ggxy LO muR=1 muF=1",
+   "what": "vs reference",
+   "value": 7.032357631646654,
+   "err": 0.0010113575292591602,
+   "ref": 7.0324,
+   "ref_err": 0.001,
+   "pull": -0.029789305889657586,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=0.5 muF=0.5",
+   "what": "vs reference",
+   "value": 8.914849814798368,
+   "err": 0.0012838669598406204,
+   "ref": 8.9148,
+   "ref_err": 0.0013,
+   "pull": 0.02726432567490985,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=2 muF=2",
+   "what": "vs reference",
+   "value": 5.625759521712319,
+   "err": 0.0008088667085837032,
+   "ref": 5.6258,
+   "ref_err": 0.0008,
+   "pull": -0.03558037082241771,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=2 muF=1",
+   "what": "vs reference",
+   "value": 5.881006001435218,
+   "err": 0.0008461939802043468,
+   "ref": 5.881,
+   "ref_err": 0.0008,
+   "pull": 0.005153688809645557,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=0.5 muF=1",
+   "what": "vs reference",
+   "value": 8.565936641697444,
+   "err": 0.0012314154982121964,
+   "ref": 8.5659,
+   "ref_err": 0.0012,
+   "pull": 0.02131057427925148,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=1 muF=2",
+   "what": "vs reference",
+   "value": 6.727728103907121,
+   "err": 0.0009672555681908748,
+   "ref": 6.7277,
+   "ref_err": 0.001,
+   "pull": 0.02020043698851198,
+   "pass": true
+  },
+  {
+   "check": "ggxy LO muR=1 muF=0.5",
+   "what": "vs reference",
+   "value": 7.319742227164358,
+   "err": 0.0010552567868444289,
+   "ref": 7.3197,
+   "ref_err": 0.0011,
+   "pull": 0.027702204396979697,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=1 muF=1",
+   "what": "vs reference",
+   "value": 13.04315941074506,
+   "err": 0.0038150558758918637,
+   "ref": 13.0461,
+   "ref_err": 0.0038,
+   "pull": -0.5461040792705993,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=0.5 muF=0.5",
+   "what": "vs reference",
+   "value": 15.212628737199697,
+   "err": 0.005102046417571933,
+   "ref": 15.2162,
+   "ref_err": 0.0051,
+   "pull": -0.49505050052331784,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=2 muF=2",
+   "what": "vs reference",
+   "value": 11.212676180305616,
+   "err": 0.0031251980933328237,
+   "ref": 11.2153,
+   "ref_err": 0.0031,
+   "pull": -0.5960631201691311,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=2 muF=1",
+   "what": "vs reference",
+   "value": 11.434563120825993,
+   "err": 0.0031959840703042505,
+   "ref": 11.4372,
+   "ref_err": 0.0032,
+   "pull": -0.58303921869622,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=0.5 muF=1",
+   "what": "vs reference",
+   "value": 14.966556448013044,
+   "err": 0.004940514031311037,
+   "ref": 14.9703,
+   "ref_err": 0.0049,
+   "pull": -0.5379939611234829,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=1 muF=2",
+   "what": "vs reference",
+   "value": 12.835725619805862,
+   "err": 0.003733890694953992,
+   "ref": 12.8388,
+   "ref_err": 0.0037,
+   "pull": -0.5848599559719057,
+   "pass": true
+  },
+  {
+   "check": "ggxy NLO muR=1 muF=0.5",
+   "what": "vs reference",
+   "value": 13.303667633231706,
+   "err": 0.003942455904943785,
+   "ref": 13.3065,
+   "ref_err": 0.0039,
+   "pull": -0.5107472520653247,
+   "pass": true
+  },
+  {
+   "check": "ggxy K = NLO/LO",
+   "what": "vs reference",
+   "value": 1.85473494010727,
+   "err": 0.0006045295159588272,
+   "ref": 1.8552,
+   "ref_err": 0.0006,
+   "pull": -0.5460134839761596,
+   "pass": true
+  },
+  {
+   "check": "ggxy K vs arXiv:2603.15762",
+   "what": "PDF4LHC21 in the paper",
+   "value": 1.85473494010727,
+   "ref": 1.853,
+   "pass": true
+  },
+  {
+   "check": "ggxy K(m_ZH)",
+   "what": "chi2 1.6 / 16",
+   "pvalue": 0.9999979193543178,
+   "pass": true
+  },
+  {
+   "check": "ggxy K(pT(Z))",
+   "what": "chi2 0.7 / 16",
+   "pvalue": 0.9999999969026542,
+   "pass": true
+  },
+  {
+   "check": "ggxy stable-Z LO NNPDF31",
+   "what": "vs reference",
+   "value": 70.70460167049974,
+   "err": 0.006887419285634139,
+   "ref": 70.7046,
+   "ref_err": 0.0069,
+   "pull": 0.000171347687247249,
+   "pass": true
+  },
+  {
+   "check": "ggxy stable-Z LO PDF4LHC21",
+   "what": "vs reference",
+   "value": 70.60086348504322,
+   "err": 0.006824831416046057,
+   "ref": 70.6009,
+   "ref_err": 0.0068,
+   "pull": -0.0037901284619632457,
+   "pass": true
+  },
+  {
+   "check": "ggxy stable-Z LO PDF4LHC21",
+   "what": "vs arXiv:2603.15762 Table 1",
+   "value": 70.60086348504322,
+   "err": 0.006824831416046057,
+   "ref": 70.59,
+   "ref_err": 0.02,
+   "pull": 0.5140677402949799,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=1 muF=1",
+   "what": "vs reference",
+   "value": 7.030580239850916,
+   "err": 0.0018719511063867024,
+   "ref": 7.0306,
+   "ref_err": 0.0019,
+   "pull": -0.007408446567250948,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=0.5 muF=0.5",
+   "what": "vs reference",
+   "value": 8.912666879625196,
+   "err": 0.0023679763392053755,
+   "ref": 8.9127,
+   "ref_err": 0.0024,
+   "pull": -0.00982350235810788,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=0.5 muF=1",
+   "what": "vs reference",
+   "value": 8.563756006115414,
+   "err": 0.002280688586687965,
+   "ref": 8.5638,
+   "ref_err": 0.0023,
+   "pull": -0.013582280082482218,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=1 muF=0.5",
+   "what": "vs reference",
+   "value": 7.317931891414895,
+   "err": 0.0019438821363492067,
+   "ref": 7.3179,
+   "ref_err": 0.0019,
+   "pull": 0.011732496260973104,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=1 muF=2",
+   "what": "vs reference",
+   "value": 6.726006448153102,
+   "err": 0.0017948830904092462,
+   "ref": 6.726,
+   "ref_err": 0.0018,
+   "pull": 0.0025366767436435997,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=2 muF=1",
+   "what": "vs reference",
+   "value": 5.879543788195868,
+   "err": 0.0015651539955756743,
+   "ref": 5.8795,
+   "ref_err": 0.0016,
+   "pull": 0.01956369518515453,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO muR=2 muF=2",
+   "what": "vs reference",
+   "value": 5.624329153402252,
+   "err": 0.0015007407412488758,
+   "ref": 5.6243,
+   "ref_err": 0.0015,
+   "pull": 0.01373965269027994,
+   "pass": true
+  },
+  {
+   "check": "POWHEG LO vs ggxy LO",
+   "what": "two codes, same run",
+   "value": 7.030580239850916,
+   "err": 0.0018719511063867024,
+   "ref": 7.032357631646654,
+   "ref_err": 0.0010113575292591602,
+   "pull": -0.8353640195430183,
+   "pass": true
+  },
+  {
+   "check": "grids NLO integral",
+   "what": "vs reference",
+   "value": 13.031219483612155,
+   "err": 0.006965986744536624,
+   "ref": 13.0312,
+   "ref_err": 0.007,
+   "pull": 0.0019729294708316293,
+   "pass": true
+  },
+  {
+   "check": "grids NLO vs ggxy NLO",
+   "what": "two codes, same run",
+   "value": 13.031219483612155,
+   "err": 0.006965986744536624,
+   "ref": 13.04315941074506,
+   "ref_err": 0.0038150558758918637,
+   "pull": -1.5033397228791878,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=0.5 muF=0.5",
+   "what": "vs reference",
+   "value": 15.229501037979999,
+   "err": 0.0699544898404781,
+   "ref": 15.2365,
+   "ref_err": 0.0355,
+   "pull": -0.08921935973080893,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=0.5 muF=1",
+   "what": "vs reference",
+   "value": 14.975202001200001,
+   "err": 0.06861617304109707,
+   "ref": 14.9929,
+   "ref_err": 0.0348,
+   "pull": -0.23003395676676772,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=0.5 muF=2",
+   "what": "vs reference",
+   "value": 14.800679213599993,
+   "err": 0.06805971442451285,
+   "ref": 14.8269,
+   "ref_err": 0.0345,
+   "pull": -0.34363361121597674,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=1 muF=0.5",
+   "what": "vs reference",
+   "value": 13.3212065,
+   "err": 0.060483498863637165,
+   "ref": 13.3202,
+   "ref_err": 0.0307,
+   "pull": 0.014838833514515294,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=1 muF=1",
+   "what": "vs reference",
+   "value": 13.053735179999885,
+   "err": 0.05906618873707409,
+   "ref": 13.0605,
+   "ref_err": 0.0299,
+   "pull": -0.1021831290263452,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=1 muF=2",
+   "what": "vs reference",
+   "value": 12.841523670000003,
+   "err": 0.058198820310362276,
+   "ref": 12.8555,
+   "ref_err": 0.0294,
+   "pull": -0.21435023329729594,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=2 muF=0.5",
+   "what": "vs reference",
+   "value": 11.711015375999999,
+   "err": 0.05319912179813672,
+   "ref": 11.7055,
+   "ref_err": 0.0269,
+   "pull": 0.09251907621403388,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=2 muF=1",
+   "what": "vs reference",
+   "value": 11.44682972874,
+   "err": 0.051771430855667024,
+   "ref": 11.4479,
+   "ref_err": 0.0262,
+   "pull": -0.01844549422430907,
+   "pass": true
+  },
+  {
+   "check": "events NLO muR=2 muF=2",
+   "what": "vs reference",
+   "value": 11.220657580099997,
+   "err": 0.050736610877482664,
+   "ref": 11.2271,
+   "ref_err": 0.0256,
+   "pull": -0.11336450634671136,
+   "pass": true
+  },
+  {
+   "check": "events PDF (Hessian)",
+   "what": "vs reference",
+   "value": 0.009607271546971032,
+   "ref": 0.0095,
+   "pass": true
+  },
+  {
+   "check": "events alpha_s (+-0.002)",
+   "what": "vs reference",
+   "value": 0.027736200180603264,
+   "ref": 0.0278,
+   "pass": true
+  },
+  {
+   "check": "events NLO vs ggxy NLO",
+   "what": "two codes, same run",
+   "value": 13.054132322000006,
+   "err": 0.05906795878438933,
+   "ref": 13.04315941074506,
+   "ref_err": 0.0038150558758918637,
+   "pull": 0.18538130979549736,
+   "pass": true
+  },
+  {
+   "check": "MCFM stable-Z LO NNPDF31",
+   "what": "vs reference",
+   "value": 71.1113,
+   "err": 0.017564,
+   "ref": 71.111,
+   "ref_err": 0.018,
+   "pull": 0.011928697260814435,
+   "pass": true
+  },
+  {
+   "check": "MCFM stable-Z LO PDF4LHC21",
+   "what": "vs reference",
+   "value": 70.9982,
+   "err": 0.017454,
+   "ref": 71.003,
+   "ref_err": 0.017,
+   "pull": -0.19700574232303497,
+   "pass": true
+  },
+  {
+   "check": "cache closure compare-51000.json",
+   "what": "50/50 events, 5600/5600 weights",
+   "pass": true
+  },
+  {
+   "check": "cache closure compare-51001.json",
+   "what": "50/50 events, 5600/5600 weights",
+   "pass": true
+  },
+  {
+   "check": "cache closure compare-51002.json",
+   "what": "50/50 events, 5600/5600 weights",
+   "pass": true
+  }
+ ]
+}

@@ -11,11 +11,23 @@ LCG view from `/cvmfs/sft.cern.ch`, or any compiler + CMake + Boost + Eigen + LH
 | [POWHEG-BOX-V2](https://gitlab.com/POWHEG-BOX/V2/POWHEG-BOX-V2) | `6654ea3` | |
 | [ggxy_ggZH](https://gitlab.com/POWHEG-BOX/V2/User-Processes/ggxy_ggZH) | `0fbaccf` | includes the amplitude cache (merged 2026-10-07) |
 
-**Status.** These scripts are extracted from the workflow that produced the reference numbers and
-cleaned of site-specific paths. The analysis and check scripts have been run on the original
-outputs and reproduce every reference number (`check.py`: 46/46). The build and run scripts have
-**not yet been re-run end to end in this form**; the reference numbers come from the same code
-built with gcc 10 (CMSSW_12_4_11 toolchain), and the first rebuild with the LCG view is pending.
+**Status: verified end to end** (2026-10-08/09). A fresh build of the pinned commits with the
+LCG_107 view (gcc 11.3, LHAPDF 6.5.5) on HTCondor workers re-ran every step with the reference
+seeds, and `check.py` passes all 48 checks (`reference/verification-2026-10-09.json`):
+
+- LO (ggxy program, stable Z, POWHEG LO at 7 points): identical to 10⁻¹⁵ with the same seeds,
+  although the reference was built with gcc 10.3 / LHAPDF 6.4.0.
+- NLO: statistically equal. ggxy 13.0432(38) vs 13.0461(38) fb; half of the 40 seeds agree to
+  ~10⁻⁵, the others take a different path in the adaptive integration after floating-point
+  differences (up to 0.5 % per seed). Grids 13.0312(70) fb, as the reference. 50 000 events:
+  13.054(59) fb, 7-point band +16.7/−14.0 %, PDF 0.96 %, α_s 2.8 %, 0.14 % negative weights.
+- Cache closure (cache on/off, same seed, 112 weights): 150/150 events and 16 800/16 800 weights
+  identical; 5.5–6× faster with 112 weights (23.9× with the 884-weight CMS list).
+- MCFM LO cross-check: reproduced with the standalone patch.
+
+The verification found and fixed five problems of the extracted scripts (silent `set -e` exit,
+module directory, HepMC flags of the LCG `pythia8-config`, relative grids path, and the CMS
+work-area location in `../cms`).
 
 ## What is reproduced
 
@@ -85,9 +97,10 @@ condor_submit generator/condor/cache.sub            # 3 x 50 events, cache on/of
 If the workers cannot reach gitlab.com: `./fetch_sources.sh sources` on a machine that can,
 and add `sources.tgz` to the build job's input files.
 
-**Cost** (reference runs, core-hours): build ~4; ggxy LO 2 and NLO 60; POWHEG LO 20; grids 70;
-50 000 events with the 112-weight list ~40 (estimate); cache closure ~3; MCFM ~3.
-About 200 core-hours in total.
+**Cost** (core-hours, measured in the verification): build 2.3 (17 min on 8 cores for ggxy);
+ggxy LO 2 and NLO 60; POWHEG LO 20; grids 70–140 (16 seeds; 4.3 h on fast, 9.6 h on slow
+cores); 50 000 NLO events with 112 weights 18 (1.3 s per event with the cache); cache closure 3;
+MCFM 2. About 200 core-hours in total.
 
 ## Options for production samples
 
