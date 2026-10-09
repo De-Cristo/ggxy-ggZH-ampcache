@@ -1,0 +1,6 @@
+! LO+PS, shower start at a quarter of the scale of the hard process.
+POWHEG:veto = 0
+SpaceShower:pTmaxMatch = 1
+TimeShower:pTmaxMatch = 1
+SpaceShower:pTmaxFudge = 0.25
+TimeShower:pTmaxFudge = 0.25

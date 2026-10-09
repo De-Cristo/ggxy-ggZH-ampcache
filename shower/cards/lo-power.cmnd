@@ -1,0 +1,4 @@
+! LO+PS, shower over the full phase space regardless of the final state (pTmaxMatch = 2).
+POWHEG:veto = 0
+SpaceShower:pTmaxMatch = 2
+TimeShower:pTmaxMatch = 2

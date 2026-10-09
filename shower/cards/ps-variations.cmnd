@@ -1,0 +1,9 @@
+! Shower uncertainty weights (Pythia 8 "Uncertainty Bands"): ISR and FSR renormalisation-scale
+! variations by factors 2 and 1/2 (and sqrt 2), stored as extra event weights.
+UncertaintyBands:doVariations = on
+UncertaintyBands:List = {
+  isrRedHi isr:muRfac=0.707, fsrRedHi fsr:muRfac=0.707,
+  isrRedLo isr:muRfac=1.414, fsrRedLo fsr:muRfac=1.414,
+  isrDefHi isr:muRfac=0.5,   fsrDefHi fsr:muRfac=0.5,
+  isrDefLo isr:muRfac=2.0,   fsrDefLo fsr:muRfac=2.0
+}

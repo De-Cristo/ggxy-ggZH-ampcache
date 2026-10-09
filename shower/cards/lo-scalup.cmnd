@@ -1,0 +1,4 @@
+! LO+PS, shower start limited to the scale of the hard process (SCALUP of the LHE event).
+POWHEG:veto = 0
+SpaceShower:pTmaxMatch = 1
+TimeShower:pTmaxMatch = 1

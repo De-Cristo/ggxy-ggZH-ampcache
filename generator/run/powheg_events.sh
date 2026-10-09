@@ -17,6 +17,8 @@ set -o pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 GRIDS=${1:?grids}; OUT=${2:?outdir}; NEV=${3:?nevents}; SEED=${4:?seed}; RWL=${5:-$GEN/cards/pwg-rwl.dat}
 load_env
+GRIDS=$(readlink -f "$GRIDS"); [ -e "$GRIDS" ] || die "no grids $GRIDS"   # absolute: the run happens in its own directory
+RWL=$( [ "$RWL" = none ] && echo none || readlink -f "$RWL" )
 mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
 RUN=$OUT/run-$SEED; rm -rf "$RUN"; mkdir -p "$RUN"; cd "$RUN"
 if [ -f "$GRIDS" ]; then tar xzf "$GRIDS" --wildcards 'pwg*.dat'; else cp -p "$GRIDS"/pwg*.dat .; fi

@@ -1,0 +1,11 @@
+! Common Pythia 8 settings for gg -> Z(l+l-)H events from POWHEG ggxy_ggZH (LHE input).
+Main:timesAllowErrors = 10
+Next:numberShowLHA = 0
+Next:numberShowInfo = 0
+Next:numberShowProcess = 0
+Next:numberShowEvent = 0
+Init:showChangedSettings = on
+Init:showChangedParticleData = off
+! Higgs boson decay (the STXS classification and the observables do not depend on it)
+25:onMode = off
+25:onIfMatch = 5 -5

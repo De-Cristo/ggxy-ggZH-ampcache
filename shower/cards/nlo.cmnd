@@ -1,0 +1,13 @@
+! NLO+PS: POWHEG matching (Pythia 8 manual, "POWHEG Merging"; Pythia8Plugins/PowhegHooks.h).
+! The shower runs over the full phase space (pTmaxMatch = 2) and emissions harder than the
+! POWHEG one are vetoed.  Born final state: l+, l-, H.  These are the settings of the earlier
+! (validated) NLO+PS samples; other POWHEG:* settings keep their Pythia defaults.
+POWHEG:nFinal = 3
+POWHEG:veto = 1
+POWHEG:vetoCount = 100
+POWHEG:pThard = 0
+POWHEG:pTemt = 0
+POWHEG:emitted = 0
+POWHEG:pTdef = 1
+SpaceShower:pTmaxMatch = 2
+TimeShower:pTmaxMatch = 2

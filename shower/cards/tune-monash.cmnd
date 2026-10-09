@@ -1,0 +1,3 @@
+! Monash 2013 tune (Pythia 8 default), NNPDF2.3 QCD+QED LO for the shower and MPI.
+Tune:pp = 14
+Tune:ee = 7

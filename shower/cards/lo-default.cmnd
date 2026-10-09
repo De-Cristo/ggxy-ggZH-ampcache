@@ -1,0 +1,6 @@
+! LO+PS with Pythia's default shower start: pTmaxMatch = 0, i.e. for a hard process without
+! final-state quarks, gluons or photons (gg -> l+l-H) emissions up to the kinematic limit
+! ("power shower").  No POWHEG veto.
+POWHEG:veto = 0
+SpaceShower:pTmaxMatch = 0
+TimeShower:pTmaxMatch = 0

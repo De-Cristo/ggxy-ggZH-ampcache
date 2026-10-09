@@ -1,0 +1,3 @@
+! Test only: no shower, no MPI, no hadronisation (LHE kinematics through the analysis).
+PartonLevel:all = off
+HadronLevel:all = off
