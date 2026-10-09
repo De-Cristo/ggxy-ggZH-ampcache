@@ -24,7 +24,6 @@ RUN=$OUT/run-$SEED; rm -rf "$RUN"; mkdir -p "$RUN"; cd "$RUN"
 if [ -f "$GRIDS" ]; then tar xzf "$GRIDS" --wildcards 'pwg*.dat'; else cp -p "$GRIDS"/pwg*.dat .; fi
 rm -f pwg-rwl.dat pwgseeds.dat pwgevents*.lhe
 [ "$(ls pwggrid-*.dat 2>/dev/null | wc -l)" -gt 0 ] || die "no pwggrid-*.dat in $GRIDS"
-[ -f pwgubound.dat ] || die "no pwgubound.dat in $GRIDS (made by run/powheg_grids.sh)"
 args=(numevts=$NEV iseed=$SEED storeinfo_rwgt=0 pdfreweight=0)
 if [ "$RWL" != none ]; then
   cp -p "$RWL" pwg-rwl.dat
@@ -36,6 +35,8 @@ mv powheg.input powheg.input-grids
 sed -i -e '/^[[:space:]]*manyseeds[[:space:]]/d' -e '/^[[:space:]]*parallelstage[[:space:]]/d' \
        -e '/^[[:space:]]*xgriditeration[[:space:]]/d' powheg.input-grids
 make_card powheg.input-grids powheg.input "${args[@]}"
+grep -q '^[[:space:]]*LOevents[[:space:]][[:space:]]*1' powheg.input || [ -f pwgubound.dat ] \
+  || die "no pwgubound.dat in $GRIDS (made by run/powheg_grids.sh)"
 manifest "$OUT/manifest.txt" "powheg_events.sh seed $SEED nevents $NEV weights $(grep -c '<weight ' pwg-rwl.dat 2>/dev/null || echo 0) GGXY_AMPCACHE=${GGXY_AMPCACHE:-1}"
 t=$SECONDS
 pwhg_main < /dev/null > pwhg.log 2>&1 || { tail -20 pwhg.log >&2; die "pwhg_main failed (seed $SEED)"; }

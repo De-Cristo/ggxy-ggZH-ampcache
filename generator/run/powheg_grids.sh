@@ -38,12 +38,15 @@ echo "$(stamp) stage 2 done"
 card parallelstage=3 xgriditeration=$NX
 run_parallel "$NS" run-st3 || die "stage 3 failed (run-st3-*.log)"
 echo "$(stamp) stage 3 done"
-for f in pwggrid pwgubound pwgbtildeupb pwgremnupb; do
+# LO (LOevents 1): no radiation, hence no radiation upper bounds (pwgubound) or remnant bounds
+LO=0; grep -q '^[[:space:]]*LOevents[[:space:]][[:space:]]*1' powheg.input && LO=1
+req=pwggrid; [ $LO = 1 ] || req="pwggrid pwgubound pwgbtildeupb pwgremnupb"
+for f in $req; do
   [ "$(ls $f-*.dat 2>/dev/null | wc -l)" -eq "$NS" ] || die "expected $NS files $f-*.dat"
 done
 # single-run event generation reads pwgubound.dat and pwg-stat.dat: provide them exactly as the
 # CMS gridpack tarball step does (createTarBall_template.sh: the first seed's files)
-cp -p "$(ls pwgubound-*.dat | head -1)" pwgubound.dat
+[ $LO = 1 ] || cp -p "$(ls pwgubound-*.dat | head -1)" pwgubound.dat
 f=$(ls pwg-[0-9]*-stat.dat 2>/dev/null | head -1); [ -n "$f" ] && cp -p "$f" pwg-stat.dat
 python3 "$GEN/analysis/powheg_stat.py" --points r1f1="$WD" --label grids --out "$WD/grids-xsec.json"
 tar czf grids.tgz pwg*.dat powheg.input manifest.txt grids-xsec.json
