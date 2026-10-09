@@ -110,6 +110,12 @@ fi
 for r in grids-nlo grids-lo grids-nlo-bs250; do
   have "$r" || continue
   unpack "$r" 'grids/grids-xsec.json' 'grids/manifest.txt'
+  if [ ! -f "$W/$r/0/grids/grids-xsec.json" ] && grep -q bornsuppfact "$W/$r/0/grids/manifest.txt" 2>/dev/null; then
+    # before 2026-10-10 analysis/powheg_stat.py did not read the Born-suppressed total, so those grid
+    # jobs wrote no grids-xsec.json; that integral (sigma x F) is not a cross section and not needed
+    echo "--- $r: Born-suppressed grids without grids-xsec.json (integral of sigma x F, not used)"
+    continue
+  fi
   step "$r" cp "$W/$r/0/grids/grids-xsec.json" "$OUT/$r.json"
 done
 if have mcfm; then unpack mcfm 'out/*.json'; step mcfm cp "$W"/mcfm/0/out/mcfm-*.json "$OUT/"; fi
