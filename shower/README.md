@@ -14,7 +14,7 @@ Pythia's shower-variation weights are carried to every histogram.
 | `build.sh <prefix>` | Rivet plugin `RivetGGZH.so`, driver `ggzh-shower`, relocatable `env.sh` |
 | `src/ggzh_shower.cc` | Pythia 8 driver: LHE in, HepMC3 event handed to `Rivet::AnalysisHandler` in-process, POWHEG hooks when `POWHEG:veto > 0` |
 | `rivet/GGZH_NLOPS.cc` | distributions; normalisation Σw/N per weight (pb per bin) |
-| `cards/` | `common`, `tune-monash`, `nlo` (POWHEG veto), `lo-*` (shower-start variants for LO+PS), `ps-variations`, `noshower` (test) |
+| `cards/` | `common`, `tune-monash`/`tune-cp5`/`tune-a14`, `nlo` (POWHEG veto), `lo-*` (shower-start variants for LO+PS), `ps-variations`, `noshower` (test) |
 | `run/shower.sh` | one LHE file → `<name>.<mode>.<tune>.yoda` |
 | `analysis/yoda_summary.py` | YODA (text) → JSON from Rivet's RAW sums: all histograms and weight variations with under/overflow, gg → ZH(ℓℓ) STXS bins; per job (`--raw`) and combined (`--merge`); plain Python |
 
@@ -47,5 +47,10 @@ python3 analysis/yoda_summary.py out/*.nlo.monash.yoda --out nlo.json           
 3. Same seed, same output; the POWHEG veto acts (vetoed emissions are counted in the log).
 4. LO+PS with the shower off reproduces the fixed-order LO distributions of `generator/` (ggxy).
 
-Tunes other than Monash (CP5, A14) are added as cards once their parameters are taken from the
-publications (paper plan D2).
+## Tunes
+
+`tune-monash` (nominal; Pythia's default Monash 2013), `tune-cp5` (CMS CP5, arXiv:1903.12179, with
+NNPDF3.1 NNLO for shower and MPI and the 13.6 TeV total cross sections of CMS's public Run-3
+implementation), `tune-a14` (ATLAS A14 central with NNPDF2.3 LO, built into Pythia as
+`Tune:pp = 21`). The tune's PDF serves the shower and MPI only; the hard process keeps the PDF of
+the POWHEG events.

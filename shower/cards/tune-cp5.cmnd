@@ -1,0 +1,28 @@
+! CMS CP5 tune (CMS Collaboration, Eur. Phys. J. C 80 (2020) 4, arXiv:1903.12179, Table 3), with
+! the parameter values at full precision and the total and elastic cross sections at 13.6 TeV as
+! in CMS's public Run-3 implementation of the tune.  Shower, MPI and hard-process alpha_s 0.118
+! with NLO running; NNPDF3.1 NNLO (alpha_s 0.118) for the shower and MPI, independent of the PDF
+! of the POWHEG events.
+Tune:pp = 14
+Tune:ee = 7
+MultipartonInteractions:ecmPow = 0.03344
+MultipartonInteractions:bProfile = 2
+MultipartonInteractions:pT0Ref = 1.41
+MultipartonInteractions:coreRadius = 0.7634
+MultipartonInteractions:coreFraction = 0.63
+MultipartonInteractions:ecmRef = 7000.
+ColourReconnection:range = 5.176
+SigmaTotal:zeroAXB = off
+SpaceShower:rapidityOrder = on
+SpaceShower:alphaSorder = 2
+SpaceShower:alphaSvalue = 0.118
+SigmaProcess:alphaSvalue = 0.118
+SigmaProcess:alphaSorder = 2
+MultipartonInteractions:alphaSvalue = 0.118
+MultipartonInteractions:alphaSorder = 2
+TimeShower:alphaSorder = 2
+TimeShower:alphaSvalue = 0.118
+SigmaTotal:mode = 0
+SigmaTotal:sigmaEl = 22.08
+SigmaTotal:sigmaTot = 101.037
+PDF:pSet = LHAPDF6:NNPDF31_nnlo_as_0118

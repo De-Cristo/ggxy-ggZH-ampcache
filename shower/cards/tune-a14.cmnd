@@ -1,0 +1,4 @@
+! ATLAS A14 tune, central, with NNPDF2.3 LO (ATL-PHYS-PUB-2014-021); built into Pythia 8 as
+! Tune:pp = 21 (tunes/ATLAS-A14-NNPDF23LO.cmnd), the centre of the A14 variations 23-32.
+Tune:ee = 7
+Tune:pp = 21
