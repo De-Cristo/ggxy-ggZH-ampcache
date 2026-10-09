@@ -31,8 +31,9 @@ git -C "$STXS" checkout -q "$STXS_COMMIT"
   || { echo "FATAL: rivet-build failed" >&2; tail -30 "$PREFIX/lib/rivet-build.log" >&2; exit 3; }
 
 # Pythia driver
-g++ -O2 -std=c++17 "$HERE/src/ggzh_shower.cc" -o "$PREFIX/bin/ggzh-shower" \
-    $(pythia8-config --cxxflags) $(rivet-config --cppflags) $(HepMC3-config --cflags) \
+# -std=c++17 last: pythia8-config --cxxflags carries -std=c++11, too old for the Rivet 4.1 headers
+g++ -O2 "$HERE/src/ggzh_shower.cc" -o "$PREFIX/bin/ggzh-shower" \
+    $(pythia8-config --cxxflags) $(rivet-config --cppflags) $(HepMC3-config --cflags) -std=c++17 \
     $(pythia8-config --libs) $(rivet-config --libs) $(HepMC3-config --libs) -ldl \
     > "$PREFIX/bin/build.log" 2>&1 \
   || { echo "FATAL: ggzh-shower failed to compile" >&2; tail -30 "$PREFIX/bin/build.log" >&2; exit 4; }
