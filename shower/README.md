@@ -33,8 +33,9 @@ python3 analysis/yoda_summary.py out/*.nlo.monash.yoda --out nlo.json           
 - LO events (Born only, `bornonly 1`, `LOevents 1` in the generator) without veto, with the
   shower start as the variable under study:
   `lo-default` (`pTmaxMatch 0`: for a final state without coloured partons Pythia showers up to
-  the kinematic limit), `lo-scalup` (`pTmaxMatch 1`: up to SCALUP of the event),
-  `lo-scalup-half`, `lo-scalup-quarter` (`pTmaxFudge` 0.5, 0.25), `lo-power` (`pTmaxMatch 2`).
+  the kinematic limit), `lo-scalup` (`pTmaxMatch 1`: up to SCALUP, which POWHEG sets to m_ZH for
+  Born-only events), `lo-scalup-half` (m_ZH/2 = μ_F), `lo-scalup-quarter` (m_ZH/4),
+  `lo-power` (`pTmaxMatch 2`).
 - `noshower`: no shower, MPI or hadronisation; for the tests.
 
 ## Tests (to pass before results are used)

@@ -1,4 +1,5 @@
-! LO+PS, shower start limited to the scale of the hard process (SCALUP of the LHE event).
+! LO+PS, shower start limited to the scale of the hard process (SCALUP of the LHE event; for
+! POWHEG Born-only events SCALUP = m_ZH, the partonic centre-of-mass energy).
 POWHEG:veto = 0
 SpaceShower:pTmaxMatch = 1
 TimeShower:pTmaxMatch = 1

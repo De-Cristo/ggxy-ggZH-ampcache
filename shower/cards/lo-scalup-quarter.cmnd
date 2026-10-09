@@ -1,4 +1,4 @@
-! LO+PS, shower start at a quarter of the scale of the hard process.
+! LO+PS, shower start at a quarter of the scale of the hard process (m_ZH/4).
 POWHEG:veto = 0
 SpaceShower:pTmaxMatch = 1
 TimeShower:pTmaxMatch = 1
