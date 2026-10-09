@@ -1,0 +1,59 @@
+--- a/Born_phsp.f
++++ b/Born_phsp.f
+@@ -154,13 +154,22 @@
+ 
+ 
+       subroutine born_suppression(fact)
++c     Born suppression for weighted events, active when bornsuppfact > 0:
++c       fact = ((pT^2 + (r L)^2) / (pT^2 + L^2))^n
++c     pT = transverse momentum of the Higgs boson (equal to that of the lepton pair) of the
++c     underlying Born, L = bornsuppfact [GeV], n = bornsuppexp (default 1),
++c     r = bornsuppfloor (default 0.1).  fact lies in [r^(2n), 1]: Born configurations with
++c     pT << L are generated less often and carry the weight 1/fact, which populates the
++c     high-pT tail.  POWHEG divides the event weight by fact; the integrals of stages 2-3
++c     are those of the suppressed function.  Without bornsuppfact, fact = 1 (as before).
+       implicit none
+       include 'nlegborn.h'
+       include 'pwhg_flst.h'
+       include 'pwhg_kn.h'
+       logical ini
+       data ini/.true./
+-      real * 8 fact,pt
++      real * 8 fact,pt,pt2,suppl,suppn,suppr
++      save suppl,suppn,suppr
+       real * 8 powheginput
+       external powheginput
+       if (ini) then
+@@ -171,14 +180,30 @@
+          else
+             pt = powheginput("#bornsuppfact")
+          endif
+-         if(pt.ge.0) then
++         suppl = pt
++         if(suppl.le.0) then
+             write(*,*) '**************************'
+             write(*,*) 'No Born suppression factor'
+             write(*,*) '**************************'
++         else
++            suppn = powheginput("#bornsuppexp")
++            if(suppn.le.0) suppn = 1d0
++            suppr = powheginput("#bornsuppfloor")
++            if(suppr.lt.0) suppr = 0.1d0
++            write(*,*) '********************************************'
++            write(*,*) 'Born suppression in pT(H): L, n, r =',
++     1           suppl,suppn,suppr
++            write(*,*) '********************************************'
+          endif
+          ini=.false.
+       endif
+-      fact=1d0
++      if(suppl.le.0) then
++         fact=1d0
++         return
++      endif
++c     leg 5 of the Born is the Higgs boson (init_processes.f)
++      pt2 = kn_pborn(1,5)**2 + kn_pborn(2,5)**2
++      fact = ((pt2 + (suppr*suppl)**2)/(pt2 + suppl**2))**suppn
+       end
+ 
+ 

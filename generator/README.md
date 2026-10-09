@@ -89,6 +89,22 @@ and add `sources.tgz` to the build job's input files.
 50 000 events with the 112-weight list ~40 (estimate); cache closure ~3; MCFM ~3.
 About 200 core-hours in total.
 
+## Options for production samples
+
+- **LO events** (Born only): grids made with `GRID_SETTINGS="bornonly=1 LOevents=1"
+  run/powheg_grids.sh <dir>`; `run/powheg_events.sh` then gives LO events (it always uses the
+  card stored with the grids).
+- **Born suppression** (weighted events that populate the high-p_T tail):
+  `GRID_SETTINGS="bornsuppfact=250"`, optionally `bornsuppexp` (default 1) and
+  `bornsuppfloor` (default 0.1): the generation density is multiplied by
+  ((p_T² + (rL)²)/(p_T² + L²))ⁿ in p_T(H) of the underlying Born, and every event carries the
+  weight 1/fact. Implemented by `patches/ggxy_ggZH-born-suppression.patch` (the process ships
+  a stub that always returns 1), which `build.sh` applies; without `bornsuppfact` it changes
+  nothing. With suppression, the integrals printed by POWHEG are those of the suppressed
+  function; the cross section is Σw/N of the events. *Not yet validated (paper plan WP1).*
+- **Another PDF**: e.g. `GRID_SETTINGS="lhans1=93300 lhans2=93300"` (PDF4LHC21_40_pdfas) and a
+  weight list with that set.
+
 ## Notes
 
 - **Other Recola/Collier/CutTools/OneLOop builds.** ggxy bundles modified versions. LCG views

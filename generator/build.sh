@@ -82,7 +82,15 @@ echo "[$(stamp)] 2. POWHEG-BOX-V2 $POWHEG_COMMIT + ggxy_ggZH $GGZH_COMMIT"
 fetch "$SRC/POWHEG-BOX-V2" "$POWHEG_URL" "$POWHEG_COMMIT"
 fetch "$SRC/POWHEG-BOX-V2/ggxy_ggZH" "$GGZH_URL" "$GGZH_COMMIT"
 P=$SRC/POWHEG-BOX-V2/ggxy_ggZH
-git -C "$P" checkout -q -- Makefile
+git -C "$P" checkout -q -- .          # pristine process sources (re-runs)
+# local patches (patches/*.patch); each is inert unless enabled in the card:
+#   ggxy_ggZH-born-suppression.patch  Born suppression in pT(H) for weighted events (bornsuppfact)
+for pf in "$HERE"/patches/*.patch; do
+  [ -f "$pf" ] || continue
+  patch -p1 -d "$P" --forward --batch < "$pf" > "$LOG/patch-$(basename "$pf").log" 2>&1 \
+    || { echo "FATAL: patch $(basename "$pf") does not apply" >&2; cat "$LOG/patch-$(basename "$pf").log" >&2; exit 5; }
+  echo "applied $(basename "$pf")"
+done
 grep -q '^ANALYSIS = default' "$P/Makefile" && grep -q '^LIBS+=-L$(GGXYLIB) -lggxy' "$P/Makefile" && grep -q '^CFLAGS=' "$P/Makefile" \
   && grep -q '^LIBHEPMC=' "$P/Makefile" \
   || { echo "FATAL: unexpected ggxy_ggZH Makefile; the edits below need revisiting" >&2; exit 5; }
@@ -148,6 +156,7 @@ done
   echo "ggxy $(git -C "$SRC/ggxy-release" rev-parse HEAD)"
   echo "POWHEG-BOX-V2 $(git -C "$SRC/POWHEG-BOX-V2" rev-parse HEAD)"
   echo "ggxy_ggZH $(git -C "$P" rev-parse HEAD)"
+  for pf in "$HERE"/patches/*.patch; do [ -f "$pf" ] && echo "patch $(basename "$pf") sha256 $(sha256sum "$pf" | cut -c1-16)"; done
   echo "LCG_VIEW ${LCG_VIEW:-none}"
   echo "gcc $(gcc --version | head -1)"
   echo "gfortran $(gfortran --version | head -1)"
