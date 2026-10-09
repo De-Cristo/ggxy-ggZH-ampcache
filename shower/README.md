@@ -6,24 +6,24 @@ Rivet: the LHC Higgs WG STXS classification (`SimplifiedTemplateCrossSections`, 
 18-cell Stage 1.3 fine classification as a cross-check). The LHE weights (scale, PDF, α_s) and
 Pythia's shower-variation weights are carried to every histogram.
 
-**Status: written, not yet run.** Validation tests below (paper plan WP2).
+**Status:** built and run on NLO events (smoke test 2026-10-09: 14/14 checks of `check_shower.py`); LO+PS modes and the full samples in progress (paper plan WP2).
 
 | | |
 |---|---|
 | `versions.sh` | LCG view (default LCG_108a gcc 13: Pythia 8.315, Rivet 4.1.2, HepMC3, FastJet), STXS routine commit |
 | `build.sh <prefix>` | Rivet plugin `RivetGGZH.so`, driver `ggzh-shower`, relocatable `env.sh` |
-| `src/ggzh_shower.cc` | Pythia 8 driver: LHE in, Rivet in-process (`Pythia8Rivet`), POWHEG hooks when `POWHEG:veto > 0` |
+| `src/ggzh_shower.cc` | Pythia 8 driver: LHE in, HepMC3 event handed to `Rivet::AnalysisHandler` in-process, POWHEG hooks when `POWHEG:veto > 0` |
 | `rivet/GGZH_NLOPS.cc` | distributions; normalisation Σw/N per weight (pb per bin) |
 | `cards/` | `common`, `tune-monash`, `nlo` (POWHEG veto), `lo-*` (shower-start variants for LO+PS), `ps-variations`, `noshower` (test) |
 | `run/shower.sh` | one LHE file → `<name>.<mode>.<tune>.yoda` |
-| `analysis/yoda_summary.py` | YODA → JSON (all histograms and weight variations; STXS gg → ZH(ℓℓ) bins extracted) |
+| `analysis/yoda_summary.py` | YODA (text) → JSON from Rivet's RAW sums: all histograms and weight variations with under/overflow, gg → ZH(ℓℓ) STXS bins; per job (`--raw`) and combined (`--merge`); plain Python |
 
 ```sh
 ./build.sh $PWD/shower-install
 export GGZH_SHOWER_PREFIX=$PWD/shower-install
 run/shower.sh events-1001.lhe.gz out nlo monash 1001                   # NLO+PS
 run/shower.sh lo-events-2001.lhe.gz out lo-default monash 2001         # LO+PS, default shower start
-python3 analysis/yoda_summary.py out/*.nlo.monash.yoda --out nlo.json
+python3 analysis/yoda_summary.py out/*.nlo.monash.yoda --out nlo.json                # or per job with --raw, then --merge
 ```
 
 ## Modes

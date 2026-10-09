@@ -2,7 +2,7 @@
 // in the same process (no HepMC file on disk).
 //
 //   ggzh-shower --lhe <file.lhe> --out <name> [--cmnd <file.cmnd>]... [--set "Key = value"]...
-//               [--nevents N] [--seed S] [--analysis <Rivet analysis[:options]>]...
+//               [--nevents N] [--seed S] [--analysis <Rivet analysis[:options]>]... [--no-beam-check]
 //
 // The settings come from the command files (cards/*.cmnd, read in order) and --set lines.
 // With POWHEG:veto > 0 the POWHEG hooks (Pythia8Plugins/PowhegHooks.h) veto shower emissions
@@ -24,7 +24,7 @@ using namespace Pythia8;
 
 static void usage() {
   std::cerr << "usage: ggzh-shower --lhe <file.lhe> --out <name> [--cmnd <file>]... [--set \"Key = value\"]...\n"
-               "                   [--nevents N] [--seed S] [--analysis <name[:options]>]...\n";
+               "                   [--nevents N] [--seed S] [--analysis <name[:options]>]... [--no-beam-check]\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> cmnds, sets, analyses;
   long nEvents = -1;
   long seed = -1;
+  bool beamCheck = true;     // off for tests without parton level (no beam remnants in the record)
   for (int i = 1; i < argc; ++i) {
     std::string a = argv[i];
     auto next = [&](const char* what) -> std::string {
@@ -45,6 +46,7 @@ int main(int argc, char* argv[]) {
     else if (a == "--analysis") analyses.push_back(next("--analysis"));
     else if (a == "--nevents") nEvents = std::stol(next("--nevents"));
     else if (a == "--seed") seed = std::stol(next("--seed"));
+    else if (a == "--no-beam-check") beamCheck = false;
     else { std::cerr << "unknown argument " << a << "\n"; usage(); return 2; }
   }
   if (lhe.empty() || out.empty()) { usage(); return 2; }
@@ -73,6 +75,7 @@ int main(int argc, char* argv[]) {
 
   Pythia8ToHepMC toHepMC;
   Rivet::AnalysisHandler rivet;
+  rivet.setCheckBeams(beamCheck);
   for (const auto& a : analyses) rivet.addAnalysis(a);
   bool rivetInit = false;
 
@@ -95,6 +98,6 @@ int main(int argc, char* argv[]) {
   if (rivetInit) { rivet.finalize(); rivet.writeData(out + ".yoda"); }
   std::cout << "ggzh-shower: " << iEvent << " events, " << nFail << " failed; POWHEG veto "
             << (veto ? "on" : "off") << ", ISR vetoes " << nISRveto << ", FSR vetoes " << nFSRveto
-            << "; weights per event " << pythia.info.weightNameVector().size() << "\n";
+            << "; weights per event " << (rivetInit ? toHepMC.event().weights().size() : 0) << "\n";
   return 0;
 }

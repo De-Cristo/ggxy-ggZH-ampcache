@@ -28,7 +28,8 @@ esac
 for x in "$@"; do cmnds+=(--cmnd "$HERE/cards/$x.cmnd"); done
 name=$base.$MODE.$TUNE
 t=$SECONDS
-( cd "$work" && ggzh-shower --lhe events.lhe --out "$OUT/$name" "${cmnds[@]}" ${SEED:+--seed "$SEED"} ) > "$OUT/$name.log" 2>&1
+opts=(); [ "$MODE" = noshower ] && opts+=(--no-beam-check)
+( cd "$work" && ggzh-shower --lhe events.lhe --out "$OUT/$name" "${cmnds[@]}" ${SEED:+--seed "$SEED"} "${opts[@]}" ) > "$OUT/$name.log" 2>&1
 rc=$?
 echo "$name rc $rc wall $((SECONDS - t)) s; $(grep -h '^ggzh-shower:' "$OUT/$name.log" | tail -1)"
 [ $rc = 0 ] && [ -s "$OUT/$name.yoda" ] || { tail -20 "$OUT/$name.log" >&2; exit 3; }
