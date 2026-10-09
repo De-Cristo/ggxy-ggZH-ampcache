@@ -11,7 +11,7 @@
 #   build                                  -> ggzh-install.tgz
 #   grids  [nseeds] [x-grid iterations]    -> grids.tgz (+ out-grids.tgz with logs)
 #   events <nevents> <seed> [none]         -> out-events-<seed>.tgz (LHE, log, xsec-raw-<seed>.json)
-#   cache  <nevents> <seed>                -> out-cache-<seed>.tgz
+#   cache  <nevents> <seed> [weight list]  -> out-cache-<seed>.tgz
 #   fo     <lo|nlo> <first seed> <nseeds> [np] [np_opt] [pdf] [program] -> out-fo-<mode>-<first seed>.tgz
 #   lo     [nseeds] [points...]            -> out-lo.tgz
 set -o pipefail
@@ -43,7 +43,7 @@ case $STEP in
     [ $rc = 0 ] && python3 "$G/analysis/lhe_xsec.py" --files "out/events-$2.lhe.gz" --raw --out "out/xsec-raw-$2.json"
     tar czf "out-events-$2.tgz" out; exit $rc ;;
   cache)
-    "$G/run/cache_ab.sh" grids.tgz out "$1" "$2"; rc=$?
+    "$G/run/cache_ab.sh" grids.tgz out "$1" "$2" "${3:-$G/cards/pwg-rwl.dat}"; rc=$?
     tar czf "out-cache-$2.tgz" out; exit $rc ;;
   fo)
     "$G/run/fo.sh" "$1" out "$2" "$3" "${@:4}"; rc=$?
