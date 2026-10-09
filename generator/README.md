@@ -116,7 +116,14 @@ MCFM 2. About 200 core-hours in total.
   nothing. With suppression, the integrals printed by POWHEG are those of the suppressed
   function; the cross section is Σw/N of the events. *Not yet validated (paper plan WP1).*
 - **Another PDF**: e.g. `GRID_SETTINGS="lhans1=93300 lhans2=93300"` (PDF4LHC21_40_pdfas) and a
-  weight list with that set.
+  weight list with that set: `cards/pwg-rwl-pdf4lhc21.dat` (9 scale points at PDF4LHC21,
+  PDF4LHC21_40_pdfas 43 members, NNPDF3.1 103 members: 155 weights); fixed order with the
+  set name as the 7th argument of `run/fo.sh`.
+- **Another energy**: POWHEG with `GRID_SETTINGS="ebeam1=6500d0 ebeam2=6500d0"` (13 TeV; also
+  for `run/powheg_lo.sh`), the ggxy programs with √s in GeV as the 9th argument of
+  `run/fo.sh`, MCFM with `MCFM_SQRTS=13000`. `check.py --paper-energy 13600|13000` compares a
+  PDF4LHC21 reproduction with Tables 1 and 3 of arXiv:2603.15762 at that energy. The shower
+  picks the energy-dependent part of the CP5 tune from the beams of the LHE file.
 
 ## Notes
 
