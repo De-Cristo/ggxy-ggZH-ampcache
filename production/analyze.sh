@@ -35,6 +35,9 @@
 #   effect-<tune>.json          fixed order vs parton level vs shower at each order, and the high-pT
 #                               test of the NLO events (analysis/shower_effect.py)
 #   bornsupp-shower.json        (verify: NLO+PS from weighted against unweighted events)
+#   bornsupp-parton.json        (verify: the same at parton level)
+#   effect-bs250-monash.json    (verify: the weighted NLO events against fixed order; effect-<tune>.json
+#                               holds the unweighted ones)
 #   check-generator.json        generator/check.py (13600, 13000: --paper-energy)
 #   SHA256SUMS                  of every file above
 # The outputs record no absolute paths (file names only), so they can be published as they are.
@@ -184,6 +187,13 @@ if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
     step "effect-$t" python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
       --nlo-ps "$f" --lo-ps "${los[@]}" --out "effect-$t.json"
   done
+fi
+if [ -f parton-nlo-bs250.json ] && [ -f parton-nlo.json ]; then
+  step bornsupp-parton python3 "$SA/compare_samples.py" --a parton-nlo-bs250.json --b parton-nlo.json --out bornsupp-parton.json
+  if [ -f parton-lo.json ] && [ -f fo-llh.json ] && [ -f shower-nlo-bs250-monash.json ]; then
+    step effect-bs250-monash python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo-bs250.json \
+      --parton-lo parton-lo.json --nlo-ps shower-nlo-bs250-monash.json --out effect-bs250-monash.json
+  fi
 fi
 if [ -f "$OUT/shower-nlo-bs250-monash.json" ] && [ -f "$OUT/shower-nlo-monash.json" ]; then
   step bornsupp-shower python3 "$SA/compare_samples.py" --a shower-nlo-bs250-monash.json \

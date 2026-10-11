@@ -20,7 +20,8 @@
 #            the high-pT test of the Born suppression against the fixed-order NLO)
 #   13000    the same runs, seeds and statistics at sqrt(s) = 13 TeV
 #   verify   NNPDF3.1, 13.6 TeV: the verification runs of generator/reference (48 checks), the
-#            unweighted validation samples and their showers, the Born-suppression test
+#            unweighted validation samples and their showers, the Born-suppression test (also at
+#            parton level: unweighted and weighted NLO events against the fixed-order NLO)
 # Jobs p = 0 .. <jobs>-1; seeds are fixed functions of p (below), identical in 13600 and 13000.
 #
 # A job directory contains the unpacked package (VERSION, production/, generator/, shower/) and
@@ -65,7 +66,8 @@ runs() {
       for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
       for m in "${LOMODES[@]}"; do echo "shower-lo-$m-monash"; done
       echo shower-lo-default-cp5 shower-lo-scalup-half-cp5 shower-lo-default-a14 shower-lo-scalup-half-a14
-      echo shower-nlo-bs250-monash ;;
+      echo shower-nlo-bs250-monash
+      echo parton-nlo parton-lo parton-nlo-bs250 ;;
   esac
 }
 
@@ -146,9 +148,14 @@ def() {
                   STEP=("$S/run/shower_batch.sh" shower-out "lo-$m" "$t" -- lhe/*.lhe.gz) ;;
     # ---- the production events at parton level: Rivet on the LHE kinematics (shower/run/shower.sh
     #      mode noshower: no shower, MPI or hadronisation), all files
-    parton-nlo)   res 5 4 8 4; need_lhe "$(sname nlo)" 10001 40 "$p"
+    parton-nlo-bs250)
+                  res 1 4 8 4; need_lhe "$(sname nlo-bs250)" 1001 50 "$p"
                   STEP=("$S/run/shower_batch.sh" shower-out noshower monash -- lhe/*.lhe.gz) ;;
-    parton-lo)    res 5 4 8 4; need_lhe "$(sname lo)" 20001 20 "$p"
+    parton-nlo)   if [ "$SET" = verify ]; then res 1 4 8 4; need_lhe "$(sname nlo)" 1001 50 "$p"
+                  else res 5 4 8 4; need_lhe "$(sname nlo)" 10001 40 "$p"; fi
+                  STEP=("$S/run/shower_batch.sh" shower-out noshower monash -- lhe/*.lhe.gz) ;;
+    parton-lo)    if [ "$SET" = verify ]; then res 1 4 8 4; need_lhe "$(sname lo)" 2001 25 "$p"
+                  else res 5 4 8 4; need_lhe "$(sname lo)" 20001 20 "$p"; fi
                   STEP=("$S/run/shower_batch.sh" shower-out noshower monash -- lhe/*.lhe.gz) ;;
     *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
   esac
