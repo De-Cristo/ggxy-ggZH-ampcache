@@ -30,6 +30,8 @@
 #   shower-<variant>.json       showers, exact sums over all jobs (pb, analysis/yoda_summary.py)
 #   check-shower-<variant>.json shower/check_shower.py of each shower against its events
 #   lops-<tune>.json            rescaled LO+PS against NLO+PS (analysis/compare_orders.py)
+#   stxs-nlo.json               (13600, 13000) NLO+PS (Monash) in the STXS fine bins with scale, PDF,
+#                               alpha_s, shower-weight and tune uncertainties (analysis/stxs_table.py)
 #   parton-nlo.json, parton-lo.json   the NLO and LO events at parton level (no shower; summaries)
 #   check-parton-<order>.json   shower/check_shower.py --noshower of each against its events
 #   effect-<tune>.json          fixed order vs parton level vs shower at each order, and the high-pT
@@ -178,6 +180,12 @@ for f in "$OUT"/shower-nlo-*.json; do
   los=(); for g in "$OUT"/shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
   [ ${#los[@]} = 0 ] || step "lops-$t" python3 "$SA/compare_orders.py" --nlo "${f##*/}" --lo "${los[@]##*/}" --out "lops-$t.json"
 done
+# the STXS table of the production: NLO+PS with Monash, the other tunes for comparison
+if [ "$SET" != verify ] && [ -f shower-nlo-monash.json ]; then
+  tn=(); for t in cp5 a14; do [ -f "shower-nlo-$t.json" ] && tn+=("shower-nlo-$t.json"); done
+  step stxs-nlo python3 "$SA/stxs_table.py" --summary shower-nlo-monash.json --tunes "${tn[@]}" \
+    --pdf-weight $PDFW --pdf-nmem $NMEM --out stxs-nlo.json
+fi
 # fixed order, parton level and shower at each order, per tune (needs the parton-level runs)
 if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
   for f in shower-nlo-*.json; do
