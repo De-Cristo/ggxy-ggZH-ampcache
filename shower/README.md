@@ -19,6 +19,7 @@ Pythia's shower-variation weights are carried to every histogram.
 | `analysis/yoda_summary.py` | YODA (text) → JSON from Rivet's RAW sums: all histograms and weight variations with under/overflow, gg → ZH(ℓℓ) STXS bins; per job (`--raw`) and combined (`--merge`); plain Python |
 | `analysis/compare_orders.py` | rescaled LO+PS (K × LO+PS, one or more shower starts) against NLO+PS in the 18 STXS Stage 1.3 fine bins and the p_T(Z) tail |
 | `analysis/compare_samples.py` | two independent samples of the same prediction bin by bin (σ, STXS fine bins, p_T(Z)); the Born-suppression test |
+| `analysis/shower_effect.py` | fixed order vs parton level (`noshower`) vs shower at each order: p_T(Z) per bin against ggxy, fractions above the STXS boundaries, m_ZH before/after the shower |
 | `check_shower.py` | tests of one showered sample against its LHE files (`--pdf-weight 3000 --pdf-nmem 40` for `pwg-rwl-pdf4lhc21.dat`) |
 
 ```sh

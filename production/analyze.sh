@@ -30,6 +30,10 @@
 #   shower-<variant>.json       showers, exact sums over all jobs (pb, analysis/yoda_summary.py)
 #   check-shower-<variant>.json shower/check_shower.py of each shower against its events
 #   lops-<tune>.json            rescaled LO+PS against NLO+PS (analysis/compare_orders.py)
+#   parton-nlo.json, parton-lo.json   the NLO and LO events at parton level (no shower; summaries)
+#   check-parton-<order>.json   shower/check_shower.py --noshower of each against its events
+#   effect-<tune>.json          fixed order vs parton level vs shower at each order, and the high-pT
+#                               test of the NLO events (analysis/shower_effect.py)
 #   bornsupp-shower.json        (verify: NLO+PS from weighted against unweighted events)
 #   check-generator.json        generator/check.py (13600, 13000: --paper-energy)
 #   SHA256SUMS                  of every file above
@@ -152,13 +156,16 @@ fi
 
 # ---------------------------------------------------------------- showers
 for r in "${RUNS[@]}"; do
-  case $r in shower-nlo-*|shower-lo-*) ;; *) continue ;; esac
+  case $r in shower-nlo-*|shower-lo-*|parton-*) ;; *) continue ;; esac
   have "$r" || continue
-  x=${r#shower-}
-  step "$r" python3 "$SA/yoda_summary.py" --merge "$RES/$r"/*/"$r"-*.raw.json --out "$OUT/shower-$x.json" || continue
-  case $x in nlo-bs250-*) l=events-nlo-bs250 ;; nlo-*) l=events-nlo ;; *) l=events-lo ;; esac
-  [ -f "$OUT/$l.json" ] && step "check-shower-$x" python3 "$PKG/shower/check_shower.py" --summary "$OUT/shower-$x.json" \
-    --lhe "$OUT/$l.json" --pdf-weight $PDFW --pdf-nmem $NMEM --out "$OUT/check-shower-$x.json"
+  case $r in
+    parton-*) sum=$r; chk=check-$r; ns=(--noshower); l=events-${r#parton-} ;;
+    *) x=${r#shower-}; sum=shower-$x; chk=check-shower-$x; ns=()
+       case $x in nlo-bs250-*) l=events-nlo-bs250 ;; nlo-*) l=events-nlo ;; *) l=events-lo ;; esac ;;
+  esac
+  step "$r" python3 "$SA/yoda_summary.py" --merge "$RES/$r"/*/"$r"-*.raw.json --out "$OUT/$sum.json" || continue
+  [ -f "$OUT/$l.json" ] && step "$chk" python3 "$PKG/shower/check_shower.py" --summary "$OUT/$sum.json" \
+    --lhe "$OUT/$l.json" "${ns[@]}" --pdf-weight $PDFW --pdf-nmem $NMEM --out "$OUT/$chk.json"
 done
 # rescaled LO+PS against NLO+PS, per tune, with every LO+PS shower start present
 for f in "$OUT"/shower-nlo-*.json; do
@@ -168,6 +175,16 @@ for f in "$OUT"/shower-nlo-*.json; do
   los=(); for g in "$OUT"/shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
   [ ${#los[@]} = 0 ] || step "lops-$t" python3 "$SA/compare_orders.py" --nlo "${f##*/}" --lo "${los[@]##*/}" --out "lops-$t.json"
 done
+# fixed order, parton level and shower at each order, per tune (needs the parton-level runs)
+if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
+  for f in shower-nlo-*.json; do
+    t=${f#shower-nlo-}; t=${t%.json}
+    case $t in bs250-*) continue ;; esac
+    los=(); for g in shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
+    step "effect-$t" python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
+      --nlo-ps "$f" --lo-ps "${los[@]}" --out "effect-$t.json"
+  done
+fi
 if [ -f "$OUT/shower-nlo-bs250-monash.json" ] && [ -f "$OUT/shower-nlo-monash.json" ]; then
   step bornsupp-shower python3 "$SA/compare_samples.py" --a shower-nlo-bs250-monash.json \
     --b shower-nlo-monash.json --out bornsupp-shower.json
