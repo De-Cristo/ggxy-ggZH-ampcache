@@ -14,7 +14,9 @@ generator/analysis/lhe_xsec.py of the same LHE files.  Checks:
   4. the PDF weights are present and give the LHE PDF uncertainty (relative 1e-5): --pdf-weight is
      the weight id of the central member, followed by --pdf-nmem Hessian members (pwg-rwl.dat:
      NNPDF3.1, 2000 and 100; pwg-rwl-pdf4lhc21.dat: PDF4LHC21, 3000 and 40); lhe.json must hold the
-     uncertainty of the same set (lhe_xsec.py --pdf-id).
+     uncertainty of the same set (lhe_xsec.py --pdf-id);
+  5. the analysis found the Z and the Higgs boson in every event: the p_T(Z) histogram (with under-
+     and overflow) holds the whole cross section (relative 1e-5).
 With --noshower (test mode without parton level) checks 2 and 3 do not apply: the Higgs boson is
 not decayed, and the STXS routine only classifies events with a decayed Higgs boson.
 Exit status 1 if a check fails.
@@ -50,6 +52,8 @@ def main(argv=None) -> int:
         v = f"MUR{p['muR']:.1f}_MUF{p['muF']:.1f}"
         ok = v in sig and rel(tot(v), p["sigma_fb"]) < 1e-5
         add(f"sigma {v}", ok, f"{tot(v) if v in sig else float('nan'):.5f} vs LHE {p['sigma_fb']:.5f} fb")
+    ptz = 1e3 * sum(s["hists"]["GGZH_NLOPS/ptz"]["var"][""]["xs"])
+    add("Z and H in every event", rel(ptz, tot("")) < 1e-5, f"sigma in pT(Z) {ptz:.5f} vs {tot(''):.5f} fb")
     unk = s.get("stxs_unknown", {}).get("", None)
     if not a.noshower:
         add("STXS unclassified", unk == 0.0, f"{unk} pb")

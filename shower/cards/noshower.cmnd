@@ -1,3 +1,9 @@
-! Test only: no shower, no MPI, no hadronisation (LHE kinematics through the analysis).
-PartonLevel:all = off
+! Parton level of the LHE events: no shower, no MPI, no primordial kT, no hadronisation.  The
+! parton level itself stays on: with PartonLevel:all = off Pythia stops after the hard process and
+! leaves the event record (which the analysis reads) empty.  Here the event record holds the hard
+! process with its LHE kinematics, plus beam remnants without transverse momentum.
+PartonLevel:ISR = off
+PartonLevel:FSR = off
+PartonLevel:MPI = off
+BeamRemnants:primordialKT = off
 HadronLevel:all = off
