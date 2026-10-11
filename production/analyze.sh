@@ -22,6 +22,8 @@
 #                               NNPDF3.1 weights of the same events)
 #   events-nlo-bs250.json       (verify: weighted events with Born suppression)
 #   cache/compare-<seed>.json   cache closure (file names relative to the job)
+#   cache-scan.json             (13600) the cache timing scan: amplitude evaluations per event and
+#                               relative times against the number of weights (analysis/cache_scan.py)
 #   cache/speedup.json          per seed, same events with and without the amplitude cache:
 #                               "evaluations" = one-loop amplitude evaluations without / with the cache
 #                               (from the cache counters: (hits + misses) / misses; independent of the
@@ -157,6 +159,11 @@ if have cache; then
           for (s in c) if (s in u && c[s] > 0 && m[s] > 0)
             printf "%s\n \"%s\": {\"evaluations\": %.3f, \"wall\": %.3f}", (n++ ? "," : ""), s, (h[s] + m[s]) / m[s], u[s] / c[s]
           print "\n}" }' > "$OUT/cache/speedup.json"
+fi
+
+if have cache-scan; then
+  unpack cache-scan 'out/w*/timing.txt' 'out/w*/compare-*.json'
+  step cache-scan python3 "$GA/cache_scan.py" --jobs "$W"/cache-scan/*/out --out cache-scan.json
 fi
 
 # ---------------------------------------------------------------- showers

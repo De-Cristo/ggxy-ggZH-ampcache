@@ -59,7 +59,8 @@ runs() {
            events-nlo events-lo cache
       for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
-      echo parton-nlo parton-lo ;;
+      echo parton-nlo parton-lo
+      [ "$SET" = 13600 ] && echo cache-scan ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
@@ -134,6 +135,12 @@ def() {
     cache)        res 3 1 4 12; need_install; need_grids "$(sname grids-nlo)"
                   s0=$([ "$SET" = verify ] && echo 51000 || echo 52000)
                   STEP=("$G/condor/run_job.sh" cache 50 $((s0 + p)) "$G/cards/$RWL") ;;
+    # ---- cache timing scan (13600): the same 50 events with 0 to 450 weights, cache on and off,
+    #      3 jobs (machines); lists in generator/cards (rwl-scan/: prefixes of one list)
+    cache-scan)   res 3 1 4 6; need_install; need_grids "$(sname grids-nlo)"
+                  STEP=("$G/condor/run_job.sh" cache-scan 50 $((53000 + p)) none "$G/cards/rwl-scan/pwg-rwl-scan-9.dat"
+                        "$G/cards/rwl-scan/pwg-rwl-scan-52.dat" "$G/cards/pwg-rwl.dat" "$G/cards/pwg-rwl-pdf4lhc21.dat"
+                        "$G/cards/rwl-scan/pwg-rwl-scan-300.dat" "$G/cards/rwl-scan/pwg-rwl-scan-450.dat") ;;
     # ---- showers: NLO+PS (POWHEG veto) with shower-scale variation weights; LO+PS shower starts
     shower-nlo-bs250-monash)
                   res 1 8 16 4; need_lhe "$(sname nlo-bs250)" 1001 50 "$p"

@@ -1,0 +1,58 @@
+<initrwgt>
+<weightgroup name='scale_variation' combine='envelope' >
+<weight id='1001'> lhapdf=93300 renscfact=1d0 facscfact=1d0 </weight>
+<weight id='1002'> lhapdf=93300 renscfact=1d0 facscfact=2d0 </weight>
+<weight id='1003'> lhapdf=93300 renscfact=1d0 facscfact=0.5d0 </weight>
+<weight id='1004'> lhapdf=93300 renscfact=2d0 facscfact=1d0 </weight>
+<weight id='1005'> lhapdf=93300 renscfact=2d0 facscfact=2d0 </weight>
+<weight id='1006'> lhapdf=93300 renscfact=2d0 facscfact=0.5d0 </weight>
+<weight id='1007'> lhapdf=93300 renscfact=0.5d0 facscfact=1d0 </weight>
+<weight id='1008'> lhapdf=93300 renscfact=0.5d0 facscfact=2d0 </weight>
+<weight id='1009'> lhapdf=93300 renscfact=0.5d0 facscfact=0.5d0 </weight>
+</weightgroup>
+<weightgroup name='PDF4LHC21' combine='hessian' >
+<weight id='3000'> lhapdf=93300 </weight>
+<weight id='3001'> lhapdf=93301 </weight>
+<weight id='3002'> lhapdf=93302 </weight>
+<weight id='3003'> lhapdf=93303 </weight>
+<weight id='3004'> lhapdf=93304 </weight>
+<weight id='3005'> lhapdf=93305 </weight>
+<weight id='3006'> lhapdf=93306 </weight>
+<weight id='3007'> lhapdf=93307 </weight>
+<weight id='3008'> lhapdf=93308 </weight>
+<weight id='3009'> lhapdf=93309 </weight>
+<weight id='3010'> lhapdf=93310 </weight>
+<weight id='3011'> lhapdf=93311 </weight>
+<weight id='3012'> lhapdf=93312 </weight>
+<weight id='3013'> lhapdf=93313 </weight>
+<weight id='3014'> lhapdf=93314 </weight>
+<weight id='3015'> lhapdf=93315 </weight>
+<weight id='3016'> lhapdf=93316 </weight>
+<weight id='3017'> lhapdf=93317 </weight>
+<weight id='3018'> lhapdf=93318 </weight>
+<weight id='3019'> lhapdf=93319 </weight>
+<weight id='3020'> lhapdf=93320 </weight>
+<weight id='3021'> lhapdf=93321 </weight>
+<weight id='3022'> lhapdf=93322 </weight>
+<weight id='3023'> lhapdf=93323 </weight>
+<weight id='3024'> lhapdf=93324 </weight>
+<weight id='3025'> lhapdf=93325 </weight>
+<weight id='3026'> lhapdf=93326 </weight>
+<weight id='3027'> lhapdf=93327 </weight>
+<weight id='3028'> lhapdf=93328 </weight>
+<weight id='3029'> lhapdf=93329 </weight>
+<weight id='3030'> lhapdf=93330 </weight>
+<weight id='3031'> lhapdf=93331 </weight>
+<weight id='3032'> lhapdf=93332 </weight>
+<weight id='3033'> lhapdf=93333 </weight>
+<weight id='3034'> lhapdf=93334 </weight>
+<weight id='3035'> lhapdf=93335 </weight>
+<weight id='3036'> lhapdf=93336 </weight>
+<weight id='3037'> lhapdf=93337 </weight>
+<weight id='3038'> lhapdf=93338 </weight>
+<weight id='3039'> lhapdf=93339 </weight>
+<weight id='3040'> lhapdf=93340 </weight>
+<weight id='3041'> lhapdf=93341 </weight>
+<weight id='3042'> lhapdf=93342 </weight>
+</weightgroup>
+</initrwgt>

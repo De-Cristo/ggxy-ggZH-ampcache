@@ -14,6 +14,7 @@
 #   grids  [nseeds] [x-grid iterations]    -> grids.tgz (+ out-grids.tgz with logs)
 #   events <nevents> <seed> [weight list|none] -> events-<seed>.lhe.gz + out-events-<seed>.tgz (log, xsec-raw-<seed>.json)
 #   cache  <nevents> <seed> [weight list]  -> out-cache-<seed>.tgz
+#   cache-scan <nevents> <seed> <weight list|none> ...   -> out-cache-scan-<seed>.tgz (run/cache_scan.sh)
 #   fo     <lo|nlo> <first seed> <nseeds> [np] [np_opt] [pdf] [program] [sqrt(s)] -> out-fo-<mode>-<first seed>.tgz
 #   lo     [nseeds] [points...]            -> out-lo.tgz
 #   mcfm                                   -> out-mcfm.tgz (MCFM_SQRTS from the environment)
@@ -51,6 +52,9 @@ case $STEP in
   cache)
     "$G/run/cache_ab.sh" grids.tgz out "$1" "$2" "${3:-$G/cards/pwg-rwl.dat}"; rc=$?
     tar czf "out-cache-$2.tgz" out; exit $rc ;;
+  cache-scan)
+    "$G/run/cache_scan.sh" grids.tgz out "$1" "$2" "${@:3}"; rc=$?
+    tar czf "out-cache-scan-$2.tgz" out; exit $rc ;;
   fo)
     "$G/run/fo.sh" "$1" out "$2" "$3" "${@:4}"; rc=$?
     tar czf "out-fo-$1-$2.tgz" out; exit $rc ;;

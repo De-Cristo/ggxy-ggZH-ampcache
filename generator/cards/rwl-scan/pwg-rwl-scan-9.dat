@@ -1,0 +1,13 @@
+<initrwgt>
+<weightgroup name='scale_variation' combine='envelope' >
+<weight id='1001'> lhapdf=93300 renscfact=1d0 facscfact=1d0 </weight>
+<weight id='1002'> lhapdf=93300 renscfact=1d0 facscfact=2d0 </weight>
+<weight id='1003'> lhapdf=93300 renscfact=1d0 facscfact=0.5d0 </weight>
+<weight id='1004'> lhapdf=93300 renscfact=2d0 facscfact=1d0 </weight>
+<weight id='1005'> lhapdf=93300 renscfact=2d0 facscfact=2d0 </weight>
+<weight id='1006'> lhapdf=93300 renscfact=2d0 facscfact=0.5d0 </weight>
+<weight id='1007'> lhapdf=93300 renscfact=0.5d0 facscfact=1d0 </weight>
+<weight id='1008'> lhapdf=93300 renscfact=0.5d0 facscfact=2d0 </weight>
+<weight id='1009'> lhapdf=93300 renscfact=0.5d0 facscfact=0.5d0 </weight>
+</weightgroup>
+</initrwgt>
