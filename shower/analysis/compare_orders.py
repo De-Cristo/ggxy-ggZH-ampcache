@@ -14,7 +14,8 @@ envelope and (C, "correlated") the envelope of sigma_NLO(point) x LO+PS shape(po
 LO+PS variant: for each of the 18 Stage 1.3 fine bins (FWDH excluded) and for p_T(Z) fractions
 above 75, 150, 250, 400, 600 GeV: NLO+PS and rescaled LO+PS cross sections with bands and MC
 errors, their ratio, and whether each band contains the NLO+PS central value ("coverage", counted
-over the bins whose NLO+PS MC error is below 10 %).
+over the bins whose NLO+PS MC error is below 10 %).  The same per bin, without coverage counts, for
+the differential p_T(Z) spectrum in the bins PTZ (summary bins summed; above the last edge dropped).
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ PTV = ["0-75", "75-150", "150-250", "250-400", "400-600", ">600"]
 JETS = ["0J", "1J", ">=2J"]
 CELLS = [f"{p} {j}" for j in JETS for p in PTV]          # the routine's (jet-major) order after FWDH
 BOUNDS = [75.0, 150.0, 250.0, 400.0, 600.0]
+PTZ = [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 200.0, 250.0, 300.0, 350.0, 400.0, 500.0, 600.0, 800.0]
 
 
 def sigma(s, var=""):
@@ -37,6 +39,45 @@ def sigma(s, var=""):
 def cells(s, var=""):
     d = s["stxs13_fine"][var]
     return d["xs"][1:], d["err"][1:]                    # drop FWDH
+
+
+def ptz(s, var=""):
+    """p_T(Z) in the bins PTZ: cross sections and MC errors (sums of the summary bins)."""
+    h = s["hists"]["GGZH_NLOPS/ptz"]
+    edges, v = h["edges"], h["var"][var]
+    xs, er = [], []
+    for a, b in zip(PTZ[:-1], PTZ[1:]):
+        idx = [i + 1 for i in range(len(edges) - 1) if edges[i] >= a - 1e-9 and edges[i + 1] <= b + 1e-9]
+        if not idx or edges[idx[0] - 1] != a or edges[idx[-1]] != b:
+            raise SystemExit(f"p_T(Z) bin {a}-{b} is not a union of the summary bins")
+        xs.append(sum(v["xs"][i] for i in idx)); er.append(math.sqrt(sum(v["err"][i] ** 2 for i in idx)))
+    return xs, er
+
+
+def compare(nc, ne, nenv, lc, le, lenv, k, snlo, slo, sig_lo, nrm_up, nrm_dn):
+    """per bin: NLO+PS and K x LO+PS with MC errors, the bands A, B, C, coverage and the ratio"""
+    rows = []
+    for i in range(len(nc)):
+        n_up, n_dn = max(e[i] for e in nenv), min(e[i] for e in nenv)
+        l_up, l_dn = k * max(e[i] for e in lenv), k * min(e[i] for e in lenv)
+        ratio = k * lc[i] / nc[i] if nc[i] > 0 else float("nan")
+        rerr = ratio * math.hypot(le[i] / lc[i] if lc[i] else 0, ne[i] / nc[i] if nc[i] else 0) if nc[i] > 0 else float("nan")
+        c = k * lc[i]
+        shape = [(e[i] / s) / (lc[i] / sig_lo) - 1 if lc[i] else 0.0 for e, s in zip(lenv, slo)]
+        b_up = math.hypot(max(max(shape), 0.0), nrm_up); b_dn = math.hypot(min(min(shape), 0.0), nrm_dn)
+        band_b = [c * (1 - b_dn), c * (1 + b_up)]
+        corr = [s_n * e[i] / s for s_n, e, s in zip(snlo, lenv, slo)]
+        band_c = [min(corr), max(corr)]
+        inside = lambda b: b[0] <= nc[i] <= b[1]
+        rows.append({"nlo_ps_fb": 1e3 * nc[i], "nlo_ps_err_fb": 1e3 * ne[i],
+                     "nlo_ps_band_fb": [1e3 * n_dn, 1e3 * n_up],
+                     "k_lo_ps_fb": 1e3 * k * lc[i], "k_lo_ps_err_fb": 1e3 * k * le[i],
+                     "k_lo_ps_band_fb": [1e3 * x for x in band_b],
+                     "k_lo_ps_band_A_fb": [1e3 * l_dn, 1e3 * l_up], "k_lo_ps_band_C_fb": [1e3 * x for x in band_c],
+                     "covered": {"A": inside([l_dn, l_up]), "B": inside(band_b), "C": inside(band_c)},
+                     "precise": bool(nc[i] > 0 and ne[i] < 0.1 * nc[i]),
+                     "ratio_klo_over_nlo": ratio, "ratio_err": rerr})
+    return rows
 
 
 def fractions(s, var=""):
@@ -70,33 +111,15 @@ def main(argv=None) -> int:
         lc, le = cells(lo)
         lenv = [cells(lo, v)[0] for v in SEVEN]
         slo = [sigma(lo, v) for v in SEVEN]
-        rows = []
-        for i, name in enumerate(CELLS):
-            n_up, n_dn = max(e[i] for e in nenv), min(e[i] for e in nenv)
-            l_up, l_dn = k * max(e[i] for e in lenv), k * min(e[i] for e in lenv)
-            ratio = k * lc[i] / nc[i] if nc[i] > 0 else float("nan")
-            rerr = ratio * math.hypot(le[i] / lc[i] if lc[i] else 0, ne[i] / nc[i] if nc[i] else 0) if nc[i] > 0 else float("nan")
-            c = k * lc[i]
-            shape = [(e[i] / s) / (lc[i] / sigma(lo)) - 1 if lc[i] else 0.0 for e, s in zip(lenv, slo)]
-            b_up = math.hypot(max(max(shape), 0.0), nrm_up); b_dn = math.hypot(min(min(shape), 0.0), nrm_dn)
-            band_b = [c * (1 - b_dn), c * (1 + b_up)]
-            corr = [s_n * e[i] / s for s_n, e, s in zip(snlo, lenv, slo)]
-            band_c = [min(corr), max(corr)]
-            inside = lambda b: b[0] <= nc[i] <= b[1]
-            rows.append({"cell": name, "nlo_ps_fb": 1e3 * nc[i], "nlo_ps_err_fb": 1e3 * ne[i],
-                         "nlo_ps_band_fb": [1e3 * n_dn, 1e3 * n_up],
-                         "k_lo_ps_fb": 1e3 * k * lc[i], "k_lo_ps_err_fb": 1e3 * k * le[i],
-                         "k_lo_ps_band_fb": [1e3 * x for x in band_b],
-                         "k_lo_ps_band_A_fb": [1e3 * l_dn, 1e3 * l_up], "k_lo_ps_band_C_fb": [1e3 * x for x in band_c],
-                         "covered": {"A": inside([l_dn, l_up]), "B": inside(band_b), "C": inside(band_c)},
-                         "precise": bool(nc[i] > 0 and ne[i] < 0.1 * nc[i]),
-                         "ratio_klo_over_nlo": ratio, "ratio_err": rerr})
+        rows = [{"cell": name, **r} for name, r in zip(CELLS, compare(nc, ne, nenv, lc, le, lenv, k, snlo, slo, sigma(lo), nrm_up, nrm_dn))]
+        pn, pe = ptz(nlo); pl, ple = ptz(lo)
+        prow = compare(pn, pe, [ptz(nlo, v)[0] for v in SEVEN], pl, ple, [ptz(lo, v)[0] for v in SEVEN], k, snlo, slo, sigma(lo), nrm_up, nrm_dn)
         cov = {d: [r["cell"] for r in rows if r["precise"] and r["covered"][d]] for d in "ABC"}
         coverage = {"bins": sum(r["precise"] for r in rows), **{d: len(v) for d, v in cov.items()},
                     "not_covered_B": [r["cell"] for r in rows if r["precise"] and not r["covered"]["B"]]}
         fn, fl = fractions(nlo), fractions(lo)
         res["variants"][lo_path.stem] = {"lo": str(lo_path), "sigma_lo_fb": 1e3 * sigma(lo), "K": k, "cells": rows,
-                                         "coverage": coverage,
+                                         "coverage": coverage, "ptz": {"edges": PTZ, "bins": prow},
                                          "fraction_above_nlo_ps": fn, "fraction_above_lo_ps": fl,
                                          "fraction_ratio_lo_over_nlo": {b: fl[b] / fn[b] if fn[b] else float("nan") for b in fn}}
     a.out.parent.mkdir(parents=True, exist_ok=True)
