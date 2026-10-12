@@ -6,10 +6,15 @@
 Inputs: finished summaries of analysis/yoda_summary.py (NLO+PS from NLO events with the POWHEG
 veto; LO+PS from Born-only events with a given shower start).  K = sigma_NLO / sigma_LO from the
 inclusive cross sections of the two samples (nominal weights); "rescaled LO+PS" = K x LO+PS.
-Seven-point scale envelopes from the MUR/MUF weight variations of each sample (for LO+PS the
-envelope is scaled by the same K).  Output per LO+PS variant: for each of the 18 Stage 1.3 fine
-bins (FWDH excluded) and for p_T(Z) fractions above 75, 150, 250, 400, 600 GeV: NLO+PS and
-rescaled LO+PS cross sections with bands and MC errors, and their ratio.
+Seven-point scale envelopes from the MUR/MUF weight variations of each sample.  The scale band of
+rescaled LO+PS is defined as in the paper (B, "uncorrelated"): the LO+PS variations as shapes only
+(each normalised to its own inclusive cross section), combined in quadrature with the inclusive
+NLO scale band, which sets the normalisation; for comparison also (A) K times the full LO+PS
+envelope and (C, "correlated") the envelope of sigma_NLO(point) x LO+PS shape(point).  Output per
+LO+PS variant: for each of the 18 Stage 1.3 fine bins (FWDH excluded) and for p_T(Z) fractions
+above 75, 150, 250, 400, 600 GeV: NLO+PS and rescaled LO+PS cross sections with bands and MC
+errors, their ratio, and whether each band contains the NLO+PS central value ("coverage", counted
+over the bins whose NLO+PS MC error is below 10 %).
 """
 from __future__ import annotations
 
@@ -56,24 +61,42 @@ def main(argv=None) -> int:
     res = {"nlo": str(a.nlo), "sigma_nlo_fb": 1e3 * sigma(nlo), "variants": {}}
     nc, ne = cells(nlo)
     nenv = [cells(nlo, v)[0] for v in SEVEN]
+    snlo = [sigma(nlo, v) for v in SEVEN]
+    nrm_up, nrm_dn = max(snlo) / snlo[0] - 1, min(snlo) / snlo[0] - 1      # inclusive NLO band
+    res["nlo_inclusive_band_rel"] = [nrm_up, nrm_dn]
     for lo_path in a.lo:
         lo = json.loads(lo_path.read_text())
         k = sigma(nlo) / sigma(lo)
         lc, le = cells(lo)
         lenv = [cells(lo, v)[0] for v in SEVEN]
+        slo = [sigma(lo, v) for v in SEVEN]
         rows = []
         for i, name in enumerate(CELLS):
             n_up, n_dn = max(e[i] for e in nenv), min(e[i] for e in nenv)
             l_up, l_dn = k * max(e[i] for e in lenv), k * min(e[i] for e in lenv)
             ratio = k * lc[i] / nc[i] if nc[i] > 0 else float("nan")
             rerr = ratio * math.hypot(le[i] / lc[i] if lc[i] else 0, ne[i] / nc[i] if nc[i] else 0) if nc[i] > 0 else float("nan")
+            c = k * lc[i]
+            shape = [(e[i] / s) / (lc[i] / sigma(lo)) - 1 if lc[i] else 0.0 for e, s in zip(lenv, slo)]
+            b_up = math.hypot(max(max(shape), 0.0), nrm_up); b_dn = math.hypot(min(min(shape), 0.0), nrm_dn)
+            band_b = [c * (1 - b_dn), c * (1 + b_up)]
+            corr = [s_n * e[i] / s for s_n, e, s in zip(snlo, lenv, slo)]
+            band_c = [min(corr), max(corr)]
+            inside = lambda b: b[0] <= nc[i] <= b[1]
             rows.append({"cell": name, "nlo_ps_fb": 1e3 * nc[i], "nlo_ps_err_fb": 1e3 * ne[i],
                          "nlo_ps_band_fb": [1e3 * n_dn, 1e3 * n_up],
                          "k_lo_ps_fb": 1e3 * k * lc[i], "k_lo_ps_err_fb": 1e3 * k * le[i],
-                         "k_lo_ps_band_fb": [1e3 * l_dn, 1e3 * l_up],
+                         "k_lo_ps_band_fb": [1e3 * x for x in band_b],
+                         "k_lo_ps_band_A_fb": [1e3 * l_dn, 1e3 * l_up], "k_lo_ps_band_C_fb": [1e3 * x for x in band_c],
+                         "covered": {"A": inside([l_dn, l_up]), "B": inside(band_b), "C": inside(band_c)},
+                         "precise": bool(nc[i] > 0 and ne[i] < 0.1 * nc[i]),
                          "ratio_klo_over_nlo": ratio, "ratio_err": rerr})
+        cov = {d: [r["cell"] for r in rows if r["precise"] and r["covered"][d]] for d in "ABC"}
+        coverage = {"bins": sum(r["precise"] for r in rows), **{d: len(v) for d, v in cov.items()},
+                    "not_covered_B": [r["cell"] for r in rows if r["precise"] and not r["covered"]["B"]]}
         fn, fl = fractions(nlo), fractions(lo)
         res["variants"][lo_path.stem] = {"lo": str(lo_path), "sigma_lo_fb": 1e3 * sigma(lo), "K": k, "cells": rows,
+                                         "coverage": coverage,
                                          "fraction_above_nlo_ps": fn, "fraction_above_lo_ps": fl,
                                          "fraction_ratio_lo_over_nlo": {b: fl[b] / fn[b] if fn[b] else float("nan") for b in fn}}
     a.out.parent.mkdir(parents=True, exist_ok=True)
