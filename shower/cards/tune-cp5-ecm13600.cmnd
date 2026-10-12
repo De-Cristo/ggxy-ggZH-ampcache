@@ -1,4 +1,7 @@
-! CP5 at 13.6 TeV: total and elastic pp cross sections (mb), as CMS's public Run-3 implementation.
+! CP5 at 13.6 TeV: total and elastic pp cross sections (mb) fixed as in CMS's public implementation of the
+! tune.  They equal Pythia's default parametrisation (SigmaTotal:mode = 1) at this energy: the
+! Donnachie-Landshoff total (Phys. Lett. B 296 (1992) 227) and the Schuler-Sjostrand elastic
+! cross section (Phys. Rev. D 49 (1994) 2257).
 SigmaTotal:mode = 0
 SigmaTotal:sigmaEl = 22.08
 SigmaTotal:sigmaTot = 101.037
