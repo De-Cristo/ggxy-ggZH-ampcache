@@ -1,0 +1,3 @@
+! Matching variation (NLO+PS, after nlo.cmnd): Pythia's own pT definitions for the emissions
+! compared with the POWHEG emission, instead of the POWHEG ISR pT and FSR d_ij definitions.
+POWHEG:pTdef = 2

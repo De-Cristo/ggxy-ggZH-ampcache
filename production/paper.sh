@@ -61,7 +61,8 @@ runs() {
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
       echo parton-nlo parton-lo
       [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf \
-           grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash ;;
+           grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
+           shower-nlo-pthard1-monash shower-nlo-ptdef2-monash ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
@@ -158,6 +159,12 @@ def() {
     shower-nlo-hdampinf-monash)
                   res 10 8 16 6; need_lhe "$(sname nlo-hdampinf)" 10001 20 "$p"
                   STEP=("$S/run/shower_batch.sh" shower-out nlo monash ps-variations -- lhe/*.lhe.gz) ;;
+    # ---- matching variations of the POWHEG veto in Pythia (13600): the production NLO events
+    #      re-showered with POWHEG:pThard = 1 or POWHEG:pTdef = 2 (cards veto-*.cmnd after nlo.cmnd)
+    shower-nlo-pthard1-monash|shower-nlo-ptdef2-monash)
+                  m=${run#shower-nlo-}; m=${m%-monash}
+                  res 10 8 16 6; need_lhe "$(sname nlo)" 10001 20 "$p"
+                  STEP=("$S/run/shower_batch.sh" shower-out nlo monash ps-variations "veto-$m" -- lhe/*.lhe.gz) ;;
     # ---- cache timing scan (13600): the same 50 events with 0 to 450 weights, cache on and off,
     #      3 jobs (machines); lists in generator/cards (rwl-scan/: prefixes of one list)
     cache-scan)   res 3 1 4 6; need_install; need_grids "$(sname grids-nlo)"

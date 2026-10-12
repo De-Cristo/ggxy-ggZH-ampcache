@@ -1,0 +1,3 @@
+! Matching variation (NLO+PS, after nlo.cmnd): the hardness of the POWHEG emission is the minimal
+! pT of the POWHEG emission against all other incoming and outgoing partons, instead of SCALUP.
+POWHEG:pThard = 1

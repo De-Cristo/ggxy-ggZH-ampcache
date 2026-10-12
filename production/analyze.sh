@@ -42,6 +42,7 @@
 #                               test of the NLO events (analysis/shower_effect.py)
 #   bornsupp-shower.json        (verify: NLO+PS from weighted against unweighted events)
 #   bornsupp-parton.json        (verify: the same at parton level)
+#   stxs-nlo-<v>.json, veto-<v>-shower.json   (13600) POWHEG-veto variations v = pthard1, ptdef2
 #   stxs-nlo-hdampinf.json, hdamp-shower.json, effect-hdampinf-monash.json   (13600) the matching
 #                               variation h_damp = infinity: STXS table, against h_damp = 250 GeV bin by
 #                               bin, parton level against fixed order
@@ -209,7 +210,7 @@ fi
 if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
   for f in shower-nlo-*.json; do
     t=${f#shower-nlo-}; t=${t%.json}
-    case $t in bs250-*|hdampinf-*) continue ;; esac
+    case $t in bs250-*|hdampinf-*|pthard1-*|ptdef2-*) continue ;; esac
     los=(); for g in shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
     step "effect-$t" python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
       --nlo-ps "$f" --lo-ps "${los[@]}" --out "effect-$t.json"
@@ -217,6 +218,14 @@ if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
 fi
 # matching variation h_damp = infinity (13600): STXS table, parton level against fixed order, and the
 # showered sample bin by bin against the nominal h_damp = 250 GeV (expected to differ: report only)
+# matching variations of the POWHEG veto (13600): STXS tables and comparison with the nominal shower
+for v in pthard1 ptdef2; do
+  [ -f "shower-nlo-$v-monash.json" ] || continue
+  step "stxs-nlo-$v" python3 "$SA/stxs_table.py" --summary "shower-nlo-$v-monash.json" \
+    --pdf-weight $PDFW --pdf-nmem $NMEM --out "stxs-nlo-$v.json"
+  [ -f shower-nlo-monash.json ] && step "veto-$v-shower" python3 "$SA/compare_samples.py" --a "shower-nlo-$v-monash.json" \
+    --b shower-nlo-monash.json --report-only --out "veto-$v-shower.json"
+done
 if [ -f shower-nlo-hdampinf-monash.json ]; then
   step stxs-nlo-hdampinf python3 "$SA/stxs_table.py" --summary shower-nlo-hdampinf-monash.json \
     --pdf-weight $PDFW --pdf-nmem $NMEM --out stxs-nlo-hdampinf.json
