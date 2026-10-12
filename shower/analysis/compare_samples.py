@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Two independent samples of the same prediction after the shower, bin by bin.
 
-    compare_samples.py --a a.json --b b.json [--out cmp.json]
+    compare_samples.py --a a.json --b b.json [--out cmp.json] [--report-only]
 
 Inputs: finished summaries of analysis/yoda_summary.py (nominal weights).  Used for the
 Born-suppression test: NLO+PS from weighted events (bornsuppfact) against NLO+PS from unweighted
 events of the same generator settings.  Compared: the inclusive cross section (pull), the 19
 STXS Stage 1.3 fine bins (FWDH + 18) and the p_T(Z) histogram including its overflow (chi2 over
 the bins with an entry in either sample).  The samples agree if the pull is below 3 and both
-chi2 p-values are above 0.001.  Exit status 1 otherwise.
+chi2 p-values are above 0.001.  Exit status 1 otherwise, unless --report-only (for two samples that
+are expected to differ, e.g. two matching settings: the per-bin values and ratios are the result).
 """
 from __future__ import annotations
 
@@ -51,6 +52,7 @@ def main(argv=None) -> int:
     ap.add_argument("--a", type=Path, required=True)
     ap.add_argument("--b", type=Path, required=True)
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--report-only", action="store_true")
     a = ap.parse_args(argv)
     sa, sb = json.loads(a.a.read_text()), json.loads(a.b.read_text())
     res = {"a": str(a.a), "b": str(a.b)}
@@ -75,7 +77,7 @@ def main(argv=None) -> int:
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps(res, indent=1) + "\n")
-    return 0 if res["pass"] else 1
+    return 0 if res["pass"] or a.report_only else 1
 
 
 if __name__ == "__main__":

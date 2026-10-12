@@ -60,7 +60,8 @@ runs() {
       for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
       echo parton-nlo parton-lo
-      [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf ;;
+      [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf \
+           grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
@@ -141,6 +142,22 @@ def() {
                   res 11 4 8 4; need_install; m=$((4 * p)); nm=$(( p == 10 ? 3 : 4 ))
                   STEP=("$G/condor/run_job.sh" fo-members lo 7001 2000000 200000 "$PDF" "$m" "$nm"
                         "$([ "$run" = fo-llh-pdf ] && echo fo-ggllh || echo fo-ggzh)" "$E") ;;
+    # ---- matching variation h_damp = infinity (13600): POWHEG damps nothing for hdamp <= 0 (no remnant
+    #      events), so hdamp=-1 replaces the card's hdamp 250; otherwise as the production (Born
+    #      suppression, 200 x 2500 NLO events, NLO+PS with Monash, parton level)
+    grids-nlo-hdampinf)
+                  res 1 16 32 20; need_install; ENVS=("GRID_SETTINGS=$CARD bornsuppfact=250 hdamp=-1")
+                  STEP=("$G/condor/run_job.sh" grids 16 3); OUTP=("grids.tgz grids/$(sname grids-nlo-hdampinf).tgz") ;;
+    events-nlo-hdampinf)
+                  res 200 1 4 12; need_install; need_grids "$(sname grids-nlo-hdampinf)"
+                  STEP=("$G/condor/run_job.sh" events 2500 $((10001 + p)) "$G/cards/$RWL")
+                  OUTP=("events-$((10001 + p)).lhe.gz lhe/$(sname nlo-hdampinf)/events-$((10001 + p)).lhe.gz") ;;
+    parton-nlo-hdampinf)
+                  res 5 4 8 4; need_lhe "$(sname nlo-hdampinf)" 10001 40 "$p"
+                  STEP=("$S/run/shower_batch.sh" shower-out noshower monash -- lhe/*.lhe.gz) ;;
+    shower-nlo-hdampinf-monash)
+                  res 10 8 16 6; need_lhe "$(sname nlo-hdampinf)" 10001 20 "$p"
+                  STEP=("$S/run/shower_batch.sh" shower-out nlo monash ps-variations -- lhe/*.lhe.gz) ;;
     # ---- cache timing scan (13600): the same 50 events with 0 to 450 weights, cache on and off,
     #      3 jobs (machines); lists in generator/cards (rwl-scan/: prefixes of one list)
     cache-scan)   res 3 1 4 6; need_install; need_grids "$(sname grids-nlo)"

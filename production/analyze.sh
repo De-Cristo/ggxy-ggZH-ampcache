@@ -42,6 +42,9 @@
 #                               test of the NLO events (analysis/shower_effect.py)
 #   bornsupp-shower.json        (verify: NLO+PS from weighted against unweighted events)
 #   bornsupp-parton.json        (verify: the same at parton level)
+#   stxs-nlo-hdampinf.json, hdamp-shower.json, effect-hdampinf-monash.json   (13600) the matching
+#                               variation h_damp = infinity: STXS table, against h_damp = 250 GeV bin by
+#                               bin, parton level against fixed order
 #   effect-bs250-monash.json    (verify: the weighted NLO events against fixed order; effect-<tune>.json
 #                               holds the unweighted ones)
 #   check-generator.json        generator/check.py (13600, 13000: --paper-energy)
@@ -145,6 +148,7 @@ events events-lo events-lo $PDFID $NMEM
 if [ "$SET" = verify ]; then
   events events-nlo-bs250 events-nlo-bs250 $PDFID $NMEM
 else
+  events events-nlo-hdampinf events-nlo-hdampinf $PDFID $NMEM
   events events-nlo events-nlo-nnpdf31 325300 100
   events events-lo events-lo-nnpdf31 325300 100
 fi
@@ -181,7 +185,7 @@ for r in "${RUNS[@]}"; do
   case $r in
     parton-*) sum=$r; chk=check-$r; ns=(--noshower); l=events-${r#parton-} ;;
     *) x=${r#shower-}; sum=shower-$x; chk=check-shower-$x; ns=()
-       case $x in nlo-bs250-*) l=events-nlo-bs250 ;; nlo-*) l=events-nlo ;; *) l=events-lo ;; esac ;;
+       case $x in nlo-bs250-*) l=events-nlo-bs250 ;; nlo-hdampinf-*) l=events-nlo-hdampinf ;; nlo-*) l=events-nlo ;; *) l=events-lo ;; esac ;;
   esac
   step "$r" python3 "$SA/yoda_summary.py" --merge "$RES/$r"/*/"$r"-*.raw.json --out "$OUT/$sum.json" || continue
   [ -f "$OUT/$l.json" ] && step "$chk" python3 "$PKG/shower/check_shower.py" --summary "$OUT/$sum.json" \
@@ -205,11 +209,23 @@ fi
 if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
   for f in shower-nlo-*.json; do
     t=${f#shower-nlo-}; t=${t%.json}
-    case $t in bs250-*) continue ;; esac
+    case $t in bs250-*|hdampinf-*) continue ;; esac
     los=(); for g in shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
     step "effect-$t" python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
       --nlo-ps "$f" --lo-ps "${los[@]}" --out "effect-$t.json"
   done
+fi
+# matching variation h_damp = infinity (13600): STXS table, parton level against fixed order, and the
+# showered sample bin by bin against the nominal h_damp = 250 GeV (expected to differ: report only)
+if [ -f shower-nlo-hdampinf-monash.json ]; then
+  step stxs-nlo-hdampinf python3 "$SA/stxs_table.py" --summary shower-nlo-hdampinf-monash.json \
+    --pdf-weight $PDFW --pdf-nmem $NMEM --out stxs-nlo-hdampinf.json
+  [ -f shower-nlo-monash.json ] && step hdamp-shower python3 "$SA/compare_samples.py" --a shower-nlo-hdampinf-monash.json \
+    --b shower-nlo-monash.json --report-only --out hdamp-shower.json
+  if [ -f parton-nlo-hdampinf.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
+    step effect-hdampinf-monash python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo-hdampinf.json \
+      --parton-lo parton-lo.json --nlo-ps shower-nlo-hdampinf-monash.json --out effect-hdampinf-monash.json
+  fi
 fi
 if [ -f parton-nlo-bs250.json ] && [ -f parton-nlo.json ]; then
   step bornsupp-parton python3 "$SA/compare_samples.py" --a parton-nlo-bs250.json --b parton-nlo.json --out bornsupp-parton.json
