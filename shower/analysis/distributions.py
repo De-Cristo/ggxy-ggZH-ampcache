@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Differential distributions of a showered sample with the weight variations needed for bands.
 
-    distributions.py --summary shower-nlo-monash.json [--obs ptz mzh ptzh njets]
+    distributions.py --summary shower-nlo-monash.json [--obs ptz pth mzh ptzh njets]
                      [--pdf-weight 3000 --pdf-nmem 40] --out dists-nlo.json
 
 Input: a finished summary of analysis/yoda_summary.py.  Per observable (GGZH_NLOPS histograms), in fb
@@ -25,7 +25,7 @@ SEVEN = ["MUR1.0_MUF1.0", "MUR0.5_MUF0.5", "MUR2.0_MUF2.0", "MUR2.0_MUF1.0", "MU
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--summary", type=Path, required=True)
-    ap.add_argument("--obs", nargs="+", default=["ptz", "mzh", "ptzh", "njets"])
+    ap.add_argument("--obs", nargs="+", default=["ptz", "pth", "mzh", "ptzh", "njets"])
     ap.add_argument("--pdf-weight", type=int, default=3000)
     ap.add_argument("--pdf-nmem", type=int, default=40)
     ap.add_argument("--out", type=Path, required=True)
