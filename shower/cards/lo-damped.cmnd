@@ -1,0 +1,13 @@
+! LO+PS, Pythia's default start (pTmaxMatch = 0: emissions up to the kinematic limit for a hard process
+! without final-state quarks, gluons or photons) with the high-pT damping of Corke and Sjostrand: above
+! the factorisation scale Q_fac every emission is weighted by k^2 Q_fac^2 / (pT^2 + k^2 Q_fac^2), k =
+! pTdampFudge.  Q_fac is SCALUP (m_ZH for the LO events; the LHE files carry no PDF info, pdfreweight=0).
+! SpaceShower:pTdampMatch defaults to 3, which damps only with two tops or BSM coloured particles, so
+! the default start is undamped here.  No POWHEG veto.
+POWHEG:veto = 0
+SpaceShower:pTmaxMatch = 0
+TimeShower:pTmaxMatch = 0
+SpaceShower:pTdampMatch = 1
+TimeShower:pTdampMatch = 1
+SpaceShower:pTdampFudge = 1.0
+TimeShower:pTdampFudge = 1.0

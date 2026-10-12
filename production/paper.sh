@@ -62,7 +62,7 @@ runs() {
       echo parton-nlo parton-lo
       [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf \
            grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
-           shower-nlo-pthard1-monash shower-nlo-ptdef2-monash ;;
+           shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache

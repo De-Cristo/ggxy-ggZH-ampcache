@@ -4,7 +4,7 @@
 #   GGZH_SHOWER_PREFIX=<prefix> run/shower.sh <events.lhe[.gz]> <outdir> <mode> [tune=monash] [seed] [extra cards...]
 #
 # mode: nlo (POWHEG veto; for NLO events) or lo-default, lo-scalup, lo-scalup-half,
-#       lo-scalup-quarter, lo-power (no veto; for Born-only LO events; cards/lo-*.cmnd), or
+#       lo-scalup-quarter, lo-power, lo-damped (no veto; for Born-only LO events; cards/lo-*.cmnd), or
 #       noshower (test: LHE kinematics only).
 # extra cards: e.g. ps-variations (cards/ps-variations.cmnd).
 # Output: <outdir>/<base>.<mode>.<tune>.yoda and the log; <base> is the LHE file name.
