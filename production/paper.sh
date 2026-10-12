@@ -60,7 +60,7 @@ runs() {
       for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
       echo parton-nlo parton-lo
-      [ "$SET" = 13600 ] && echo cache-scan ;;
+      [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
@@ -135,6 +135,12 @@ def() {
     cache)        res 3 1 4 12; need_install; need_grids "$(sname grids-nlo)"
                   s0=$([ "$SET" = verify ] && echo 51000 || echo 52000)
                   STEP=("$G/condor/run_job.sh" cache 50 $((s0 + p)) "$G/cards/$RWL") ;;
+    # ---- PDF and alpha_s at fixed order, member by member (13600; independent check of the event
+    #      weights): LO, one seed (7001), 2e6 points, PDF4LHC21 members 0-42, 4 per job
+    fo-llh-pdf|fo-zh-pdf)
+                  res 11 4 8 4; need_install; m=$((4 * p)); nm=$(( p == 10 ? 3 : 4 ))
+                  STEP=("$G/condor/run_job.sh" fo-members lo 7001 2000000 200000 "$PDF" "$m" "$nm"
+                        "$([ "$run" = fo-llh-pdf ] && echo fo-ggllh || echo fo-ggzh)" "$E") ;;
     # ---- cache timing scan (13600): the same 50 events with 0 to 450 weights, cache on and off,
     #      3 jobs (machines); lists in generator/cards (rwl-scan/: prefixes of one list)
     cache-scan)   res 3 1 4 6; need_install; need_grids "$(sname grids-nlo)"

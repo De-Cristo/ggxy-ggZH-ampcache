@@ -22,6 +22,8 @@
 #                               NNPDF3.1 weights of the same events)
 #   events-nlo-bs250.json       (verify: weighted events with Born suppression)
 #   cache/compare-<seed>.json   cache closure (file names relative to the job)
+#   fo-llh-pdf.json, fo-zh-pdf.json   (13600) PDF and alpha_s at fixed order (LO), one run per PDF
+#                               member: check of the event-weight uncertainties (analysis/fo_pdf.py)
 #   cache-scan.json             (13600) the cache timing scan: amplitude evaluations per event and
 #                               relative times against the number of weights (analysis/cache_scan.py)
 #   cache/speedup.json          per seed, same events with and without the amplitude cache:
@@ -161,6 +163,12 @@ if have cache; then
           print "\n}" }' > "$OUT/cache/speedup.json"
 fi
 
+for r in fo-llh-pdf fo-zh-pdf; do
+  have "$r" || continue
+  unpack "$r" 'out/m*/histo_*'
+  step "$r" python3 "$GA/fo_pdf.py" --members "$W/$r"/*/out/m* --nlep "$([ "$r" = fo-llh-pdf ] && echo 3 || echo 1)" \
+    --pdf-nmem $NMEM --label "$SET $r" --out "$r.json"
+done
 if have cache-scan; then
   unpack cache-scan 'out/w*/timing.txt' 'out/w*/compare-*.json'
   step cache-scan python3 "$GA/cache_scan.py" --jobs "$W"/cache-scan/*/out --out cache-scan.json
