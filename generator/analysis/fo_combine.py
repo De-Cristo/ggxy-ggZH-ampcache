@@ -10,7 +10,8 @@ gives Z -> l+l- with l = e, mu, tau.
     fo_combine.py --lo out/lo/histo_lo_*.txt --nlo out/nlo/histo_nlo_*.txt --nlep 3 --out fo.json
 
 Output (fb): inclusive cross section and 7-point band at LO and NLO, K = NLO/LO, and the
-differential K factor in m_ZH and pT(Z) (bins of the comparison in the reference).
+differential distributions in m_ZH, pT(Z) (bins of the comparison in the reference) and pT(ZH), with
+the 7-point band per bin and the differential K factor.
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ GRID = [(1.0, 1.0), (0.5, 0.5), (2.0, 2.0), (2.0, 1.0), (0.5, 1.0), (1.0, 2.0), 
 REBIN = {
     "mzh25": [150, 200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 550, 600, 700, 800, 1000, 1250],
     "ptz25": [0, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 500, 600, 800, 1000],
+    "ptzh": [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 360, 420, 480, 540, 600],
 }
 
 
@@ -95,11 +97,16 @@ def main(argv=None) -> int:
                 nlo = rebin(*combine(args.nlo, obs, args.nlep), new)
             except KeyError:
                 continue
-            k = nlo[1][:, 0] / lo[1][:, 0]
-            kerr = k * np.hypot(lo[2][:, 0] / lo[1][:, 0], nlo[2][:, 0] / nlo[1][:, 0])
+            with np.errstate(divide="ignore", invalid="ignore"):      # p_T(ZH): LO only in the first bin
+                k = nlo[1][:, 0] / lo[1][:, 0]
+                kerr = k * np.hypot(lo[2][:, 0] / lo[1][:, 0], nlo[2][:, 0] / nlo[1][:, 0])
+            fin = lambda a: [float(x) if np.isfinite(x) else None for x in a]
             out["differential"][obs] = {"edges": lo[0].tolist(), "lo_fb": lo[1][:, 0].tolist(), "nlo_fb": nlo[1][:, 0].tolist(),
                                         "lo_err_fb": lo[2][:, 0].tolist(), "nlo_err_fb": nlo[2][:, 0].tolist(),
-                                        "K": k.tolist(), "K_err": kerr.tolist()}
+                                        "K": fin(k), "K_err": fin(kerr),
+                                        # seven-point scale envelope per bin, [lowest, highest] in fb
+                                        "lo_band_fb": np.stack([lo[1].min(1), lo[1].max(1)], 1).tolist(),
+                                        "nlo_band_fb": np.stack([nlo[1].min(1), nlo[1].max(1)], 1).tolist()}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, indent=1) + "\n")
     for order in ("lo", "nlo"):
