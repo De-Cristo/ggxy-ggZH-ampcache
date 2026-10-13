@@ -62,10 +62,13 @@ runs() {
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
       echo parton-nlo parton-lo
       for f in "${MTFAC[@]}"; do echo "fo-llh-lo-mt$f fo-llh-nlo-mt$f"; done
-      [ "$SET" = 13600 ] && for f in "${MTFAC[@]}"; do echo "fo-zh-lo-mt$f fo-zh-nlo-mt$f"; done
-      [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf \
+      # (if, not "[ ] &&": the list must end with status 0 for known() under pipefail)
+      if [ "$SET" = 13600 ]; then
+        for f in "${MTFAC[@]}"; do echo "fo-zh-lo-mt$f fo-zh-nlo-mt$f"; done
+        echo cache-scan fo-llh-pdf fo-zh-pdf \
            grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
-           shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash ;;
+           shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash
+      fi ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
            grids-nlo-bs250 mcfm events-nlo events-lo events-nlo-bs250 cache
