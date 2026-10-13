@@ -19,6 +19,9 @@
 #include "mc_config/mc_ggzh.h"
 
 
+//MSbar top-mass scale: mu_t = mt_fac * m_ZH (argument 9); mt_fac = 0 keeps mu_t = mt(mt)
+static double mt_fac = 0.0;
+
 //function to define renormalization, factorization and MSbar scales
 void set_scale(const std::vector<int>& iproc, const std::vector<lorentz_vec>& p, const params& pars, std::vector<double>& muR, std::vector<double>& muF, double& mut){
    lorentz_vec pzh(0.0,0.0,0.0,0.0);
@@ -32,7 +35,7 @@ void set_scale(const std::vector<int>& iproc, const std::vector<lorentz_vec>& p,
    muF[1]=muR[1];
 
    //set MSbar scale
-   if(pars.mtscheme == 1) mut = pars.mtmt; //mt(mt)
+   if(pars.mtscheme == 1) mut = mt_fac > 0.0 ? mt_fac*pzh.mass() : pars.mtmt; //mt_fac*m_ZH, or mt(mt)
 }
 
 
@@ -126,7 +129,9 @@ int main(int argc, char* argv[])
    if(argc >= 6) np_opt=atoi(argv[5]);
    if(argc >= 7) pdf_name=std::string(argv[6]);
    if(argc >= 8) ss=atof(argv[7]);                  //centre-of-mass energy [GeV]
-   std::cout<<"fo-ggzh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<std::endl;
+   if(argc >= 9) mtscheme=atoi(argv[8]);            //top-quark mass scheme: 0 - on-shell, 1 - MSbar
+   if(argc >= 10) mt_fac=atof(argv[9]);             //MSbar scale mu_t / m_ZH (0: mt(mt))
+   std::cout<<"fo-ggzh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<" mtscheme "<<mtscheme<<" mu_t/m_ZH "<<mt_fac<<std::endl;
 
    std::string outfile=path+"histo_"+mode+"_"+std::to_string(seed)+".txt";  //output file for histograms
 

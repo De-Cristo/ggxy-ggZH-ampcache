@@ -35,6 +35,7 @@ CMD_=${1:?list|inputs|outputs|show|run}; SET=${2:?set: common|13600|13000|verify
 
 TUNES=(monash cp5 a14)
 LOMODES=(default scalup scalup-half scalup-quarter power)
+MTFAC=(1 2 4)                       # MS-bar top-mass scale mu_t = m_ZH / f
 
 case $SET in
   common) ;;
@@ -60,6 +61,8 @@ runs() {
       for t in "${TUNES[@]}"; do echo "shower-nlo-$t"; done
       for t in "${TUNES[@]}"; do for m in "${LOMODES[@]}"; do echo "shower-lo-$m-$t"; done; done
       echo parton-nlo parton-lo
+      for f in "${MTFAC[@]}"; do echo "fo-llh-lo-mt$f fo-llh-nlo-mt$f"; done
+      [ "$SET" = 13600 ] && for f in "${MTFAC[@]}"; do echo "fo-zh-lo-mt$f fo-zh-nlo-mt$f"; done
       [ "$SET" = 13600 ] && echo cache-scan fo-llh-pdf fo-zh-pdf \
            grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
            shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash ;;
@@ -78,7 +81,9 @@ runs() {
 # def <run> <p>: sets JOBS CPUS MEM HOURS, ENVS (VAR=value ...), STEP (command), IN and OUTP
 # ("<file> <product>" lines).  G = generator/, S = shower/ of the job directory.
 G=generator; S=shower
-INSTALL=install/ggzh-install; SHOWER_INSTALL=install/shower-install
+# ggzh-install-v2: the fixed-order programs take the top-mass scheme and mu_t (generator/fo, 2026-10-13); the
+# production runs of 2026-10-09..12 used install/ggzh-install, identical apart from these two options
+INSTALL=install/ggzh-install-v2; SHOWER_INSTALL=install/shower-install
 need_install() { IN+=("ggzh-install.tgz $INSTALL.tgz"); }
 need_grids()   { IN+=("grids.tgz grids/$1.tgz"); }
 # shower job p of a sample: <nper> LHE files of seeds first + nper*p ...
@@ -139,6 +144,17 @@ def() {
                   STEP=("$G/condor/run_job.sh" cache 50 $((s0 + p)) "$G/cards/$RWL") ;;
     # ---- PDF and alpha_s at fixed order, member by member (13600; independent check of the event
     #      weights): LO, one seed (7001), 2e6 points, PDF4LHC21 members 0-42, 4 per job
+    # top-mass scheme (sec. m_t scheme): MS-bar with mu_t = m_ZH / f, the seeds and statistics of the on-shell run
+    fo-llh-lo-mt*|fo-llh-nlo-mt*|fo-zh-lo-mt*|fo-zh-nlo-mt*)
+                  f=${run##*-mt}; base=${run%-mt*}
+                  case $base in
+                    fo-llh-lo)  res 2 4 8 6;   s0=2001; ns=4; np=2000000; npo=200000; prog=fo-ggllh; mode=lo ;;
+                    fo-llh-nlo) res 10 4 8 16; s0=3001; ns=4; np=1000000; npo=150000; prog=fo-ggllh; mode=nlo ;;
+                    fo-zh-lo)   res 1 2 4 6;   s0=5001; ns=2; np=2000000; npo=200000; prog=fo-ggzh;  mode=lo ;;
+                    fo-zh-nlo)  res 10 4 8 16; s0=6001; ns=4; np=1000000; npo=150000; prog=fo-ggzh;  mode=nlo ;;
+                  esac
+                  need_install
+                  STEP=("$G/condor/run_job.sh" fo $mode $((s0 + ns * p)) $ns $np $npo "$PDF" $prog "$E" 1 "$(awk -v f="$f" 'BEGIN { print 1 / f }')") ;;
     fo-llh-pdf|fo-zh-pdf)
                   res 11 4 8 4; need_install; m=$((4 * p)); nm=$(( p == 10 ? 3 : 4 ))
                   STEP=("$G/condor/run_job.sh" fo-members lo 7001 2000000 200000 "$PDF" "$m" "$nm"

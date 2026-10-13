@@ -17,7 +17,8 @@
 #   cache-scan <nevents> <seed> <weight list|none> ...   -> out-cache-scan-<seed>.tgz (run/cache_scan.sh)
 #   fo-members <lo|nlo> <seed> <np> <np_opt> <PDF set> <first member> <n members> [program] [sqrt(s)]
 #                                          -> out-fo-members-<first member>.tgz (run/fo_members.sh)
-#   fo     <lo|nlo> <first seed> <nseeds> [np] [np_opt] [pdf] [program] [sqrt(s)] -> out-fo-<mode>-<first seed>.tgz
+#   fo     <lo|nlo> <first seed> <nseeds> [np] [np_opt] [pdf] [program] [sqrt(s)] [mtscheme] [mu_t/m_ZH]
+#                                          -> out-fo-<mode>-<first seed>.tgz
 #   lo     [nseeds] [points...]            -> out-lo.tgz
 #   mcfm                                   -> out-mcfm.tgz (MCFM_SQRTS from the environment)
 set -o pipefail

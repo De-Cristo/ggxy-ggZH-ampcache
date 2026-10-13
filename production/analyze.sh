@@ -22,6 +22,8 @@
 #                               NNPDF3.1 weights of the same events)
 #   events-nlo-bs250.json       (verify: weighted events with Born suppression)
 #   cache/compare-<seed>.json   cache closure (file names relative to the job)
+#   fo-llh-mt<f>.json, fo-zh-mt<f>.json   fixed order in the MS-bar top-mass scheme, mu_t = m_ZH / f, f = 1, 2, 4
+#                               (fo-zh-mt<f>: 13600 only); ratios to fo-llh.json and fo-zh.json give the scheme band
 #   fo-llh-pdf.json, fo-zh-pdf.json   (13600) PDF and alpha_s at fixed order (LO), one run per PDF
 #                               member: check of the event-weight uncertainties (analysis/fo_pdf.py)
 #   cache-scan.json             (13600) the cache timing scan: amplitude evaluations per event and
@@ -119,6 +121,11 @@ if [ "$SET" = verify ]; then
 else
   fo fo-zh 1 fo-zh-lo fo-zh-nlo
 fi
+# top-mass scheme: MS-bar with mu_t = m_ZH / f (l l H at both energies, stable Z at 13.6 TeV)
+for f in 1 2 4; do
+  fo "fo-llh-mt$f" 3 "fo-llh-lo-mt$f" "fo-llh-nlo-mt$f"
+  fo "fo-zh-mt$f" 1 "fo-zh-lo-mt$f" "fo-zh-nlo-mt$f"
+done
 
 # ---------------------------------------------------------------- POWHEG LO, grids, MCFM
 if have powheg-lo; then
