@@ -61,6 +61,18 @@ def to_onnx(clf, nfeat):
                                options={id(clf): {"zipmap": False}}, target_opset=17)
 
 
+def snap_thresholds(clf):
+    """ONNX stores the tree thresholds in float32.  Each threshold t becomes the largest float32 value not above t: for
+    float32 inputs (the card's input type) x <= t is unchanged, and scikit-learn and ONNX take the same branches."""
+    for trees in clf._predictors:
+        for tree in trees:
+            t = tree.nodes["num_threshold"]
+            t32 = t.astype(np.float32)
+            up = t32.astype(np.float64) > t
+            t32[up] = np.nextafter(t32[up], np.float32(-np.inf))
+            tree.nodes["num_threshold"] = t32.astype(np.float64)
+
+
 def onnx_p(model_bytes, X):
     import onnxruntime as ort
     so = ort.SessionOptions()   # one thread: onnxruntime ignores OMP_NUM_THREADS (run.sh) and takes every core otherwise
@@ -144,7 +156,10 @@ def main(argv=None) -> int:
                         "outcome; a vetoed LO+PS sample lacks events with a jet harder than m_ZH, which no weight recovers.",
             "classifier": {"settings": CLF, "training": "all source events vs all target events in the window, balanced "
                            "classes, target events with their weights (negative weights set to zero)",
-                           "input_dtype": "float32", "output": "'probabilities'[:, 1] = p (probability of NLO+PS)",
+                           "input_dtype": "float32",
+                           "thresholds": "each tree threshold stored as the largest float32 value not above the trained "
+                                         "one, so that float32 inputs take the same branches in ONNX as in scikit-learn",
+                           "output": "'probabilities'[:, 1] = p (probability of NLO+PS)",
                            "weight": "w = p / (1 - p) / c, with c the mean of p / (1 - p) over the source events in the "
                                      "window (below, per model and variation); events outside 15 < m_ll < 150 GeV: weight 1; "
                                      "for another sample, renormalise to mean 1 over its events in the window",
@@ -154,16 +169,18 @@ def main(argv=None) -> int:
     for name, feats in MODELS.items():
         Xs = np.stack([src[k].astype(float) for k in feats], axis=1)
         Xt = np.stack([tgt[k].astype(float) for k in feats], axis=1)
+        Xs32 = Xs.astype(np.float32).astype(float)            # the source inputs as the models take them (float32)
         mc = {"inputs": [{"name": k, "definition": INPUTS[k][0], "unit": INPUTS[k][1]} for k in feats], "variations": {}}
         for wid in wids:
             t1 = time.time()
             clf = fit(Xs[ss], Xt[ts], tgt.weight(wid)[ts])
-            p = clf.predict_proba(Xs[ss])[:, 1]
+            snap_thresholds(clf)
+            p = clf.predict_proba(Xs32[ss])[:, 1]
             c = float(np.mean(p / (1.0 - p)))
             model = to_onnx(clf, len(feats)).SerializeToString()
             fname = f"{name}-{varname(wid)}.onnx"
             (out / fname).write_bytes(model)
-            po = onnx_p(model, Xs[ss])
+            po = onnx_p(model, Xs32[ss])
             wo, wk = po / (1 - po) / c, p / (1 - p) / c
             mc["variations"][varname(wid)] = {"onnx": fname, "c": c, "n_iter": int(clf.n_iter_),
                                               "max_abs_dp_onnx_vs_sklearn": float(np.max(np.abs(po - p))),
