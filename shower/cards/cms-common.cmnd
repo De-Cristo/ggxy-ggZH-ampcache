@@ -1,0 +1,12 @@
+! The CMS Run-3 common Pythia 8 settings (CMSSW Configuration/Generator/python/Pythia8CommonSettings_cfi.py,
+! CMSSW_14_0_19, public), used on top of common.cmnd and tune-cp5*.cmnd for the CMS-style samples of the
+! reweighting study (rwt/, production/paper.sh runs table-*).  Main:timesAllowErrors is left to common.cmnd.
+Tune:preferLHAPDF = 2
+Check:epTolErr = 0.01
+Beams:setProductionScalesFromLHEF = off
+SLHA:minMassSM = 1000.
+ParticleDecays:limitTau0 = on
+ParticleDecays:tau0Max = 10
+! ParticleDecays:allowPhotonRadiation = on  (CMS; removed from the settings database by Pythia 8.315, which aborts on it;
+!   photon radiation in hadron and tau decays, no effect on the observables of this study)
+25:m0 = 125.0

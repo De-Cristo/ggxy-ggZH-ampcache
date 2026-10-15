@@ -1,6 +1,7 @@
 #!/bin/bash
-# Build the shower and analysis step: the Rivet plugin library (our GGZH_NLOPS and the LHC
-# Higgs WG SimplifiedTemplateCrossSections at the pinned commit) and the Pythia 8 driver
+# Build the shower and analysis step: the Rivet plugin library (our GGZH_NLOPS, the per-event table
+# GGZH_EVENTTABLE of the reweighting study, and the LHC Higgs WG SimplifiedTemplateCrossSections at the
+# pinned commit) and the Pythia 8 driver
 # ggzh-shower, against an LCG view.
 #
 #   ./build.sh <prefix>            (SHOWER_LCG_VIEW to change the view; network for the STXS clone,
@@ -26,7 +27,7 @@ STXS=${STXS_DIR:-$PREFIX/src/stxs}
 git -C "$STXS" checkout -q "$STXS_COMMIT"
 
 # Rivet plugins
-( cd "$PREFIX/lib" && rivet-build RivetGGZH.so "$HERE/rivet/GGZH_NLOPS.cc" "$STXS/SimplifiedTemplateCrossSections.cc" \
+( cd "$PREFIX/lib" && rivet-build RivetGGZH.so "$HERE/rivet/GGZH_NLOPS.cc" "$HERE/rivet/GGZH_EVENTTABLE.cc" "$STXS/SimplifiedTemplateCrossSections.cc" \
     -I"$STXS" > "$PREFIX/lib/rivet-build.log" 2>&1 ) \
   || { echo "FATAL: rivet-build failed" >&2; tail -30 "$PREFIX/lib/rivet-build.log" >&2; exit 3; }
 
@@ -47,7 +48,7 @@ export PATH=\$GGZH_SHOWER_PREFIX/bin:\$PATH
 export RIVET_ANALYSIS_PATH=\$GGZH_SHOWER_PREFIX/lib\${RIVET_ANALYSIS_PATH:+:\$RIVET_ANALYSIS_PATH}
 EOF
 source "$PREFIX/env.sh"
-rivet --list-analyses 2>/dev/null | grep -E '^(GGZH_NLOPS|SimplifiedTemplateCrossSections)' \
+[ "$(rivet --list-analyses 2>/dev/null | grep -cE '^(GGZH_NLOPS|GGZH_EVENTTABLE|SimplifiedTemplateCrossSections)')" = 3 ] \
   || { echo "FATAL: the analyses are not visible to Rivet" >&2; exit 5; }
 {
   echo "built $(date -u +%FT%TZ) on $(hostname)"

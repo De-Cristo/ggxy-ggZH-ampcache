@@ -8,6 +8,8 @@
 #       noshower (test: LHE kinematics only).
 # extra cards: e.g. ps-variations (cards/ps-variations.cmnd).
 # Output: <outdir>/<base>.<mode>.<tune>.yoda and the log; <base> is the LHE file name.
+# GGZH_SHOWER_TABLE=1: also one row per event (Rivet GGZH_EVENTTABLE, for the reweighting study rwt/)
+# -> <outdir>/<base>.<mode>.<tune>.table.csv.gz.
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 LHE=${1:?lhe file}; OUT=${2:?outdir}; MODE=${3:?mode}; TUNE=${4:-monash}; SEED=${5:-}
@@ -36,7 +38,14 @@ for x in "$@"; do cmnds+=(--cmnd "$HERE/cards/$x.cmnd"); done
 name=$base.$MODE.$TUNE
 t=$SECONDS
 opts=(); [ "$MODE" = noshower ] && opts+=(--no-beam-check)
+if [ -n "${GGZH_SHOWER_TABLE:-}" ]; then    # the two default analyses, and the table
+  opts+=(--analysis "SimplifiedTemplateCrossSections:HiggsProdMode=GG2ZH" --analysis GGZH_NLOPS --analysis "GGZH_EVENTTABLE:OUT=table.csv")
+fi
 ( cd "$work" && ggzh-shower --lhe events.lhe --out "$OUT/$name" "${cmnds[@]}" ${SEED:+--seed "$SEED"} "${opts[@]}" ) > "$OUT/$name.log" 2>&1
 rc=$?
 echo "$name rc $rc wall $((SECONDS - t)) s; $(grep -h '^ggzh-shower:' "$OUT/$name.log" | tail -1)"
 [ $rc = 0 ] && [ -s "$OUT/$name.yoda" ] || { tail -20 "$OUT/$name.log" >&2; exit 3; }
+if [ -n "${GGZH_SHOWER_TABLE:-}" ]; then
+  [ "$(wc -l < "$work/table.csv" 2>/dev/null || echo 0)" -gt 1 ] || { echo "FATAL: no event table" >&2; exit 4; }
+  gzip -c "$work/table.csv" > "$OUT/$name.table.csv.gz"
+fi

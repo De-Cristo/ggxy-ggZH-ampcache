@@ -1,0 +1,18 @@
+! Shower of Born-only LO events as in the CMS production configuration of gg -> ZH at LO (public CMSSW
+! Configuration/Generator Pythia8PowhegEmissionVetoSettings_cfi): the CMS POWHEG emission-veto block
+! on LO events whose SCALUP = sqrt(s-hat) = m_ZH, i.e. a power
+! shower (pTmaxMatch 2) in which every ISR/FSR emission with POWHEG pT above m_ZH is vetoed.
+! nFinal = -1 (Pythia's default since 8.309): no strict count of the final state.  With the strict count
+! (CMS: 2) PowhegHooks counts the final-state particles at the end of the record, which for our ggxy
+! LO events are the H -> b bbar daughters appended by the process-level Higgs decay; nFinal = 3 aborts
+! the run.  The veto is the same either way: pThard = 0 sets the veto scale to SCALUP for
+! every event, and no POWHEG emission is identified (the b quarks have the Higgs as mother).
+POWHEG:nFinal = -1
+POWHEG:veto = 1
+POWHEG:vetoCount = 100
+POWHEG:pThard = 0
+POWHEG:pTemt = 0
+POWHEG:emitted = 0
+POWHEG:pTdef = 1
+SpaceShower:pTmaxMatch = 2
+TimeShower:pTmaxMatch = 2

@@ -18,6 +18,9 @@
 #            MCFM, showers (NLO+PS and five LO+PS shower starts, tunes Monash, CP5, A14), and the
 #            same NLO and LO events at parton level (no shower: the shower effect at each order and
 #            the high-pT test of the Born suppression against the fixed-order NLO)
+#            and, at 13.6 TeV only, the variations (PDF members, cache scan, h_damp, POWHEG veto, damped
+#            LO+PS start, MS-bar top mass) and the reweighting study (rwt/README.md: CMS-style LO+PS with
+#            public CMS settings, per-event tables, classifier weights, summary)
 #   13000    the same runs, seeds and statistics at sqrt(s) = 13 TeV
 #   verify   NNPDF3.1, 13.6 TeV: the verification runs of generator/reference (48 checks), the
 #            unweighted validation samples and their showers, the Born-suppression test (also at
@@ -68,6 +71,8 @@ runs() {
         echo cache-scan fo-llh-pdf fo-zh-pdf \
            grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
            shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash
+        echo grids-lo-cms events-lo-cms table-lo-cms table-lo-cms-default table-nlo-cp5 \
+             rwt-clf rwt-clf-default rwt-clf-jet rwt-clf-jet-default rwt-summary
       fi ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
@@ -86,7 +91,9 @@ runs() {
 G=generator; S=shower
 # ggzh-install-v2: the fixed-order programs take the top-mass scheme and mu_t (generator/fo, 2026-10-13); the
 # production runs of 2026-10-09..12 used install/ggzh-install, identical apart from these two options
-INSTALL=install/ggzh-install-v2; SHOWER_INSTALL=install/shower-install
+# shower-install-v2: the Rivet plugin also has GGZH_EVENTTABLE (the per-event tables of the reweighting study,
+# 2026-10-15); the shower runs of 2026-10-09..13 used install/shower-install, otherwise identical
+INSTALL=install/ggzh-install-v2; SHOWER_INSTALL=install/shower-install-v2
 need_install() { IN+=("ggzh-install.tgz $INSTALL.tgz"); }
 need_grids()   { IN+=("grids.tgz grids/$1.tgz"); }
 # shower job p of a sample: <nper> LHE files of seeds first + nper*p ...
@@ -94,6 +101,10 @@ need_lhe() {  # need_lhe <sample> <first seed> <files per job> <p>
   local k s
   for k in $(seq 0 $(($3 - 1))); do s=$(($2 + $3 * $4 + k)); IN+=("lhe/events-$s.lhe.gz lhe/$1/events-$s.lhe.gz"); done
   IN+=("shower-install.tgz $SHOWER_INSTALL.tgz")
+}
+# reweighting study: the per-event tables of <n> consecutive seeds of a sample (production run table-<sample>)
+need_tables() {  # need_tables <sample> <first seed> <n>
+  local k; for k in $(seq 0 $(($3 - 1))); do IN+=("tables/$1/table-$(($2 + k)).csv.gz tables/$1-$E/table-$(($2 + k)).csv.gz"); done
 }
 res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 
@@ -213,6 +224,40 @@ def() {
     parton-lo)    if [ "$SET" = verify ]; then res 1 4 8 4; need_lhe "$(sname lo)" 2001 25 "$p"
                   else res 5 4 8 4; need_lhe "$(sname lo)" 20001 20 "$p"; fi
                   STEP=("$S/run/shower_batch.sh" shower-out noshower monash -- lhe/*.lhe.gz) ;;
+    # ---- the reweighting study (rwt/README.md; 13600 only).  CMS-style LO+PS with public CMS settings: LO events
+    #      at NNPDF3.1 (the card's PDF) with the fixed scale m_Z + m_H, showered with CP5, the CMS common settings and
+    #      the CMS POWHEG veto; the same LO events with Pythia's default start; the production NLO events showered with
+    #      CP5 and the CMS common settings (the target).  One row per event (Rivet GGZH_EVENTTABLE), staged as products.
+    grids-lo-cms) res 1 8 16 12; need_install; ENVS=("GRID_SETTINGS=bornonly=1 LOevents=1 fixedscale=1")
+                  STEP=("$G/condor/run_job.sh" grids 8 3)
+                  OUTP=("grids.tgz grids/grids-lo-cms-$E.tgz" "grids/grids-xsec.json grids/grids-lo-cms-$E.xsec.json") ;;
+    events-lo-cms) res 100 1 4 12; need_install; need_grids "grids-lo-cms-$E"
+                  STEP=("$G/condor/run_job.sh" events 5000 $((40001 + p)) none)
+                  OUTP=("events-$((40001 + p)).lhe.gz lhe/lo-cms-$E/events-$((40001 + p)).lhe.gz") ;;
+    table-lo-cms|table-lo-cms-default|table-nlo-cp5)
+                  case $run in
+                    table-nlo-cp5) res 200 1 4 6; s=$((10001 + p)); need_lhe "nlo-$E" 10001 1 "$p"; m=nlo ;;
+                    table-lo-cms)  res 100 1 4 6; s=$((40001 + p)); need_lhe "lo-cms-$E" 40001 1 "$p"; m=cms-lo-veto ;;
+                    *)             res 100 1 4 6; s=$((40001 + p)); need_lhe "lo-cms-$E" 40001 1 "$p"; m=lo-default ;;
+                  esac
+                  ENVS=("GGZH_SHOWER_TABLE=1" "GGZH_SHOWER_TABLE_DIR=tables")
+                  STEP=("$S/run/shower_batch.sh" shower-out "$m" cp5 cms-common -- lhe/*.lhe.gz)
+                  OUTP=("tables/table-$s.csv.gz tables/${run#table-}-$E/table-$s.csv.gz") ;;
+    # classifier weights (rwt/run.sh clf): CMS-style and default-start source, five inputs or six (leading-jet pT)
+    rwt-clf|rwt-clf-default|rwt-clf-jet|rwt-clf-jet-default)
+                  res 1 1 8 6; n=${run#rwt-}
+                  case $n in *-default) m=lo-cms-default ;; *) m=lo-cms ;; esac
+                  t=(); case $n in clf-jet*) t=(--jet-feature) ;; esac
+                  need_tables "$m" 40001 100; need_tables nlo-cp5 10001 200
+                  STEP=(rwt/run.sh clf "$n" "$m" nlo-cp5 "${t[@]}")
+                  OUTP=("weights-$n.npz rwt/weights-$n-$E.npz" "rwt-out/bdt-$n.json rwt/bdt-$n-$E.json") ;;
+    rwt-summary)  res 1 1 8 4
+                  need_tables lo-cms 40001 100; need_tables lo-cms-default 40001 100; need_tables nlo-cp5 10001 200
+                  for n in clf clf-default clf-jet clf-jet-default; do
+                    IN+=("rwt-in/weights-$n.npz rwt/weights-$n-$E.npz" "rwt-in/bdt-$n.json rwt/bdt-$n-$E.json")
+                  done
+                  IN+=("rwt-in/grids-xsec.json grids/grids-lo-cms-$E.xsec.json")
+                  STEP=(rwt/run.sh summary) ;;
     *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
   esac
 }

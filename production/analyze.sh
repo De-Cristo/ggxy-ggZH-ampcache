@@ -53,6 +53,10 @@
 #   effect-bs250-monash.json    (verify: the weighted NLO events against fixed order; effect-<tune>.json
 #                               holds the unweighted ones)
 #   check-generator.json        generator/check.py (13600, 13000: --paper-energy)
+#   rwt/rwt-summary.json, rwt/closure-map.json, rwt/bdt-clf*.json, rwt/grids-xsec.json, rwt/<sample>.json
+#                               (13600) the reweighting study (rwt/README.md): the summary of run rwt-summary
+#                               (numbers and figure data), the closure outputs, the LO grid cross section and
+#                               the sample bookkeeping (events per table file, weights)
 #   SHA256SUMS                  of every file above
 # The outputs record no absolute paths (file names only), so they can be published as they are.
 # Exit status 1 if a step or a check failed (listed at the end of STATUS.txt).
@@ -260,6 +264,13 @@ fi
 if [ -f "$OUT/shower-nlo-bs250-monash.json" ] && [ -f "$OUT/shower-nlo-monash.json" ]; then
   step bornsupp-shower python3 "$SA/compare_samples.py" --a shower-nlo-bs250-monash.json \
     --b shower-nlo-monash.json --out bornsupp-shower.json
+fi
+
+# ---------------------------------------------------------------- the reweighting study (13600)
+if have rwt-summary; then
+  unpack rwt-summary 'rwt-out/*'
+  mkdir -p "$OUT/rwt"
+  step rwt cp -p "$W"/rwt-summary/0/rwt-out/*.json "$OUT/rwt/"
 fi
 
 # ---------------------------------------------------------------- generator checks
