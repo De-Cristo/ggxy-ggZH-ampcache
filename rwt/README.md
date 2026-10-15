@@ -27,6 +27,7 @@ every other shower of the package (LHE seed + 100000).
 | `rwt-clf-default` | the same for the default-start source |
 | `rwt-clf-jet`, `rwt-clf-jet-default` | six inputs: the leading-jet p_T added |
 | `rwt-summary` | closure of the binned map, and the summary: every number of the paper's section and the data of its figures (`rwt-summary.json`) |
+| `rwt-model` | the reusable models of the data release: the classifier (five and six inputs) as ONNX and the binned map as a correctionlib table, each for the nominal target and its seven scale variations, trained on all events; `model-card.json` gives inputs, weight formula, normalisations, training samples and the checks (ONNX against scikit-learn, correctionlib against the map code) |
 
 Classifier (`ggzh_reweight_bdt.py`): scikit-learn `HistGradientBoostingClassifier` (learning rate 0.05, at most
 400 iterations, 31 leaves, at least 100 events per leaf, L2 1.0, early stopping on 20 % of the events, fixed seed),
@@ -58,5 +59,11 @@ Locally, from per-event tables already made:
     rwt/ggzh_table.py --label lo-cms --tables 'tables/lo-cms/table-*.csv.gz' --out lo-cms.npz
     rwt/ggzh_table.py --label nlo-cp5 --tables 'tables/nlo-cp5/table-*.csv.gz' --out nlo-cp5.npz --nominal 2000
     rwt/ggzh_reweight_bdt.py --source lo-cms.npz --target nlo-cp5.npz --out bdt-clf.json --weights-out weights-clf.npz
+
+Applying a released model to another LO+PS sample: build the inputs as in `model-card.json` (float32, in its order),
+take p = `probabilities`[:, 1] of the ONNX model, w = p/(1−p), and normalise w to mean 1 over the sample's events with
+15 < m_ℓℓ < 150 GeV (weight 1 outside); the map: `correctionlib` evaluate(systematic, p_T(Z), N_jets), already
+normalised for the source sample.  The weights reshape a sample like the source; they do not create events where it
+has none (the paper's hard-jet test).
 
 `ggzh_reweight_2d.py` (a map in m_ZH × p_T(ZH)) is not used in the paper; the classifier uses its helpers.

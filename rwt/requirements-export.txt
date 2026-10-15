@@ -1,0 +1,5 @@
+# The ONNX converter for rwt/ggzh_rwt_export.py (not in the LCG views; installed by rwt/run.sh model with
+# pip --no-deps --require-hashes into the job; its dependencies onnx, protobuf, scikit-learn come from the LCG_106 view).
+# Wheels from PyPI; the production runs read copies staged as products sources/<wheel> (production/paper.sh rwt-model).
+skl2onnx==1.16.0 --hash=sha256:7de548580c625bfa5893fe79c9dd3213c3720b12e1ff8e3fd28967da0698242d
+onnxconverter-common==1.14.0 --hash=sha256:9723e4a9b47f283e298605dce9f357d5ebd5e5e70172fca26e282a1b490916c4

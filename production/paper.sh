@@ -72,7 +72,7 @@ runs() {
            grids-nlo-hdampinf events-nlo-hdampinf parton-nlo-hdampinf shower-nlo-hdampinf-monash \
            shower-nlo-pthard1-monash shower-nlo-ptdef2-monash shower-lo-damped-monash
         echo grids-lo-cms events-lo-cms table-lo-cms table-lo-cms-default table-nlo-cp5 \
-             rwt-clf rwt-clf-default rwt-clf-jet rwt-clf-jet-default rwt-summary
+             rwt-clf rwt-clf-default rwt-clf-jet rwt-clf-jet-default rwt-summary rwt-model
       fi ;;
     verify)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-lo-pdf4lhc21 powheg-lo grids-nlo grids-lo \
@@ -258,6 +258,17 @@ def() {
                   done
                   IN+=("rwt-in/grids-xsec.json grids/grids-lo-cms-$E.xsec.json")
                   STEP=(rwt/run.sh summary) ;;
+    # the reusable models of the data release: classifier (ONNX) and binned map (correctionlib), nominal and the seven
+    # scale variations, trained on all events of the CMS-style source and the target; the ONNX converter wheels
+    # (rwt/requirements-export.txt) are staged as products sources/<wheel>
+    rwt-model)    res 1 1 8 8
+                  need_tables lo-cms 40001 100; need_tables nlo-cp5 10001 200
+                  IN+=("rwt-in/weights-clf.npz rwt/weights-clf-$E.npz")
+                  for x in skl2onnx-1.16.0-py2.py3-none-any.whl onnxconverter_common-1.14.0-py2.py3-none-any.whl; do
+                    IN+=("wheels/$x sources/$x")
+                  done
+                  STEP=(rwt/run.sh model)
+                  OUTP=("model.tgz rwt/model-$E.tgz") ;;
     *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
   esac
 }

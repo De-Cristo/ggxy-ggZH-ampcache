@@ -56,7 +56,8 @@
 #   rwt/rwt-summary.json, rwt/closure-map.json, rwt/bdt-clf*.json, rwt/grids-xsec.json, rwt/<sample>.json
 #                               (13600) the reweighting study (rwt/README.md): the summary of run rwt-summary
 #                               (numbers and figure data), the closure outputs, the LO grid cross section and
-#                               the sample bookkeeping (events per table file, weights)
+#                               the sample bookkeeping (events per table file, weights); rwt/model-card.json:
+#                               the reusable models of run rwt-model (the models themselves: product rwt/model-13600.tgz)
 #   SHA256SUMS                  of every file above
 # The outputs record no absolute paths (file names only), so they can be published as they are.
 # Exit status 1 if a step or a check failed (listed at the end of STATUS.txt).
@@ -271,6 +272,10 @@ if have rwt-summary; then
   unpack rwt-summary 'rwt-out/*'
   mkdir -p "$OUT/rwt"
   step rwt cp -p "$W"/rwt-summary/0/rwt-out/*.json "$OUT/rwt/"
+fi
+if have rwt-model; then
+  unpack rwt-model 'rwt-out/model-card.json'
+  mkdir -p "$OUT/rwt"; step rwt-model cp -p "$W"/rwt-model/0/rwt-out/model-card.json "$OUT/rwt/"
 fi
 
 # ---------------------------------------------------------------- generator checks
