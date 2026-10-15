@@ -63,7 +63,9 @@ def to_onnx(clf, nfeat):
 
 def onnx_p(model_bytes, X):
     import onnxruntime as ort
-    s = ort.InferenceSession(model_bytes, providers=["CPUExecutionProvider"])
+    so = ort.SessionOptions()   # one thread: onnxruntime ignores OMP_NUM_THREADS (run.sh) and takes every core otherwise
+    so.intra_op_num_threads = so.inter_op_num_threads = 1
+    s = ort.InferenceSession(model_bytes, sess_options=so, providers=["CPUExecutionProvider"])
     names = [o.name for o in s.get_outputs()]
     return s.run(None, {"X": X.astype(np.float32)})[names.index("probabilities")][:, 1].astype(np.float64)
 
