@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the pinned ggxy library, POWHEG-BOX-V2 with the ggxy_ggZH process (pwhg_main) and the
-# two ggxy fixed-order programs (bin/fo-ggllh, bin/fo-ggzh) into <prefix>.
+# three ggxy fixed-order programs (bin/fo-ggllh, bin/fo-ggzh, and bin/fo-ggvvh = fo-ggllh for Z -> nu nubar) into <prefix>.
 #
 #   source env/lcg.sh            # or provide your own toolchain, see README.md
 #   ./build.sh <prefix> [make jobs = 8]
@@ -11,7 +11,7 @@
 # the commits are checked out from there.  The ggxy build needs about 2.5 GB of memory per
 # make job.  Takes 20-40 min on 8 cores.
 #
-# Output: <prefix>/ggxy (library install), <prefix>/bin/{pwhg_main,fo-ggllh,fo-ggzh},
+# Output: <prefix>/ggxy (library install), <prefix>/bin/{pwhg_main,fo-ggllh,fo-ggzh,fo-ggvvh},
 # <prefix>/env.sh (source it before running anything) and <prefix>/BUILD-MANIFEST.txt.
 set -Eeo pipefail
 trap 'echo "FATAL: build.sh line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -121,8 +121,11 @@ INC=$PREFIX/ggxy/include
 FOFLAGS=(-std=c++14 -O3 -ffast-math -fno-finite-math-only -fpic -D GNU_NAME_MANGLING)
 for d in ggxy ggxy/modules crundec avhlib oneloop cuttools collier recola; do FOFLAGS+=(-I"$INC/$d"); done
 FOFLAGS+=(-I"$(lhapdf-config --incdir)" -I"$BOOST_ROOT/include" -I"$EIGEN_ROOT/include" -I"$EIGEN_ROOT/include/eigen3")
-for prog in fo-ggllh fo-ggzh; do
-  g++ "${FOFLAGS[@]}" "$HERE/fo/$prog.cpp" -o "$PREFIX/bin/$prog" \
+for prog in fo-ggllh fo-ggzh fo-ggvvh; do
+  src=$prog; def=()
+  # fo-ggvvh: gg -> nu nubar H, the l-l+ program with the decay mode switched at compile time
+  [ "$prog" = fo-ggvvh ] && { src=fo-ggllh; def=(-DGGZH_DECAYMODE='"vv"'); }
+  g++ "${FOFLAGS[@]}" "${def[@]}" "$HERE/fo/$src.cpp" -o "$PREFIX/bin/$prog" \
       -L"$GGLIB" -lggxy -lcrundec -lavhlib -loneloop -lcuttools -lcollier -lrecola \
       -L"$(lhapdf-config --libdir)" -lLHAPDF -lgfortran \
       -Wl,-rpath,"$GGLIB" -Wl,--disable-new-dtags > "$LOG/$prog.log" 2>&1 \
@@ -142,7 +145,7 @@ cp -p "$HERE/env/lcg.sh" "$PREFIX/lcg.sh"
   echo "export LD_LIBRARY_PATH=\$GGZH_PREFIX/ggxy/lib:\${LD_LIBRARY_PATH:-}"
 } > "$PREFIX/env.sh"
 source "$PREFIX/env.sh"
-for b in pwhg_main fo-ggllh fo-ggzh; do
+for b in pwhg_main fo-ggllh fo-ggzh fo-ggvvh; do
   [ -x "$PREFIX/bin/$b" ] || { echo "FATAL: $b not built" >&2; exit 8; }
   if ldd "$PREFIX/bin/$b" | grep -q "not found"; then echo "FATAL: $b has unresolved libraries" >&2; ldd "$PREFIX/bin/$b" | grep "not found" >&2; exit 8; fi
   for l in recola collier cuttools oneloop avhlib crundec ggxy; do
@@ -166,7 +169,7 @@ done
   echo "cmake $(cmake --version | head -1)"
   echo "LHAPDF $(lhapdf-config --version) at $LHAPDF_PREFIX"
   echo "Boost $(grep -m1 '#define BOOST_LIB_VERSION' "$BOOST_ROOT/include/boost/version.hpp" | awk '{print $3}')"
-  for b in pwhg_main fo-ggllh fo-ggzh; do echo "sha256 $(sha256sum "$PREFIX/bin/$b")"; done
+  for b in pwhg_main fo-ggllh fo-ggzh fo-ggvvh; do echo "sha256 $(sha256sum "$PREFIX/bin/$b")"; done
   for l in "$GGLIB"/lib*.so; do echo "sha256 $(sha256sum "$l")"; done
 } > "$PREFIX/BUILD-MANIFEST.txt"
 cat "$PREFIX/BUILD-MANIFEST.txt"

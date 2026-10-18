@@ -22,6 +22,12 @@
 #include "mc_config/mc_ggllh.h"
 
 
+//Z decay: l-l+ (one lepton flavour) by default; build.sh compiles this file once more with
+//-DGGZH_DECAYMODE='"vv"' as fo-ggvvh, gg -> nu nubar H (one neutrino flavour; ggxy's decaymode "vv")
+#ifndef GGZH_DECAYMODE
+#define GGZH_DECAYMODE "ll"
+#endif
+
 //MSbar top-mass scale: mu_t = mt_fac * m_ZH (argument 9); mt_fac = 0 keeps mu_t = mt(mt)
 static double mt_fac = 0.0;
 
@@ -173,7 +179,7 @@ int main(int argc, char* argv[])
    std::string pdf_name="NNPDF31_nnlo_as_0118_mc_hessian_pdfas";  //PDF set (LHAPDF 325300)
    unsigned mtscheme=0;                             //top-quark mass scheme: 0 - on-shell, 1 - MSbar
    int iopt_ext_Z = 1;                              //0: deactivate, 1: activate Z radiation from external quark lines
-   std::string decaymode = "ll";                    //ll: l-l+, vv: vl vl~
+   std::string decaymode = GGZH_DECAYMODE;          //ll: l-l+, vv: vl vl~ (fo-ggvvh: built with -DGGZH_DECAYMODE='"vv"')
 
    int np    = 1000000;         //number of generated phase-space points for MC integration
    int np_opt=  150000;         //number of generated phase-space points for phase-space optimization
@@ -195,7 +201,7 @@ int main(int argc, char* argv[])
    if(argc >= 8) ss=atof(argv[7]);                  //centre-of-mass energy [GeV]
    if(argc >= 9) mtscheme=atoi(argv[8]);            //top-quark mass scheme: 0 - on-shell, 1 - MSbar
    if(argc >= 10) mt_fac=atof(argv[9]);             //MSbar scale mu_t / m_ZH (0: mt(mt))
-   std::cout<<"fo-ggllh: mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<" mtscheme "<<mtscheme<<" mu_t/m_ZH "<<mt_fac<<std::endl;
+   std::cout<<"fo-ggllh: decaymode "<<decaymode<<" mode "<<mode<<" seed "<<seed<<" np "<<np<<" np_opt "<<np_opt<<" pdf "<<pdf_name<<" sqrt(s) "<<ss<<" mtscheme "<<mtscheme<<" mu_t/m_ZH "<<mt_fac<<std::endl;
 
    std::string outfile=path+"histo_"+mode+"_"+std::to_string(seed)+".txt";  //output file for histograms
 
