@@ -27,14 +27,42 @@ manifest manifest.txt "powheg_grids.sh seeds $NS xgrid $NX settings: ${GRID_SETT
 seq 1 "$NS" > pwgseeds.dat
 read -r -a EXTRA <<< "${GRID_SETTINGS:-}"
 card() { make_card "$GEN/cards/ggzh_13p6TeV.input" powheg.input numevts=1000 manyseeds=1 "${EXTRA[@]}" "$@"; }
+# Optional checkpoints, for batch slots shorter than the integration: with GGZH_GRID_CKPT=<name> (and REPRO_STAGE)
+# the work directory is stored as $REPRO_STAGE/paper/ckpt/<name>-<stage>.tgz after every stage, and at the start
+# the latest stored stage is restored and the stages it covers are skipped.  Without GGZH_GRID_CKPT nothing changes.
+STAGES=(); for xg in $(seq 1 "$NX"); do STAGES+=("st1-xg$xg"); done; STAGES+=(st2 st3)
+CK=""; [ -n "${GGZH_GRID_CKPT:-}" ] && [ -n "${REPRO_STAGE:-}" ] && CK="$REPRO_STAGE/paper/ckpt/$GGZH_GRID_CKPT"
+DONE=-1
+if [ -n "$CK" ]; then
+  for ((i = ${#STAGES[@]} - 1; i >= 0; i--)); do
+    if timeout 1800 xrdcp -s -f "$CK-${STAGES[$i]}.tgz" ../ckpt-in.tgz 2>/dev/null && tar xzf ../ckpt-in.tgz; then
+      DONE=$i; echo "$(stamp) restored checkpoint ${STAGES[$i]} from $CK"; rm -f ../ckpt-in.tgz; break
+    fi
+    rm -f ../ckpt-in.tgz
+  done
+fi
+ckpt() {  # ckpt <stage index>: store the work directory (failure to store is reported, not fatal)
+  [ -n "$CK" ] || return 0
+  if tar czf ../ckpt-out.tgz . && timeout 1800 xrdcp -s -f ../ckpt-out.tgz "$CK-${STAGES[$1]}.tgz"; then
+    echo "$(stamp) checkpoint ${STAGES[$1]} stored"
+  else
+    echo "$(stamp) WARNING: checkpoint ${STAGES[$1]} not stored"
+  fi
+  rm -f ../ckpt-out.tgz
+}
 for xg in $(seq 1 "$NX"); do
+  [ $((xg - 1)) -le $DONE ] && { echo "$(stamp) stage 1 iteration $xg: from the checkpoint"; continue; }
   card parallelstage=1 xgriditeration=$xg
   run_parallel "$NS" "run-st1-xg$xg" || die "stage 1 iteration $xg failed (run-st1-xg$xg-*.log)"
   echo "$(stamp) stage 1 iteration $xg done"
+  ckpt $((xg - 1))
 done
-card parallelstage=2 xgriditeration=$NX
-run_parallel "$NS" run-st2 || die "stage 2 failed (run-st2-*.log)"
-echo "$(stamp) stage 2 done"
+if [ "$NX" -le $DONE ]; then echo "$(stamp) stage 2: from the checkpoint"; else
+  card parallelstage=2 xgriditeration=$NX
+  run_parallel "$NS" run-st2 || die "stage 2 failed (run-st2-*.log)"
+  echo "$(stamp) stage 2 done"
+  ckpt "$NX"
+fi
 card parallelstage=3 xgriditeration=$NX
 run_parallel "$NS" run-st3 || die "stage 3 failed (run-st3-*.log)"
 echo "$(stamp) stage 3 done"
