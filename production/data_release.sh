@@ -5,18 +5,21 @@
 #
 #   production/data_release.sh list
 #        the record: "<archive> <product>" for every product, and "<archive> analysis:<set>" for the analysis outputs
-#   production/data_release.sh stage <outdir> --stage <xrootd url of the products> --analysis <set>=<dir> [...]
+#   production/data_release.sh stage <outdir> --stage <xrootd url of the products> [--stage-for <glob>=<url> ...]
+#                                  --analysis <set>=<dir> [...]
 #        fetch every product (checked against its <product>.sha256 when that exists), pack the archives, add the
 #        analysis outputs (each <dir> = the analysis/ directory of analyze.sh <set>), README.md and MANIFEST.sha256
 #        (sha256 of every archive, and of every file inside them).  Needs xrdcp and about 4 GB in <outdir>; run on a
-#        machine with access to the products, not on a shared login node.
+#        machine with access to the products, not on a shared login node.  --stage-for: products whose path
+#        matches the shell glob are fetched from <url> instead (first match wins), e.g. the Z -> nu nubar products
+#        of the vv sets from their own staging area: --stage-for '*-vv-*'=<url>.
 #
 # Archives: lhe-<sample>.tar (LHE events), grids.tar (POWHEG grids and the LO grid cross section of the CMS-style
 # sample), tables-<sample>.tar (per-event tables of the reweighting study), rwt-weights.tar (per-event classifier
 # weights and the classifier outputs), rwt-model.tgz (the reusable models and their card), analysis-<set>.tar.
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SETS="common 13600 13000 verify"
+SETS="common 13600 13000 verify vv13600 vv13000"
 archive() {  # archive <product>: the archive a product goes to (empty: not released)
   case $1 in
     install/*)              echo "" ;;
@@ -43,10 +46,18 @@ CMD=${1:?list|stage}; shift
 case $CMD in
   list) list ;;
   stage)
-    OUTD=${1:?outdir}; shift; STAGE=""; declare -A AN
+    OUTD=${1:?outdir}; shift; STAGE=""; declare -A AN; FORG=(); FORU=()
     while [ $# -gt 0 ]; do
-      case $1 in --stage) STAGE=$2; shift 2 ;; --analysis) AN[${2%%=*}]=${2#*=}; shift 2 ;; *) echo "unknown option $1" >&2; exit 2 ;; esac
+      case $1 in
+        --stage) STAGE=$2; shift 2 ;;
+        --stage-for) FORG+=("${2%%=*}"); FORU+=("${2#*=}"); shift 2 ;;
+        --analysis) AN[${2%%=*}]=${2#*=}; shift 2 ;;
+        *) echo "unknown option $1" >&2; exit 2 ;;
+      esac
     done
+    src() {  # src <product>: the staging url the product is fetched from
+      local i; for i in "${!FORG[@]}"; do [[ $1 == ${FORG[$i]} ]] && { echo "${FORU[$i]}"; return; }; done; echo "$STAGE"
+    }
     [ -n "$STAGE" ] || { echo "--stage <xrootd url of the products> needed" >&2; exit 2; }
     command -v xrdcp > /dev/null || { echo "xrdcp not found" >&2; exit 2; }
     mkdir -p "$OUTD/files" "$OUTD/record"; OUTD=$(cd "$OUTD" && pwd)
@@ -56,8 +67,9 @@ case $CMD in
       case $prod in analysis:*) continue ;; esac
       d=$OUTD/files/$a; mkdir -p "$d/$(dirname "$prod")"
       [ -s "$d/$prod" ] && continue
-      xrdcp -s -f "$STAGE/$prod" "$d/$prod" || { echo "MISSING $prod" >&2; bad=1; continue; }
-      if xrdcp -s -f "$STAGE/$prod.sha256" "$d/$prod.sha256.tmp" 2>/dev/null; then
+      u=$(src "$prod")
+      xrdcp -s -f "$u/$prod" "$d/$prod" || { echo "MISSING $prod" >&2; bad=1; continue; }
+      if xrdcp -s -f "$u/$prod.sha256" "$d/$prod.sha256.tmp" 2>/dev/null; then
         [ "$(cut -d' ' -f1 "$d/$prod.sha256.tmp")" = "$(sha256sum "$d/$prod" | cut -d' ' -f1)" ] || { echo "CHECKSUM $prod" >&2; bad=1; }
         rm -f "$d/$prod.sha256.tmp"
       fi

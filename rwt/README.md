@@ -7,6 +7,9 @@ map in p_T(Z) × N_jets.  Settings and pass criteria were fixed before each test
 
 ## Samples (production/paper.sh, set 13600)
 
+The same runs exist in set `vv13600` for Z → νν̄ (`vdecaymode 12`; products named `…-vv-13600`, seeds independent
+of the ℓℓ ones: CMS-style LO events 45001+, NLO events 30001+).
+
 | Run | Jobs | What |
 |---|---|---|
 | `grids-lo-cms` | 1 | LO grids, NNPDF3.1 (the card's PDF), fixed scale μ_R = μ_F = m_Z + m_H (`fixedscale=1`), 8 seeds |

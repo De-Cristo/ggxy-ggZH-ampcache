@@ -11,6 +11,7 @@
 #
 # Output in <outdir> (fb unless stated otherwise):
 #   fo-llh.json                 ggxy l-l+H (l = e, mu, tau) LO, NLO, K and differential K
+#   fo-vvh.json                 (vv13600, vv13000) ggxy nu nubar H (three flavours), as fo-llh.json
 #   fo-zh.json                  ggxy stable Z (13600, 13000: LO and NLO)
 #   fo-zh-nnpdf31.json, fo-zh-pdf4lhc21.json      (verify: stable-Z LO with each PDF)
 #   powheg-lo.json              POWHEG LO at the seven scale points
@@ -23,6 +24,7 @@
 #   events-nlo-bs250.json       (verify: weighted events with Born suppression)
 #   cache/compare-<seed>.json   cache closure (file names relative to the job)
 #   fo-llh-mt<f>.json, fo-zh-mt<f>.json   fixed order in the MS-bar top-mass scheme, mu_t = m_ZH / f, f = 1, 2, 4
+#   fo-vvh-mt1.json             (vv13600) nu nubar H in the MS-bar scheme, mu_t = m_ZH (the m_t check)
 #                               (fo-zh-mt<f>: 13600 only); ratios to fo-llh.json and fo-zh.json give the scheme band
 #   fo-llh-pdf.json, fo-zh-pdf.json   (13600) PDF and alpha_s at fixed order (LO), one run per PDF
 #                               member: check of the event-weight uncertainties (analysis/fo_pdf.py)
@@ -120,6 +122,8 @@ fo() {  # fo <output> <nlep> <LO run> [<NLO run>]
   [ ${#args[@]} = 0 ] || step "$out" python3 "$GA/fo_combine.py" "${args[@]}" --nlep "$nlep" --label "$SET $out" --out "$OUT/$out.json"
 }
 fo fo-llh 3 fo-llh-lo fo-llh-nlo                      # fo-ggllh is for one lepton flavour
+fo fo-vvh 3 fo-vvh-lo fo-vvh-nlo                      # fo-ggvvh: one neutrino flavour
+FOJ=fo-llh.json; case $SET in vv*) FOJ=fo-vvh.json ;; esac   # the fixed order of the set's channel (shower effect)
 if [ "$SET" = verify ]; then
   fo fo-zh-nnpdf31 1 fo-zh-lo
   fo fo-zh-pdf4lhc21 1 fo-zh-lo-pdf4lhc21
@@ -130,6 +134,7 @@ fi
 for f in 1 2 4; do
   fo "fo-llh-mt$f" 3 "fo-llh-lo-mt$f" "fo-llh-nlo-mt$f"
   fo "fo-zh-mt$f" 1 "fo-zh-lo-mt$f" "fo-zh-nlo-mt$f"
+  fo "fo-vvh-mt$f" 3 "fo-vvh-lo-mt$f" "fo-vvh-nlo-mt$f"     # vv13600: the m_t check (f = 1)
 done
 
 # ---------------------------------------------------------------- POWHEG LO, grids, MCFM
@@ -226,12 +231,12 @@ if [ "$SET" != verify ] && [ -f shower-nlo-monash.json ]; then
     --pdf-weight $PDFW --pdf-nmem $NMEM --out stxs-nlo.json
 fi
 # fixed order, parton level and shower at each order, per tune (needs the parton-level runs)
-if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
+if [ -f parton-nlo.json ] && [ -f parton-lo.json ] && [ -f "$FOJ" ]; then
   for f in shower-nlo-*.json; do
     t=${f#shower-nlo-}; t=${t%.json}
     case $t in bs250-*|hdampinf-*|pthard1-*|ptdef2-*) continue ;; esac
     los=(); for g in shower-lo-*-"$t".json; do [ -f "$g" ] && los+=("$g"); done
-    step "effect-$t" python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
+    step "effect-$t" python3 "$SA/shower_effect.py" --fo "$FOJ" --parton-nlo parton-nlo.json --parton-lo parton-lo.json \
       --nlo-ps "$f" --lo-ps "${los[@]}" --out "effect-$t.json"
   done
 fi
@@ -250,15 +255,15 @@ if [ -f shower-nlo-hdampinf-monash.json ]; then
     --pdf-weight $PDFW --pdf-nmem $NMEM --out stxs-nlo-hdampinf.json
   [ -f shower-nlo-monash.json ] && step hdamp-shower python3 "$SA/compare_samples.py" --a shower-nlo-hdampinf-monash.json \
     --b shower-nlo-monash.json --report-only --out hdamp-shower.json
-  if [ -f parton-nlo-hdampinf.json ] && [ -f parton-lo.json ] && [ -f fo-llh.json ]; then
-    step effect-hdampinf-monash python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo-hdampinf.json \
+  if [ -f parton-nlo-hdampinf.json ] && [ -f parton-lo.json ] && [ -f "$FOJ" ]; then
+    step effect-hdampinf-monash python3 "$SA/shower_effect.py" --fo "$FOJ" --parton-nlo parton-nlo-hdampinf.json \
       --parton-lo parton-lo.json --nlo-ps shower-nlo-hdampinf-monash.json --out effect-hdampinf-monash.json
   fi
 fi
 if [ -f parton-nlo-bs250.json ] && [ -f parton-nlo.json ]; then
   step bornsupp-parton python3 "$SA/compare_samples.py" --a parton-nlo-bs250.json --b parton-nlo.json --out bornsupp-parton.json
-  if [ -f parton-lo.json ] && [ -f fo-llh.json ] && [ -f shower-nlo-bs250-monash.json ]; then
-    step effect-bs250-monash python3 "$SA/shower_effect.py" --fo fo-llh.json --parton-nlo parton-nlo-bs250.json \
+  if [ -f parton-lo.json ] && [ -f "$FOJ" ] && [ -f shower-nlo-bs250-monash.json ]; then
+    step effect-bs250-monash python3 "$SA/shower_effect.py" --fo "$FOJ" --parton-nlo parton-nlo-bs250.json \
       --parton-lo parton-lo.json --nlo-ps shower-nlo-bs250-monash.json --out effect-bs250-monash.json
   fi
 fi
@@ -291,6 +296,7 @@ else
   opt --stable-pdf4lhc21 fo-zh.json
 fi
 cc=("$OUT"/cache/compare-*.json); [ -f "${cc[0]}" ] && C+=(--cache "${cc[@]}")
+case $SET in vv*) C=() ;; esac          # Z -> nu nubar: no l+l- references (production/compare_nunu.py instead)
 if [ ${#C[@]} -gt 0 ]; then
   [ "$SET" = verify ] || C+=(--paper-energy "$SET")
   step check-generator python3 "$PKG/generator/check.py" "${C[@]}" --out "$OUT/check-generator.json"

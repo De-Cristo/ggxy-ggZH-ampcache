@@ -10,6 +10,7 @@ differ only in the job index p; seeds are fixed functions of p.
 | `common` | the generator build (`generator/build.sh`) and the shower build (`shower/build.sh`) |
 | `13600`, `13000` | PDF4LHC21 production at √s = 13.6 and 13 TeV, identical runs and seeds: ggxy fixed order (ℓℓH and stable Z, LO and NLO), POWHEG LO at 7 scale points, LO grids, NLO grids with Born suppression (L = 250 GeV), MCFM, 5·10⁵ NLO events (weighted) and 5·10⁵ LO events with 155 weights, cache closure, showers: NLO+PS and five LO+PS shower starts for the tunes Monash, CP5 and A14; the NLO and LO events at parton level (no shower) |
 | `verify` | NNPDF3.1 at 13.6 TeV: the verification runs behind `generator/reference` (48 checks), the unweighted 5·10⁴ NLO and LO validation samples and their showers, and the Born-suppression test (same seeds with `bornsuppfact 250`) |
+| `vv13600`, `vv13000` | Z → νν̄ (`vdecaymode 12`, three neutrino flavours): the runs of `13600` / `13000` except the decay-independent or code checks (stable Z, MCFM, POWHEG LO, cache, PDF members) and the m_t scheme scan (one MS-bar check, μ_t = m_ZH, at 13.6 TeV; the ℓℓ relative band applies); seeds independent of the ℓℓ sets; `vv13600` builds `ggzh-install-v3` (v2 plus `fo-ggvvh`); `production/compare_nunu.py` compares with the ℓℓ sets |
 
 ```sh
 production/paper.sh list 13600                         # runs: <run> <jobs> <cpus> <memory GB> <hours>
