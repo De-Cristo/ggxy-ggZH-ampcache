@@ -26,9 +26,9 @@
 #            unweighted validation samples and their showers, the Born-suppression test (also at
 #            parton level: unweighted and weighted NLO events against the fixed-order NLO)
 #   vv13600  Z -> nu nubar (vdecaymode 12, three flavours, 15 < m_nunu < 150 GeV), otherwise the 13600
-#            settings: fixed order (fo-ggvvh), NLO grids and events, NLO+PS with Monash; seeds
-#            independent of the l+l- runs (fixed order 12001/13001, events 30001)
-#   vv13000  Z -> nu nubar at 13 TeV: fixed order only
+#            settings: fixed order (fo-ggvvh), LO/NLO events and showers, matching and reweighting;
+#            seeds independent of the l+l- runs (fixed order 12001/13001, NLO events 30001)
+#   vv13000  Z -> nu nubar at 13 TeV: fixed order, LO/NLO events and showers
 # Jobs p = 0 .. <jobs>-1; seeds are fixed functions of p (below), identical in 13600 and 13000.
 #
 # A job directory contains the unpacked package (VERSION, production/, generator/, shower/) and
