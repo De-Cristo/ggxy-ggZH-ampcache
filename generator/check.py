@@ -147,6 +147,18 @@ def report(a) -> int:
     return 1 if nfail else 0
 
 
+def same_card_mode(a, load) -> int:
+    pl = load(a.powheg_lo)
+    ref = [{"muR": float(n.split("f")[0][1:].replace("p", ".")), "muF": float(n.split("f")[1].replace("p", ".")),
+            "sigma_fb": p["sigma_fb"], "mc_err_fb": p["mc_err_fb"]} for n, p in pl["points"].items()]
+    if a.events_lo:
+        points("LO events vs POWHEG LO (same card)", load(a.events_lo)["scale_points"], ref)
+    if a.grids:
+        g = load(a.grids)
+        pull("LO grids vs POWHEG LO (same card)", g["sigma_fb"], g["mc_err_fb"], pl["sigma_fb"], pl["mc_err_fb"], "same card")
+    return report(a)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     for opt in ("fo", "stable-nnpdf31", "stable-pdf4lhc21", "powheg-lo", "grids", "events", "events-lo", "events-bornsupp",
@@ -154,12 +166,16 @@ def main(argv=None) -> int:
         ap.add_argument(f"--{opt}", type=Path)
     ap.add_argument("--cache", nargs="*", type=Path, default=[])
     ap.add_argument("--paper-energy", choices=["13600", "13000"])
+    ap.add_argument("--same-card", action="store_true", help="no reference values: the LO events (--events-lo) and the LO "
+                    "grids (--grids) against the POWHEG LO runs (--powheg-lo) of the same card (set atlas13600, scale H_T)")
     ap.add_argument("--out", type=Path)
     a = ap.parse_args(argv)
     load = lambda p: json.loads(p.read_text())
 
     if a.paper_energy:
         return paper_mode(a, load)
+    if a.same_card:
+        return same_card_mode(a, load)
 
     if a.fo:
         fo, r = load(a.fo), REF["fo_ggllh"]

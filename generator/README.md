@@ -115,6 +115,13 @@ MCFM 2. About 200 core-hours in total.
   a stub that always returns 1), which `build.sh` applies; without `bornsuppfact` it changes
   nothing. With suppression, the integrals printed by POWHEG are those of the suppressed
   function; the cross section is Σw/N of the events. *Not yet validated (paper plan WP1).*
+- **Scale choice**: by default μ_R = μ_F = m_ZH/2; `fixedscale 1` gives m_Z + m_H (the CMS LO
+  setup) and `dynscale 3` the ATLAS choice H_T = m_T(H) + p_T(ℓ₁) + p_T(ℓ₂) (the scale of
+  POWHEG-BOX-V2 ggHZ with `runningscales 1`), implemented by
+  `patches/ggxy_ggZH-scale-ht-atlas.patch`; without `dynscale` it changes nothing.
+  `renscfact`/`facscfact` multiply either choice. `check.py --same-card --powheg-lo ...
+  --events-lo ... --grids ...` checks LO events and grids against `run/powheg_lo.sh` with the
+  same card (production set `atlas13600`).
 - **Another PDF**: e.g. `GRID_SETTINGS="lhans1=93300 lhans2=93300"` (PDF4LHC21_40_pdfas) and a
   weight list with that set: `cards/pwg-rwl-pdf4lhc21.dat` (9 scale points at PDF4LHC21,
   PDF4LHC21_40_pdfas 43 members, NNPDF3.1 103 members: 155 weights); fixed order with the

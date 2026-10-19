@@ -85,6 +85,7 @@ P=$SRC/POWHEG-BOX-V2/ggxy_ggZH
 git -C "$P" checkout -q -- .          # pristine process sources (re-runs)
 # local patches (patches/*.patch); each is inert unless enabled in the card:
 #   ggxy_ggZH-born-suppression.patch  Born suppression in pT(H) for weighted events (bornsuppfact)
+#   ggxy_ggZH-scale-ht-atlas.patch    scale option dynscale 3: mu = H_T = mT(H) + pT(l1) + pT(l2) (ATLAS)
 for pf in "$HERE"/patches/*.patch; do
   [ -f "$pf" ] || continue
   patch -p1 -d "$P" --forward --batch < "$pf" > "$LOG/patch-$(basename "$pf").log" 2>&1 \

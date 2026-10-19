@@ -1,0 +1,60 @@
+Scale option for the ATLAS-style LO samples of set atlas13600 (production/paper.sh); not upstream.
+Applied by build.sh after ggxy_ggZH-born-suppression.patch (alphabetical order), to Born_phsp.f of
+ggxy_ggZH 0fbaccf.  New card option "dynscale 3": mu_R = mu_F = H_T = mT(H) + pT(l1) + pT(l2), the
+running scale of POWHEG-BOX-V2 ggHZ with runningscales 1 (ATLAS LHE job options 602411/602412), no
+factor 1/2; renscfact/facscfact multiply it as for the other choices.  fixedscale 1 takes precedence;
+without dynscale the scale is m_ZH/2 as before.  At LO (bornonly 1) only the Born branch is used.
+
+--- a/Born_phsp.f
++++ b/Born_phsp.f
+@@ -223,6 +223,9 @@
+       real * 8 p345(0:3)
+       logical fixedscales
+       save fixedscales
++      integer htscale
++      save htscale
++      real * 8 pl1(0:3),pl2(0:3),ph(0:3)
+       real * 8 powheginput
+       external powheginput
+       if(ini) then
+@@ -231,6 +234,9 @@
+          else
+             fixedscales=.false.
+          endif
++c        dynscale 3: mu = H_T = mT(H) + pT(l1) + pT(l2), the scale of
++c        the POWHEG-BOX-V2 ggHZ process with runningscales 1 (ATLAS)
++         htscale=int(powheginput('#dynscale'))
+          write(*,*) '****************************************'
+          write(*,*) '****************************************'
+          write(*,*) '** Factorization and renormalization  **'   
+@@ -238,6 +244,11 @@
+             write(*,*) '** scales set to: m_Z + m_H           **'
+             write(*,*) '****************************************'
+             write(*,*) '****************************************'
++         elseif(htscale.eq.3) then
++            write(*,*) '** scales set dynamically to:  H_T    **'
++            write(*,*) '** H_T = mT(H) + pT(l1) + pT(l2)      **'
++            write(*,*) '****************************************'
++            write(*,*) '****************************************'
+          else
+             write(*,*) '** scales set dynamically to:  m_ZH/2 **'
+             write(*,*) '****************************************'
+@@ -249,6 +260,18 @@
+ 
+       if(fixedscales) then
+          muref=ph_Zmass+ph_Hmass
++      elseif(htscale.eq.3) then
++         if((flg_btildepart.eq.'b').or.(flg_btildepart.eq.'c')) then
++            pl1=kn_pborn(:,3)
++            pl2=kn_pborn(:,4)
++            ph=kn_pborn(:,5)
++         elseif ((flg_btildepart.eq.'r')) then
++            pl1=kn_preal(:,3)
++            pl2=kn_preal(:,4)
++            ph=kn_preal(:,5)
++         endif
++         muref=sqrt(max(dotp(ph,ph),0d0)+ph(1)**2+ph(2)**2)
++     1        +sqrt(pl1(1)**2+pl1(2)**2)+sqrt(pl2(1)**2+pl2(2)**2)
+       else
+          if((flg_btildepart.eq.'b').or.(flg_btildepart.eq.'c')) then
+             p345=kn_pborn(:,3)+kn_pborn(:,4)+kn_pborn(:,5)
