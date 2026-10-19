@@ -147,6 +147,8 @@ def main(argv=None) -> int:
     ap.add_argument("--compare-weights", type=Path, default=None, help="per-event out-of-fold weights of rwt-clf, for a comparison")
     ap.add_argument("--package", default=None, help="package version for the card (default: the first line of VERSION)")
     ap.add_argument("--style", choices=sorted(STYLES), default="cms", help="the source and target descriptions of the card")
+    ap.add_argument("--closure-check", action="append", default=[], metavar="MODEL=JSON",
+                    help="record the preregistered classifier closure outcomes in the model card")
     args = ap.parse_args(argv)
     sty = STYLES[args.style]
     t0 = time.time()
@@ -183,6 +185,18 @@ def main(argv=None) -> int:
                            "models": {}},
             "map": {"file": "map-ptz-njets.json", "correction": "ggzh_lo_to_nlo_ptz_njets", "checks": {}},
             "target_sigma_fb": {varname(w): 1e3 * float(np.sum(tgt.weight(w)[ts])) / tgt.n for w in wids}}
+    if args.style == "atlas":
+        card["emulation_scope"] = ("Public ATLAS-style settings with ggxy amplitudes (m_b = 0), the paper's "
+                                   "15 < m_ll < 150 GeV window, no EvtGen or kappa weights, and POWHEG:nFinal = -1. "
+                                   "This is not an official ATLAS sample or an exact reproduction of an ATLAS gridpack.")
+        card["source_weight_convention"] = ("Each LO event is counted once when deriving the shape weights, including "
+                                            "events carrying upper-bound-excess weights; this matches the closure study.")
+    if args.closure_check:
+        card["closure_tests"] = {}
+        for spec in args.closure_check:
+            name, filename = spec.split("=", 1)
+            result = json.loads(Path(filename).read_text())
+            card["closure_tests"][name] = {"source_file": Path(filename).name, "criteria": result["summary"]}
     for name, feats in MODELS.items():
         Xs = np.stack([src[k].astype(float) for k in feats], axis=1)
         Xt = np.stack([tgt[k].astype(float) for k in feats], axis=1)

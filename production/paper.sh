@@ -356,6 +356,9 @@ def() {
                   res 1 1 8 8
                   need_tables_as lo-atlas "lo-atlas-$E" $S0LO 100; need_tables_as nlo-a14 "nlo-a14-$E" $S0NLO 200
                   IN+=("rwt-in/weights-clf.npz rwt/weights-clf-atlas-$E.npz")
+                  for n in clf-atlas clf-jet-atlas; do
+                    IN+=("rwt-in/bdt-$n.json rwt/bdt-$n-$E.json")
+                  done
                   for x in skl2onnx-1.16.0-py2.py3-none-any.whl onnxconverter_common-1.14.0-py2.py3-none-any.whl; do
                     IN+=("wheels/$x sources/$x")
                   done

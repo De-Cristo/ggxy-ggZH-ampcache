@@ -79,8 +79,12 @@ case $WHAT in
     python3 -m pip install --no-index --no-deps --require-hashes --find-links wheels --target pylib -r "$HERE/requirements-export.txt" \
         > rwt-out/pip.log 2>&1 || { cat rwt-out/pip.log; exit 2; }
     export PYTHONPATH=$PWD/pylib${PYTHONPATH:+:$PYTHONPATH}
+    checks=()
+    if [ "$MSTYLE" = atlas ]; then
+      checks=(--closure-check clf5=rwt-in/bdt-clf-atlas.json --closure-check clf6=rwt-in/bdt-clf-jet-atlas.json)
+    fi
     python3 "$HERE/ggzh_rwt_export.py" --source "rwt-out/$MSRC.npz" --target "rwt-out/$MTGT.npz" --out-dir model --style "$MSTYLE" \
-        --compare-weights rwt-in/weights-clf.npz 2>&1 | tee rwt-out/export.log
+        --compare-weights rwt-in/weights-clf.npz "${checks[@]}" 2>&1 | tee rwt-out/export.log
     rc=${PIPESTATUS[0]}
     [ -s model/model-card.json ] || rc=10
     tar czf model.tgz model; cp -p model/model-card.json rwt-out/
