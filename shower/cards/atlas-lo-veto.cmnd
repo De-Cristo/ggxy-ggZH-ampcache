@@ -1,0 +1,18 @@
+! Shower of Born-only LO events as in the ATLAS gg -> ZH LO sample (603335/603336): athena Pythia8_Powheg_Main31.py
+! = Pythia's PowhegHooks (Pythia8Plugins/PowhegHooks.h, registered as "PowhegMain31") with Powheg:veto = 1 and
+! pTmaxMatch = 2, the other POWHEG settings at Pythia's defaults (written out below), on LO events whose
+! SCALUP = sqrt(s-hat) = m_ZH: a power shower in which every emission with POWHEG pT above m_ZH is vetoed.
+! Differences to cms-lo-veto.cmnd: vetoCount 3 (Pythia's default; CMS sets 100).  nFinal = -1 instead of ATLAS's
+! Powheg:NFinal = 2, as in cms-lo-veto.cmnd: with a strict count PowhegHooks counts the final-state particles at
+! the end of the record, which for our ggxy LO events are the H -> b bbar daughters of the process-level Higgs
+! decay; the veto is the same (pThard = 0: veto scale SCALUP for every event, no POWHEG emission to identify).
+POWHEG:nFinal = -1
+POWHEG:veto = 1
+POWHEG:vetoCount = 3
+POWHEG:pThard = 0
+POWHEG:pTemt = 0
+POWHEG:emitted = 0
+POWHEG:pTdef = 1
+POWHEG:MPIveto = 0
+SpaceShower:pTmaxMatch = 2
+TimeShower:pTmaxMatch = 2

@@ -1,0 +1,15 @@
+! ATLAS common Pythia 8 settings for the ATLAS-style samples of set atlas13600 (production/paper.sh),
+! used on top of common.cmnd: athena Generators/Pythia8_i/share/common/Pythia8_Base_Fragment.py (main branch, read 2026-10-18 via
+! the GitLab API), the branch with hard-coded masses (PDGparams off).  Main:timesAllowErrors (ATLAS 500) is left to
+! common.cmnd (10).  The masses and sin^2(theta_W) do not enter our observables (Z and H come from the LHE file).
+6:m0 = 172.5
+23:m0 = 91.1876
+23:mWidth = 2.4952
+24:m0 = 80.399
+24:mWidth = 2.085
+StandardModel:sin2thetaW = 0.23113
+StandardModel:sin2thetaWbar = 0.23146
+ParticleDecays:limitTau0 = on
+ParticleDecays:tau0Max = 10.0
+! the fragment's setting for Pythia >= 8.314 (ours: 8.315); StringFragmentation:stopMass is set only from 8.316
+TimeShower:recoilStrategyRF = 1

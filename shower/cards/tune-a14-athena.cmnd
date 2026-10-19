@@ -1,0 +1,20 @@
+! ATLAS A14 tune (NNPDF2.3 LO) exactly as the ATLAS job options set it (athena Generators/Pythia8_i/share/common:
+! Pythia8_A14_NNPDF23LO_Common.py, Monash base Tune:pp = 14 plus the A14 parameters, and Pythia8_RapidityOrderMPI.py,
+! which copies SpaceShower:rapidityOrder to SpaceShower:rapidityOrderMPI); used for the ATLAS-style samples of set
+! atlas13600 (the public ATLAS Run-3 gg -> ZH job options 603335/603336).  EvtGen is not used (b-hadron decays do
+! not enter the observables).  tune-a14.cmnd (Pythia's built-in Tune:pp = 21) is the A14 of the tune comparison.
+Tune:ee = 7
+Tune:pp = 14
+SpaceShower:rapidityOrder = on
+SigmaProcess:alphaSvalue = 0.140
+SpaceShower:pT0Ref = 1.56
+SpaceShower:pTmaxFudge = 0.91
+SpaceShower:pTdampFudge = 1.05
+SpaceShower:alphaSvalue = 0.127
+TimeShower:alphaSvalue = 0.127
+BeamRemnants:primordialKThard = 1.88
+MultipartonInteractions:pT0Ref = 2.09
+MultipartonInteractions:alphaSvalue = 0.126
+PDF:pSet = LHAPDF6:NNPDF23_lo_as_0130_qed
+ColourReconnection:range = 1.71
+SpaceShower:rapidityOrderMPI = on
