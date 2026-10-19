@@ -21,7 +21,7 @@ production/paper.sh run 13600 events-nlo 7             # execute it in the curre
 ```
 
 **Job directory.** The unpacked package (`git archive <commit> VERSION production generator
-shower`) plus the inputs.  Products have storage-independent names (`install/ggzh-install.tgz`,
+shower rwt`) plus the inputs.  Products have storage-independent names (`install/ggzh-install.tgz`,
 `grids/grids-nlo-13600.tgz`, `lhe/nlo-13600/events-10001.lhe.gz`, ...); the storage is up to the
 executor.  Every other file a job writes (out-*.tgz, *.json, logs) is its result.  `VERSION`
 holds the package commit (written by `git archive`); every job prints it and every run manifest
@@ -51,3 +51,11 @@ Minutes on one core.
 ```sh
 production/run_local.sh 13600 work && production/analyze.sh 13600 work/jobs/13600 results/13600
 ```
+
+For the neutrino channel, build the common shower installation and run `vv13600` (which adds
+the generator build containing `fo-ggvvh`) before `vv13000`. The vv sets use `vdecaymode 12`,
+apply the 15–150 GeV window to the neutrino-pair mass, and sum the three neutrino flavours.
+`production/analyze.sh vv13600 ...` and `vv13000 ...` produce `fo-vvh.json`, event-weight
+uncertainties, STXS and shower results; the 13.6 TeV set also produces the separately trained
+reweighting models in `rwt/model-vv-13600.tgz`. Use `production/compare_nunu.py` to compare
+the two channels and the published cross sections.
