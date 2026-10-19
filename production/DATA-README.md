@@ -1,7 +1,7 @@
 # Data of "gg → ZH at NLO matched to parton showers" (event samples, grids, analysis outputs, reweighting models)
 
-Every file here was made by the reproduction package `ggxy-ggZH-ampcache` (branch `reproduction`; the release is
-named in the record's metadata) with the runs of its `production/paper.sh`, and every number of the paper comes from
+These files were made with the workflows distributed in the reproduction package `ggxy-ggZH-ampcache`
+(branch `reproduction`; the release is named in the record's metadata), and every number of the paper comes from
 the analysis outputs below (`production/analyze.sh`).  The package can regenerate all of it; these files save the
 computing and let the results be checked without rerunning.  Licence: CC BY 4.0.
 
@@ -34,7 +34,10 @@ of every archive.
 
 The neutrino samples were generated on the development branch before its production code was
 incorporated into `reproduction`. `STATUS.txt` preserves the original commit of each run; the
-analysis header records the release-package commit used to combine them. The curated neutrino
+analysis header records the original commit used to combine them. The numerical analysis and
+reweighting sources match those in the integrated package byte for byte; the original result
+headers and checksums are retained. The paper's `results/vv-provenance.json` records the source
+checksums and explains the superseded 13 TeV grid attempt in the original status report. The curated neutrino
 job definitions were checked against those used for production, while the charged-lepton job
 definitions were unchanged. The generator installation adds `fo-ggvvh`; the production shower
 build also recorded decay-fermion information. The additional columns are documented above,
