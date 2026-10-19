@@ -12,9 +12,8 @@ differential K (m_ZH, pT(Z), pT(H), pT(ZH)) as nu nubar / l+l- with a chi2.  At 
 event-weight cross sections against the fixed order, and the STXS Stage 1.3 fine bins (FWDH included):
 the fraction of sigma per bin for both channels, nu nubar / l+l-, the pull per bin and a chi2 over the bins
 filled in both (n - 1 degrees of freedom: the fractions sum to one), plus the relative scale band per bin.
-Expected (checked with an independent CMSSW production of the same process): equal shapes and STXS
-fractions within the MC errors; K for nu nubar about 0.15 % below l+l-, because the l+l- NLO includes
-gamma* -> l+l- (enhanced at small m_ll), absent for neutrinos.
+The l+l- NLO calculation includes gamma* -> l+l-, absent for neutrinos.
+The comparisons report any channel-dependent differences, including near threshold.
 """
 from __future__ import annotations
 

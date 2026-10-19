@@ -19,7 +19,7 @@ for run in "${RUNS[@]}"; do
   for p in $(seq 0 $((jobs - 1))); do
     J=$WD/jobs/$SET/$run/$p; [ -f "$J/.done" ] && continue
     rm -rf "$J"; mkdir -p "$J"
-    ( cd "$PKG" && git archive HEAD VERSION production generator shower 2>/dev/null || tar cf - VERSION production generator shower ) | tar xf - -C "$J"
+    ( cd "$PKG" && git archive HEAD VERSION production generator shower rwt 2>/dev/null || tar cf - VERSION production generator shower rwt ) | tar xf - -C "$J"
     while read -r f prod; do
       mkdir -p "$J/$(dirname "$f")"; cp -p "$WD/products/$prod" "$J/$f" || { echo "FATAL: product $prod missing"; exit 2; }
     done < <("$HERE/paper.sh" inputs "$SET" "$run" "$p")

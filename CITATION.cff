@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use this amplitude cache, please cite it as below, together with arXiv:2603.15762."
-title: "ggxy-ggZH-ampcache: an exact amplitude cache for the POWHEG-BOX-V2 process ggxy_ggZH, and a reproduction package for gg -> ZH at NLO+PS"
+message: "If you use this reproduction package or amplitude cache, please cite it as below, together with arXiv:2603.15762."
+title: "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS with charged-lepton and neutrino decays"
 type: software
 authors:
   # TODO: full given name and ORCID

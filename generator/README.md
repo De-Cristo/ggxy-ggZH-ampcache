@@ -5,6 +5,11 @@ event-level results for gg → ℓ⁺ℓ⁻H (ℓ = e, μ, τ) at √s = 13.6 Te
 μ_R = μ_F = m_ZH/2, on-shell m_t = 172.5 GeV, NNPDF3.1 NNLO (LHAPDF 325300).  It needs only an
 LCG view from `/cvmfs/sft.cern.ch`, or any compiler + CMake + Boost + Eigen + LHAPDF stack.
 
+The build also provides `fo-ggvvh` for gg → νν̄H, compiled from the same fixed-order
+source with `GGZH_DECAYMODE="vv"`. For POWHEG, the neutrino channel uses `vdecaymode 12`.
+The paper's PDF4LHC21 production for both channels at 13 and 13.6 TeV is defined by
+[`production/paper.sh`](../production/README.md), including the `vv13600` and `vv13000` sets.
+
 | Code | Commit | |
 |---|---|---|
 | [ggxy](https://gitlab.com/ggxy/ggxy-release) | `9edd1d5` | two-loop amplitudes; bundles Recola, Collier, CutTools, OneLOop, avhlib, CRunDec |
@@ -155,3 +160,4 @@ MCFM 2. About 200 core-hours in total.
   and m_H below 150 GeV.
 - **ggxy output units.** `fo-ggllh` writes nb per unit of the observable for one lepton flavour;
   `fo_combine.py --nlep 3` converts to fb for ℓ = e, μ, τ.
+  `fo-ggvvh` uses the same convention for one neutrino flavour; `--nlep 3` sums ν_e, ν_μ, ν_τ.

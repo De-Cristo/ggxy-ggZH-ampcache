@@ -4,7 +4,10 @@ An exact amplitude cache for the POWHEG-BOX-V2 process
 [`ggxy_ggZH`](https://gitlab.com/POWHEG-BOX/V2/User-Processes/ggxy_ggZH)
 (gg → ZH at NLO QCD with full top-mass dependence, matched to parton showers;
 J. Davies, K. Schönwald, M. Steinhauser, D. Stremmer, [arXiv:2603.15762](https://arxiv.org/abs/2603.15762)),
-and a reproduction package for gg → Z(ℓ⁺ℓ⁻)H at NLO and NLO+PS at √s = 13.6 TeV.
+and a reproduction package for gg → ZH with Z → ℓ⁻ℓ⁺ or Z → νν̄ at NLO and NLO+PS
+at √s = 13.6 and 13 TeV. Both channels include all three lepton flavours.
+The `vv13600` and `vv13000` sets in [`production/`](production/README.md) reproduce the neutrino
+channel; [`rwt/`](rwt/README.md) includes its own reweighting map and exported models.
 
 **The cache is part of `ggxy_ggZH` since 2026-10-07** (merge request !1, commit `1a6dbc6`; the
 process README documents it). Use `ggxy_ggZH` at `0fbaccf` or later; the patch in `patch/` is
@@ -15,6 +18,8 @@ only needed for the original release `a22cb4f`.
 | `src/`, `patch/`, `tools/`, `validation/` | the cache: source, patch for `a22cb4f`, patch generator, closure test of the cache |
 | [`generator/`](generator/README.md) | generator-level reproduction without CMS software: build of ggxy, POWHEG-BOX-V2 and `ggxy_ggZH` at pinned commits; fixed-order LO/NLO with the ggxy program, POWHEG LO, NLO grids and events, cache closure, optional MCFM LO cross-check; reference results and a check script |
 | [`production/`](production/README.md) | the production of the gg → ZH NLO+PS paper: `paper.sh` defines every run (jobs, statistics, seeds, settings) at 13.6 and 13 TeV and the verification; `run_local.sh` executes a set |
+| [`shower/`](shower/README.md) | Pythia showers, Rivet distributions and STXS analysis for both decay channels |
+| [`rwt/`](rwt/README.md) | LO+PS reweighting, closure checks, and reusable ONNX/correctionlib models for each channel |
 | [`cms/`](cms/README.md) | CMS usage: gridpack card and recipe, Pythia8 fragments, LHE → NanoGEN validation chain with HTXS, reference results and a check script |
 
 ## Why the cache

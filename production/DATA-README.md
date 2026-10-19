@@ -1,12 +1,12 @@
 # Data of "gg → ZH at NLO matched to parton showers" (event samples, grids, analysis outputs, reweighting models)
 
-Every file here was made by the reproduction package `ggxy-ggZH-ampcache` (branch `reproduction`; the release is
-named in the record's metadata) with the runs of its `production/paper.sh`, and every number of the paper comes from
+These files were made with the workflows distributed in the reproduction package `ggxy-ggZH-ampcache`
+(branch `reproduction`; the release is named in the record's metadata), and every number of the paper comes from
 the analysis outputs below (`production/analyze.sh`).  The package can regenerate all of it; these files save the
-computing (about 4 000 CPU hours) and let the results be checked without rerunning.  Licence: CC BY 4.0.
+computing and let the results be checked without rerunning.  Licence: CC BY 4.0.
 
-Process: gg → Z(→ℓ⁻ℓ⁺)H at NLO QCD with the full top-quark mass dependence (ggxy_ggZH in POWHEG-BOX-V2, with the
-amplitude cache), Z decay and 15 < m_ℓℓ < 150 GeV as in `generator/cards/ggzh_13p6TeV.input`, m_H = 125 GeV,
+Processes: gg → Z(→ℓ⁻ℓ⁺)H and gg → Z(→νν̄)H at NLO QCD with the full top-quark mass dependence (ggxy_ggZH in POWHEG-BOX-V2, with the
+amplitude cache), Z decay and 15 < m_ℓℓ (or m_νν) < 150 GeV as in `generator/cards/ggzh_13p6TeV.input`, m_H = 125 GeV,
 m_t = 172.5 GeV (on-shell), scale m_ZH/2 unless stated.
 
 ## Archives
@@ -32,21 +32,35 @@ m_t = 172.5 GeV (on-shell), scale m_ZH/2 unless stated.
 `README.md` is this file; `FILES.sha256` has the checksum of every file inside the archives and `MANIFEST.sha256` that
 of every archive.
 
+## Production provenance
+
+The neutrino samples were generated on the development branch before its production code was
+incorporated into `reproduction`. `STATUS.txt` preserves the original commit of each run; the
+analysis header records the original commit used to combine them. The numerical analysis and
+reweighting sources match those in the integrated package byte for byte; the original result
+headers and checksums are retained. The paper's `results/vv-provenance.json` records the source
+checksums and explains the superseded 13 TeV grid attempt in the original status report. The curated neutrino
+job definitions were checked against those used for production, while the charged-lepton job
+definitions were unchanged. The generator installation adds `fo-ggvvh`; the production shower
+build also recorded decay-fermion information. The additional columns are documented above,
+and the shared event-table columns and shower summaries passed the build comparisons.
+
 ## Event weights
 
 The production LHE files carry 155 weights per event (`generator/cards/pwg-rwl-pdf4lhc21.dat`): ids 1001–1009 the
 nine (μ_R, μ_F) ∈ {½, 1, 2}² combinations, ids 3000–3042 the PDF4LHC21 members 93300–93342 (Hessian and α_s), and
 ids 2000–2102 the NNPDF3.1 members 325300–325402.  The validation samples carry 112 (`pwg-rwl.dat`: scale and
 NNPDF3.1).  Weighted
-samples: the cross section is the sum of the weights divided by the number of events (pb, per lepton flavour).
+samples: the cross section is the sum of the weights divided by the number of events (pb, summed over the three charged-lepton flavours, or the three neutrino flavours for Z → νν̄).
 
 ## Using the reweighting models
 
 See `rwt/README.md` of the package and `model-card.json`: inputs in the card's order as float32, p = `probabilities`[:, 1],
-w = p/(1−p), normalised to mean 1 over the sample's events inside 15 < m_ℓℓ < 150 GeV.  The weights reshape a sample
+w = p/(1−p), normalised to mean 1 over the sample's events inside 15 < m_ℓℓ (or m_νν) < 150 GeV.  The weights reshape a sample
 defined like the CMS-style source; they do not create events where it has none (the paper's hard-jet test).
-For Z → νν̄ samples use `model-vv-13600` (m_νν in place of m_ℓℓ): the ℓℓ model, applied to νν̄, overestimates
-m_ZH = 225–250 GeV by about 10 %, near the ZH threshold where γ* → ℓℓ makes the two channels' NLO corrections differ.
+For Z → νν̄ samples use the separately trained `model-vv-13600` (m_νν in place of m_ℓℓ).
+The two decay channels have different NLO corrections near threshold, where γ* → ℓℓ contributes
+only to the charged-lepton channel.
 For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and the ATLAS POWHEG veto) use
 `model-atlas-13600`; its target is NLO+PS with the same A14 settings.  The same caveat applies: the vetoed LO+PS
 sample lacks events with a jet harder than m_ZH.

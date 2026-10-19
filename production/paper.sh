@@ -26,9 +26,9 @@
 #            unweighted validation samples and their showers, the Born-suppression test (also at
 #            parton level: unweighted and weighted NLO events against the fixed-order NLO)
 #   vv13600  Z -> nu nubar (vdecaymode 12, three flavours, 15 < m_nunu < 150 GeV), otherwise the 13600
-#            settings: fixed order (fo-ggvvh), NLO grids and events, NLO+PS with Monash; seeds
-#            independent of the l+l- runs (fixed order 12001/13001, events 30001)
-#   vv13000  Z -> nu nubar at 13 TeV: fixed order only
+#            settings: fixed order (fo-ggvvh), LO/NLO events and showers, matching and reweighting;
+#            seeds independent of the l+l- runs (fixed order 12001/13001, NLO events 30001)
+#   vv13000  Z -> nu nubar at 13 TeV: fixed order, LO/NLO events and showers
 #   atlas13600  the reweighting study with an ATLAS-style LO+PS source (rwt/README.md): LO events with the
 #            ATLAS scale H_T = m_T(H) + p_T(l1) + p_T(l2) (generator/patches/ggxy_ggZH-scale-ht-atlas.patch,
 #            card dynscale 3) and PDF4LHC21, showered with A14 as athena sets it, the ATLAS base settings and the
