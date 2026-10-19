@@ -29,6 +29,11 @@
 #            settings: fixed order (fo-ggvvh), NLO grids and events, NLO+PS with Monash; seeds
 #            independent of the l+l- runs (fixed order 12001/13001, events 30001)
 #   vv13000  Z -> nu nubar at 13 TeV: fixed order only
+#   atlas13600  the reweighting study with an ATLAS-style LO+PS source (rwt/README.md): LO events with the
+#            ATLAS scale H_T = m_T(H) + p_T(l1) + p_T(l2) (generator/patches/ggxy_ggZH-scale-ht-atlas.patch,
+#            card dynscale 3) and PDF4LHC21, showered with A14 as athena sets it, the ATLAS base settings and the
+#            ATLAS POWHEG veto; target: the 13600 production NLO events showered with the same A14 settings;
+#            POWHEG LO at the seven scale points with the same card (check of the scale option); seeds 70001
 # Jobs p = 0 .. <jobs>-1; seeds are fixed functions of p (below), identical in 13600 and 13000.
 #
 # A job directory contains the unpacked package (VERSION, production/, generator/, shower/) and
@@ -38,7 +43,7 @@
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PKG=$(cd "$HERE/.." && pwd)
-CMD_=${1:?list|inputs|outputs|show|run}; SET=${2:?set: common|13600|13000|verify|vv13600|vv13000}
+CMD_=${1:?list|inputs|outputs|show|run}; SET=${2:?set: common|13600|13000|verify|vv13600|vv13000|atlas13600}
 
 TUNES=(monash cp5 a14)
 LOMODES=(default scalup scalup-half scalup-quarter power)
@@ -60,6 +65,12 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-pdf4lhc21.dat
     S0NLO=30001; S0LO=25001; S0HD=35001; S0CMS=45001; VDM=vdecaymode=12 ;;   # seeds independent of the l+l- samples
+  atlas13600)                       # ATLAS-style LO: dynamic scale H_T (dynscale 3), otherwise the 13600 settings
+    E=13600; EB=6800d0
+    PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
+    RWL=pwg-rwl-pdf4lhc21.dat
+    S0LO=70001 ;;                   # seeds independent of every other LO sample
   verify)
     E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
     CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
@@ -107,6 +118,9 @@ runs() {
              grids-lo-cms events-lo-cms table-lo-cms table-lo-cms-default table-nlo-cp5 \
              rwt-clf rwt-clf-default rwt-clf-jet rwt-clf-jet-default rwt-summary rwt-model fo-vvh-lo-mt1 fo-vvh-nlo-mt1
       fi ;;
+    atlas13600)                     # ggzh-install-v4 (v3 plus the H_T scale option); LO with the card's dynscale 3
+      echo build powheg-lo grids-lo events-lo table-lo-atlas table-nlo-a14 \
+           rwt-clf-atlas rwt-clf-jet-atlas rwt-summary-atlas rwt-model-atlas ;;
   esac
 }
 
@@ -119,8 +133,9 @@ G=generator; S=shower
 # shower-install-v2: the Rivet plugin also has GGZH_EVENTTABLE (the per-event tables of the reweighting study,
 # 2026-10-15); the shower runs of 2026-10-09..13 used install/shower-install, otherwise identical
 # ggzh-install-v3: v2 plus bin/fo-ggvvh (Z -> nu nubar), for the vv sets; built by run build of vv13600
+# ggzh-install-v4: v3 plus the scale option dynscale 3 (H_T, generator/patches), for set atlas13600; built by its run build
 INSTALL=install/ggzh-install-v2; SHOWER_INSTALL=install/shower-install-v2
-case $SET in vv*) INSTALL=install/ggzh-install-v3 ;; esac
+case $SET in vv*) INSTALL=install/ggzh-install-v3 ;; atlas*) INSTALL=install/ggzh-install-v4 ;; esac
 need_install() { IN+=("ggzh-install.tgz $INSTALL.tgz"); }
 need_grids()   { IN+=("grids.tgz grids/$1.tgz"); }
 # shower job p of a sample: <nper> LHE files of seeds first + nper*p ...
@@ -133,10 +148,15 @@ need_lhe() {  # need_lhe <sample> <first seed> <files per job> <p>
 need_tables() {  # need_tables <sample> <first seed> <n>
   local k; for k in $(seq 0 $(($3 - 1))); do IN+=("tables/$1/table-$(($2 + k)).csv.gz tables/$(sname "$1")/table-$(($2 + k)).csv.gz"); done
 }
+# the same with an explicit product sample name (set atlas13600: tables of another set's samples, tables/<product>/)
+need_tables_as() {  # need_tables_as <sample in the job> <product sample> <first seed> <n>
+  local k; for k in $(seq 0 $(($4 - 1))); do IN+=("tables/$1/table-$(($3 + k)).csv.gz tables/$2/table-$(($3 + k)).csv.gz"); done
+}
 res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 
-# sample names: production lhe/<nlo|lo>-<sqrt(s)>, verification lhe/<...>-nnpdf31-13600, Z -> nu nubar <...>-vv-<sqrt(s)>
-sname() { case $SET in verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; *) echo "$1-$E" ;; esac; }
+# sample names: production lhe/<nlo|lo>-<sqrt(s)>, verification lhe/<...>-nnpdf31-13600, Z -> nu nubar <...>-vv-<sqrt(s)>,
+# ATLAS-style <...>-atlas-<sqrt(s)>
+sname() { case $SET in verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
 
 def() {
   local run=$1 p=$2 m t
@@ -167,7 +187,9 @@ def() {
                   res 1 16 32 20; need_install; ENVS=("GRID_SETTINGS=bornsuppfact=250")
                   STEP=("$G/condor/run_job.sh" grids 16 3); OUTP=("grids.tgz grids/$(sname grids-nlo-bs250).tgz") ;;
     grids-lo)     res 1 8 16 12; need_install; ENVS=("GRID_SETTINGS=$CARD${CARD:+ }bornonly=1 LOevents=1")
-                  STEP=("$G/condor/run_job.sh" grids 8 3); OUTP=("grids.tgz grids/$(sname grids-lo).tgz") ;;
+                  STEP=("$G/condor/run_job.sh" grids 8 3); OUTP=("grids.tgz grids/$(sname grids-lo).tgz")
+                  # atlas13600: also the LO cross section of the grids (the reweighting summary quotes it)
+                  if [ "$SET" = atlas13600 ]; then OUTP+=("grids/grids-xsec.json grids/$(sname grids-lo).xsec.json"); fi ;;
     # ---- MCFM LO, stable Z, all cards of generator/mcfm/cards
     mcfm)         res 1 8 8 4;   ENVS=("MCFM_SQRTS=$E"); STEP=("$G/condor/run_job.sh" mcfm) ;;
     # ---- events, one seed per job; production NLO 200 x 2500 (weighted), LO 100 x 5000;
@@ -303,6 +325,42 @@ def() {
                   done
                   STEP=(rwt/run.sh model)
                   OUTP=("model.tgz rwt/$(sname model).tgz") ;;
+    # ---- the reweighting study with an ATLAS-style source (set atlas13600; rwt/README.md).  LO events of run
+    #      events-lo (dynscale 3, PDF4LHC21) showered with A14 as athena sets it (tune a14-athena), the ATLAS base
+    #      settings (atlas-common) and the ATLAS POWHEG veto (mode atlas-lo-veto); target: the 13600 production NLO
+    #      events with the same A14 settings and the package's NLO veto, PDF4LHC21 nominal.  One row per event.
+    table-lo-atlas|table-nlo-a14)
+                  case $run in
+                    table-lo-atlas) res 100 1 4 6; s=$((S0LO + p)); need_lhe "$(sname lo)" $S0LO 1 "$p"; m=atlas-lo-veto; t=tables/lo-atlas-$E ;;
+                    *)              res 200 1 4 6; s=$((S0NLO + p)); need_lhe "nlo-$E" $S0NLO 1 "$p"; m=nlo; t=tables/nlo-a14-$E ;;
+                  esac
+                  ENVS=("GGZH_SHOWER_TABLE=1" "GGZH_SHOWER_TABLE_DIR=tables")
+                  STEP=("$S/run/shower_batch.sh" shower-out "$m" a14-athena atlas-common -- lhe/*.lhe.gz)
+                  OUTP=("tables/table-$s.csv.gz $t/table-$s.csv.gz") ;;
+    # classifier weights, five inputs or six (leading-jet pT), ATLAS-style source towards the A14 target
+    rwt-clf-atlas|rwt-clf-jet-atlas)
+                  res 1 1 8 6; n=${run#rwt-}
+                  t=(); case $n in clf-jet*) t=(--jet-feature) ;; esac
+                  need_tables_as lo-atlas "lo-atlas-$E" $S0LO 100; need_tables_as nlo-a14 "nlo-a14-$E" $S0NLO 200
+                  STEP=(rwt/run.sh clf "$n" lo-atlas nlo-a14 "${t[@]}")
+                  OUTP=("weights-$n.npz rwt/weights-$n-$E.npz" "rwt-out/bdt-$n.json rwt/bdt-$n-$E.json") ;;
+    rwt-summary-atlas)
+                  res 1 1 8 4
+                  need_tables_as lo-atlas "lo-atlas-$E" $S0LO 100; need_tables_as nlo-a14 "nlo-a14-$E" $S0NLO 200
+                  for n in clf-atlas clf-jet-atlas; do
+                    IN+=("rwt-in/weights-$n.npz rwt/weights-$n-$E.npz" "rwt-in/bdt-$n.json rwt/bdt-$n-$E.json")
+                  done
+                  IN+=("rwt-in/grids-xsec.json grids/$(sname grids-lo).xsec.json")
+                  STEP=(rwt/run.sh summary-atlas) ;;
+    rwt-model-atlas)
+                  res 1 1 8 8
+                  need_tables_as lo-atlas "lo-atlas-$E" $S0LO 100; need_tables_as nlo-a14 "nlo-a14-$E" $S0NLO 200
+                  IN+=("rwt-in/weights-clf.npz rwt/weights-clf-atlas-$E.npz")
+                  for x in skl2onnx-1.16.0-py2.py3-none-any.whl onnxconverter_common-1.14.0-py2.py3-none-any.whl; do
+                    IN+=("wheels/$x sources/$x")
+                  done
+                  STEP=(rwt/run.sh model lo-atlas nlo-a14 atlas)
+                  OUTP=("model.tgz rwt/model-atlas-$E.tgz") ;;
     *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
   esac
 }

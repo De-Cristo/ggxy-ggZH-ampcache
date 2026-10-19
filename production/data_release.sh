@@ -12,14 +12,15 @@
 #        (sha256 of every archive, and of every file inside them).  Needs xrdcp and about 4 GB in <outdir>; run on a
 #        machine with access to the products, not on a shared login node.  --stage-for: products whose path
 #        matches the shell glob are fetched from <url> instead (first match wins), e.g. the Z -> nu nubar products
-#        of the vv sets from their own staging area: --stage-for '*-vv-*'=<url>.
+#        of the vv sets from their own staging area: --stage-for '*-vv-*'=<url>, the ATLAS-style ones of set
+#        atlas13600: --stage-for '*atlas*'=<url> --stage-for '*-a14-*'=<url>.
 #
 # Archives: lhe-<sample>.tar (LHE events), grids.tar (POWHEG grids and the LO grid cross section of the CMS-style
 # sample), tables-<sample>.tar (per-event tables of the reweighting study), rwt-weights.tar (per-event classifier
 # weights and the classifier outputs), rwt-model.tgz (the reusable models and their card), analysis-<set>.tar.
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SETS="common 13600 13000 verify vv13600 vv13000"
+SETS="common 13600 13000 verify vv13600 vv13000 atlas13600"
 archive() {  # archive <product>: the archive a product goes to (empty: not released)
   case $1 in
     install/*)              echo "" ;;

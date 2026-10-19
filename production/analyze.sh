@@ -60,6 +60,8 @@
 #                               (numbers and figure data), the closure outputs, the LO grid cross section and
 #                               the sample bookkeeping (events per table file, weights); rwt/model-card.json:
 #                               the reusable models of run rwt-model (the models themselves: product rwt/model-13600.tgz)
+#   rwt/rwt-summary-atlas.json, rwt/closure-map-atlas.json, rwt/bdt-clf*-atlas.json, rwt/model-card-atlas.json
+#                               (atlas13600) the same for the ATLAS-style source (product rwt/model-atlas-13600.tgz)
 #   SHA256SUMS                  of every file above
 # The outputs record no absolute paths (file names only), so they can be published as they are.
 # Exit status 1 if a step or a check failed (listed at the end of STATUS.txt).
@@ -282,6 +284,16 @@ if have rwt-model; then
   unpack rwt-model 'rwt-out/model-card.json'
   mkdir -p "$OUT/rwt"; step rwt-model cp -p "$W"/rwt-model/0/rwt-out/model-card.json "$OUT/rwt/"
 fi
+# the ATLAS-style source (atlas13600)
+if have rwt-summary-atlas; then
+  unpack rwt-summary-atlas 'rwt-out/*'
+  mkdir -p "$OUT/rwt"
+  step rwt-atlas cp -p "$W"/rwt-summary-atlas/0/rwt-out/*.json "$OUT/rwt/"
+fi
+if have rwt-model-atlas; then
+  unpack rwt-model-atlas 'rwt-out/model-card.json'
+  mkdir -p "$OUT/rwt"; step rwt-model-atlas cp -p "$W"/rwt-model-atlas/0/rwt-out/model-card.json "$OUT/rwt/model-card-atlas.json"
+fi
 
 # ---------------------------------------------------------------- generator checks
 C=()
@@ -297,8 +309,10 @@ else
 fi
 cc=("$OUT"/cache/compare-*.json); [ -f "${cc[0]}" ] && C+=(--cache "${cc[@]}")
 case $SET in vv*) C=() ;; esac          # Z -> nu nubar: no l+l- references (production/compare_nunu.py instead)
+# atlas13600 (scale H_T): no reference values; the LO events and grids against the POWHEG LO runs of the same card
+case $SET in atlas*) C=(--same-card); opt --powheg-lo powheg-lo.json; opt --events-lo events-lo.json; opt --grids grids-lo.json ;; esac
 if [ ${#C[@]} -gt 0 ]; then
-  [ "$SET" = verify ] || C+=(--paper-energy "$SET")
+  case $SET in 13600|13000) C+=(--paper-energy "$SET") ;; esac
   step check-generator python3 "$PKG/generator/check.py" "${C[@]}" --out "$OUT/check-generator.json"
 fi
 

@@ -10,6 +10,17 @@ map in p_T(Z) × N_jets.  Settings and pass criteria were fixed before each test
 The same runs exist in set `vv13600` for Z → νν̄ (`vdecaymode 12`; products named `…-vv-13600`, seeds independent
 of the ℓℓ ones: CMS-style LO events 45001+, NLO events 30001+).
 
+Set `atlas13600` repeats the study with an ATLAS-style source, the settings of the public ATLAS Run-3 gg → ZH job
+options (LHE 602411, shower 603335) with public tools: `events-lo` with the card's `dynscale 3` (μ_R = μ_F = H_T =
+m_T(H) + p_T(ℓ₁) + p_T(ℓ₂), patch `generator/patches/ggxy_ggZH-scale-ht-atlas.patch`) and PDF4LHC21, seeds 70001+;
+`table-lo-atlas`: shower with A14 as athena sets it (`shower/cards/tune-a14-athena.cmnd`), the ATLAS base settings
+(`atlas-common.cmnd`) and the ATLAS POWHEG veto at SCALUP = m_ZH (`atlas-lo-veto.cmnd`); `table-nlo-a14`: the
+production NLO events with the same A14 settings (target, PDF4LHC21 nominal); `rwt-clf-atlas`, `rwt-clf-jet-atlas`
+(five and six inputs), `rwt-summary-atlas` (`ggzh_rwt_summary_atlas.py`), `rwt-model-atlas` (`model-atlas-13600.tgz`);
+`powheg-lo` with the same card checks the scale option (the event weights at the seven scale points against
+separate integrations, `generator/check.py --same-card`).  Differences to the ATLAS samples: ggxy's amplitudes
+(m_b = 0) for ggHZ's top and bottom loops, 15 < m_ℓℓ < 150 GeV for 10–1000, no EvtGen, κ or shower weights.
+
 | Run | Jobs | What |
 |---|---|---|
 | `grids-lo-cms` | 1 | LO grids, NNPDF3.1 (the card's PDF), fixed scale μ_R = μ_F = m_Z + m_H (`fixedscale=1`), 8 seeds |

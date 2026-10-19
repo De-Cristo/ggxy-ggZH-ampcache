@@ -82,7 +82,27 @@ def onnx_p(model_bytes, X):
     return s.run(None, {"X": X.astype(np.float32)})[names.index("probabilities")][:, 1].astype(np.float64)
 
 
-def map_correction(maps):
+# the samples of each model set: "cms" (set 13600, the paper's reweighting study) and "atlas" (set atlas13600)
+STYLES = {
+    "cms": {"label": "CMS-style",
+            "source": "CMS-style LO+PS at 13.6 TeV: LO gg -> l+l-H events of ggxy_ggZH (POWHEG-BOX-V2, bornonly), NNPDF3.1 NNLO, "
+                      "fixed scale mu_R = mu_F = m_Z + m_H, 15 < m_ll < 150 GeV, showered with Pythia 8 (CP5, the CMS common "
+                      "settings and the CMS POWHEG veto at SCALUP = m_ZH); production runs table-lo-cms",
+            "target": "NLO+PS at 13.6 TeV: the production NLO events (Born suppression 250 GeV) with the NNPDF3.1 central member "
+                      "as nominal weight, showered with CP5 and the CMS common settings; production run table-nlo-cp5; the "
+                      "variations use the target's scale weights"},
+    "atlas": {"label": "ATLAS-style",
+              "source": "ATLAS-style LO+PS at 13.6 TeV: LO gg -> l+l-H events of ggxy_ggZH (POWHEG-BOX-V2, bornonly), PDF4LHC21, "
+                        "dynamic scale mu_R = mu_F = H_T = m_T(H) + p_T(l1) + p_T(l2) (dynscale 3), 15 < m_ll < 150 GeV, showered "
+                        "with Pythia 8 (A14 as the ATLAS job options set it, the ATLAS base settings and the ATLAS POWHEG veto at "
+                        "SCALUP = m_ZH); set atlas13600, runs events-lo and table-lo-atlas",
+              "target": "NLO+PS at 13.6 TeV: the production NLO events (Born suppression 250 GeV, PDF4LHC21 nominal weight), "
+                        "showered with the same A14 settings, the ATLAS base settings and the NLO POWHEG veto; set atlas13600, "
+                        "run table-nlo-a14; the variations use the target's scale weights"},
+}
+
+
+def map_correction(maps, label="CMS-style"):
     """correctionlib (schema v2) of the binned maps: per systematic, a binning in njets (0, 1, >=2) of a binning in
     p_T(Z) (25 GeV bins to 250 GeV: the binned ratio; above: exp(polynomial in log p_T(Z)) of the jet bin's fit),
     divided by the map's normalisation (mean weight 1 over the source events in the m_ll window)."""
@@ -107,7 +127,7 @@ def map_correction(maps):
         systs.append({"key": varname(wid), "value": {"nodetype": "binning", "input": "njets", "edges": [0.0, 1.0, 2.0, 100.0],
                                                       "content": jets, "flow": "clamp"}})
     corr = {"name": "ggzh_lo_to_nlo_ptz_njets", "version": 1,
-            "description": "gg -> Z(ll)H at 13.6 TeV: weight of CMS-style LO+PS events towards NLO+PS in the generator-level "
+            "description": f"gg -> Z(ll)H at 13.6 TeV: weight of {label} LO+PS events towards NLO+PS in the generator-level "
                            "p_T(Z) x N_jets binning (rwt/README.md); shape only, mean 1 over the source sample inside "
                            "15 < m_ll < 150 GeV; events outside that window: weight 1",
             "inputs": [{"name": "systematic", "type": "string", "description": "nominal or MUR<r>_MUF<f>: the NLO+PS target "
@@ -126,7 +146,9 @@ def main(argv=None) -> int:
     ap.add_argument("--out-dir", type=Path, required=True)
     ap.add_argument("--compare-weights", type=Path, default=None, help="per-event out-of-fold weights of rwt-clf, for a comparison")
     ap.add_argument("--package", default=None, help="package version for the card (default: the first line of VERSION)")
+    ap.add_argument("--style", choices=sorted(STYLES), default="cms", help="the source and target descriptions of the card")
     args = ap.parse_args(argv)
+    sty = STYLES[args.style]
     t0 = time.time()
     out = args.out_dir; out.mkdir(parents=True, exist_ok=True)
     version = args.package
@@ -144,12 +166,7 @@ def main(argv=None) -> int:
     card = {"package": version,
             "software": {"scikit-learn": sklearn.__version__, "skl2onnx": skl2onnx.__version__, "onnx": onnx.__version__,
                          "onnxruntime": onnxruntime.__version__},
-            "source": "CMS-style LO+PS at 13.6 TeV: LO gg -> l+l-H events of ggxy_ggZH (POWHEG-BOX-V2, bornonly), NNPDF3.1 NNLO, "
-                      "fixed scale mu_R = mu_F = m_Z + m_H, 15 < m_ll < 150 GeV, showered with Pythia 8 (CP5, the CMS common "
-                      "settings and the CMS POWHEG veto at SCALUP = m_ZH); production runs table-lo-cms",
-            "target": "NLO+PS at 13.6 TeV: the production NLO events (Born suppression 250 GeV) with the NNPDF3.1 central member "
-                      "as nominal weight, showered with CP5 and the CMS common settings; production run table-nlo-cp5; the "
-                      "variations use the target's scale weights",
+            "source": sty["source"], "target": sty["target"],
             "objects": OBJECTS, "source_events_in_window": int(ss.sum()), "target_events_in_window": int(ts.sum()),
             "validity": "shape weights for samples defined as the source; outside that definition untested.  The paper's "
                         "reweighting section gives the tests (STXS fractions, distributions, split-sample stability) and their "
@@ -198,7 +215,7 @@ def main(argv=None) -> int:
         card["classifier"]["models"][name] = mc
     # the binned map
     maps = {wid: build_map(src, tgt, wid) for wid in wids}
-    cset = map_correction(maps)
+    cset = map_correction(maps, sty["label"])
     (out / "map-ptz-njets.json").write_text(json.dumps(cset, indent=1) + "\n")
     import correctionlib
     ev = correctionlib.CorrectionSet.from_file(str(out / "map-ptz-njets.json"))["ggzh_lo_to_nlo_ptz_njets"]
