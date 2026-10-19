@@ -111,7 +111,7 @@ def main(argv=None) -> int:
     out["hardjet"] = {}
     for lab, fs, ft in (("all", ss, ts), ("ptz400", ss & (src.ptz > 400), ts & (tgt.ptz > 400)),
                         ("pth450", ss & (src["pth"].astype(float) > 450), ts & (tgt["pth"].astype(float) > 450))):
-        out["hardjet"][lab] = {"lo": float(src.w0[fs & hj(src)].sum() / src.w0[fs].sum()), "lo_raw": int((fs & hj(src)).sum()),
+        out["hardjet"][lab] = {"lo": float(w["lo"][fs & hj(src)].sum() / w["lo"][fs].sum()), "lo_raw": int((fs & hj(src)).sum()),
                                "clf": float(w["clf"][fs & hj(src)].sum() / w["clf"][fs].sum()),
                                "clf6": float(w6[fs & hj(src)].sum() / w6[fs].sum()),
                                "nlo": float(tgt.w0[ft & hj(tgt)].sum() / tgt.w0[ft].sum())}

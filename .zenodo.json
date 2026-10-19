@@ -1,7 +1,7 @@
 {
   "title": "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS with charged-lepton and neutrino decays",
   "upload_type": "software",
-  "description": "Reproduction package for loop-induced gg → ZH at 13 and 13.6 TeV, with Z → ℓ⁻ℓ⁺ and Z → νν̄ summed over three flavours. Includes pinned builds, the exact amplitude cache (merged upstream), Born suppression, fixed-order and POWHEG event generation, scale and PDF weights, parton showers, STXS analysis, theory-uncertainty comparisons, and channel-specific LO+PS reweighting maps and reusable models. production/paper.sh defines the six production and validation sets; analysis and data-release scripts reproduce and package the results.",
+  "description": "Reproduction package for loop-induced gg → ZH at 13 and 13.6 TeV, with Z → ℓ⁻ℓ⁺ and Z → νν̄ summed over three flavours. Includes pinned builds, the exact amplitude cache (merged upstream), Born suppression, fixed-order and POWHEG event generation, scale and PDF weights, parton showers, STXS analysis, theory-uncertainty comparisons, and channel-specific LO+PS reweighting maps and reusable models, including a public ATLAS-style charged-lepton source with an A14 NLO+PS target. production/paper.sh defines the seven production and validation sets; analysis and data-release scripts reproduce and package the results.",
   "creators": [
     {
       "name": "Zhang, L.",
@@ -16,7 +16,8 @@
     "ZH",
     "NLO",
     "event generation",
-    "CMS"
+    "CMS",
+    "ATLAS"
   ],
   "related_identifiers": [
     {

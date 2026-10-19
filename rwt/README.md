@@ -19,7 +19,17 @@ production NLO events with the same A14 settings (target, PDF4LHC21 nominal); `r
 (five and six inputs), `rwt-summary-atlas` (`ggzh_rwt_summary_atlas.py`), `rwt-model-atlas` (`model-atlas-13600.tgz`);
 `powheg-lo` with the same card checks the scale option (the event weights at the seven scale points against
 separate integrations, `generator/check.py --same-card`).  Differences to the ATLAS samples: ggxy's amplitudes
-(m_b = 0) for ggHZ's top and bottom loops, 15 < m_ℓℓ < 150 GeV for 10–1000, no EvtGen, κ or shower weights.
+(m_b = 0) for ggHZ's top and bottom loops, 15 < m_ℓℓ < 150 GeV for 10–1000, no EvtGen, κ or shower weights. The LO veto uses `POWHEG:nFinal=-1` to accommodate the ggxy
+event record, instead of the official configuration’s final-state count of 2. The NLO target retains
+the package’s validated NLO veto (`nFinal=3`, `vetoCount=100`); the LO source uses `vetoCount=3`.
+This is a public emulation, not an official ATLAS sample or a validation against its gridpack.
+
+The ATLAS closure study counts every LO event once, including events carrying upper-bound-excess
+weights. The summary records their number. NLO closure distributions retain signed event weights;
+negative target weights are set to zero only for classifier training. Exported classifiers are
+trained on all events; the reported closure tests use the separate out-of-fold and split-sample
+weights. Their pass/fail outcomes accompany the ATLAS model card, independently of the numerical
+ONNX and correctionlib export checks.
 
 | Run | Jobs | What |
 |---|---|---|

@@ -187,7 +187,7 @@ def main(argv=None) -> int:
             "target_sigma_fb": {varname(w): 1e3 * float(np.sum(tgt.weight(w)[ts])) / tgt.n for w in wids}}
     if args.style == "atlas":
         card["emulation_scope"] = ("Public ATLAS-style settings with ggxy amplitudes (m_b = 0), the paper's "
-                                   "15 < m_ll < 150 GeV window, no EvtGen or kappa weights, and POWHEG:nFinal = -1. "
+                                   "15 < m_ll < 150 GeV window, no EvtGen, kappa or shower-variation weights, and POWHEG:nFinal = -1 for the LO source. "
                                    "This is not an official ATLAS sample or an exact reproduction of an ATLAS gridpack.")
         card["source_weight_convention"] = ("Each LO event is counted once when deriving the shape weights, including "
                                             "events carrying upper-bound-excess weights; this matches the closure study.")

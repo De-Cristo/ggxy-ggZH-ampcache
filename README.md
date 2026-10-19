@@ -8,6 +8,9 @@ and a reproduction package for gg → ZH with Z → ℓ⁻ℓ⁺ or Z → νν̄
 at √s = 13.6 and 13 TeV. Both channels include all three lepton flavours.
 The `vv13600` and `vv13000` sets in [`production/`](production/README.md) reproduce the neutrino
 channel; [`rwt/`](rwt/README.md) includes its own reweighting map and exported models.
+The `atlas13600` set adds a public ATLAS-style charged-lepton source (PDF4LHC21, H_T scale,
+A14 and the ATLAS shower veto), its A14 NLO+PS target, and separate correctionlib/ONNX exports.
+The emulation scope and closure criteria are documented in [`rwt/README.md`](rwt/README.md).
 
 **The cache is part of `ggxy_ggZH` since 2026-10-07** (merge request !1, commit `1a6dbc6`; the
 process README documents it). Use `ggxy_ggZH` at `0fbaccf` or later; the patch in `patch/` is

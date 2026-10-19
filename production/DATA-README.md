@@ -57,13 +57,15 @@ samples: the cross section is the sum of the weights divided by the number of ev
 
 See `rwt/README.md` of the package and `model-card.json`: inputs in the card's order as float32, p = `probabilities`[:, 1],
 w = p/(1−p), normalised to mean 1 over the sample's events inside 15 < m_ℓℓ (or m_νν) < 150 GeV.  The weights reshape a sample
-defined like the CMS-style source; they do not create events where it has none (the paper's hard-jet test).
+defined like the source specified in the model card; they do not create events where it has none (the paper's hard-jet test).
 For Z → νν̄ samples use the separately trained `model-vv-13600` (m_νν in place of m_ℓℓ).
 The two decay channels have different NLO corrections near threshold, where γ* → ℓℓ contributes
 only to the charged-lepton channel.
 For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and the ATLAS POWHEG veto) use
 `model-atlas-13600`; its target is NLO+PS with the same A14 settings.  The same caveat applies: the vetoed LO+PS
-sample lacks events with a jet harder than m_ZH.
+sample has severely depleted support for jets harder than m_ZH. The ATLAS model card records
+the emulation scope, unit-event LO convention and classifier closure-test outcomes; a successful
+ONNX/correctionlib conversion does not imply that the physics closure criteria passed.
 
 ## Citation
 
