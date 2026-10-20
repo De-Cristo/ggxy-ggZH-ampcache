@@ -62,7 +62,7 @@ For Z → νν̄ samples use the separately trained `model-vv-13600` (m_νν in 
 The two decay channels have different NLO corrections near threshold, where γ* → ℓℓ contributes
 only to the charged-lepton channel.
 For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and the ATLAS POWHEG veto) use
-`model-atlas-13600`; its target is NLO+PS with the same A14 settings.  The same caveat applies: the vetoed LO+PS
+`model-atlas-13600` (also distributed unpacked in the source repository’s `models/atlas13600/`); its target is NLO+PS with the same A14 settings.  The same caveat applies: the vetoed LO+PS
 sample has severely depleted support for jets harder than m_ZH. The ATLAS model card records
 the emulation scope, unit-event LO convention and classifier closure-test outcomes; a successful
 ONNX/correctionlib conversion does not imply that the physics closure criteria passed.

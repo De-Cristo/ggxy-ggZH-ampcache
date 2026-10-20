@@ -1,0 +1,423 @@
+{
+ "package": "13794aa53f6e131b373f8d49eabc33205301a8d4 2026-10-19",
+ "software": {
+  "scikit-learn": "1.2.2",
+  "skl2onnx": "1.16.0",
+  "onnx": "1.16.0",
+  "onnxruntime": "1.17.3"
+ },
+ "source": "ATLAS-style LO+PS at 13.6 TeV: LO gg -> l+l-H events of ggxy_ggZH (POWHEG-BOX-V2, bornonly), PDF4LHC21, dynamic scale mu_R = mu_F = H_T = m_T(H) + p_T(l1) + p_T(l2) (dynscale 3), 15 < m_ll < 150 GeV, showered with Pythia 8 (A14 as the ATLAS job options set it, the ATLAS base settings and the ATLAS POWHEG veto at SCALUP = m_ZH); set atlas13600, runs events-lo and table-lo-atlas",
+ "target": "NLO+PS at 13.6 TeV: the production NLO events (Born suppression 250 GeV, PDF4LHC21 nominal weight), showered with the same A14 settings, the ATLAS base settings and the NLO POWHEG veto; set atlas13600, run table-nlo-a14; the variations use the target's scale weights",
+ "objects": "Z and H: the last copies of the bosons in the event record (Z from its decay leptons' parent); jets: anti-kT R = 0.4 from all stable particles except the descendants of the Z and the Higgs boson",
+ "source_events_in_window": 500000,
+ "target_events_in_window": 500000,
+ "validity": "shape weights for samples defined as the source; outside that definition untested.  The paper's reweighting section gives the tests (STXS fractions, distributions, split-sample stability) and their outcome; a vetoed LO+PS sample lacks events with a jet harder than m_ZH, which no weight recovers.",
+ "classifier": {
+  "settings": {
+   "learning_rate": 0.05,
+   "max_iter": 400,
+   "max_leaf_nodes": 31,
+   "min_samples_leaf": 100,
+   "l2_regularization": 1.0,
+   "early_stopping": true,
+   "validation_fraction": 0.2,
+   "n_iter_no_change": 20,
+   "random_state": 1
+  },
+  "training": "all source events vs all target events in the window, balanced classes, target events with their weights (negative weights set to zero)",
+  "input_dtype": "float32",
+  "thresholds": "each tree threshold stored as the largest float32 value not above the trained one, so that float32 inputs take the same branches in ONNX as in scikit-learn",
+  "output": "'probabilities'[:, 1] = p (probability of NLO+PS)",
+  "weight": "w = p / (1 - p) / c, with c the mean of p / (1 - p) over the source events in the window (below, per model and variation); events outside 15 < m_ll < 150 GeV: weight 1; for another sample, renormalise to mean 1 over its events in the window",
+  "models": {
+   "clf5": {
+    "inputs": [
+     {
+      "name": "mzh",
+      "definition": "invariant mass of the Z + H system",
+      "unit": "GeV"
+     },
+     {
+      "name": "ptzh",
+      "definition": "transverse momentum of the Z + H system",
+      "unit": "GeV"
+     },
+     {
+      "name": "ptz",
+      "definition": "transverse momentum of the Z boson",
+      "unit": "GeV"
+     },
+     {
+      "name": "njets",
+      "definition": "number of jets with p_T > 30 GeV, no rapidity requirement, capped at 3",
+      "unit": ""
+     },
+     {
+      "name": "ayzh",
+      "definition": "|rapidity| of the Z + H system",
+      "unit": ""
+     }
+    ],
+    "variations": {
+     "nominal": {
+      "onnx": "clf5-nominal.onnx",
+      "c": 0.9945597229137851,
+      "n_iter": 172,
+      "max_abs_dp_onnx_vs_sklearn": 2.710765567848217e-07,
+      "max_rel_dw_onnx_vs_sklearn": 2.3086522762394424e-06,
+      "n_eff_source": 459851.30408155447,
+      "seconds": 15.6
+     },
+     "MUR1.0_MUF2.0": {
+      "onnx": "clf5-MUR1.0_MUF2.0.onnx",
+      "c": 0.9951918175211547,
+      "n_iter": 147,
+      "max_abs_dp_onnx_vs_sklearn": 2.5571284278935735e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.5886360208439143e-06,
+      "n_eff_source": 459378.7159573033,
+      "seconds": 19.2
+     },
+     "MUR2.0_MUF1.0": {
+      "onnx": "clf5-MUR2.0_MUF1.0.onnx",
+      "c": 0.9947064586226676,
+      "n_iter": 151,
+      "max_abs_dp_onnx_vs_sklearn": 2.1981413067528877e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.5553146863744871e-06,
+      "n_eff_source": 460746.4016244557,
+      "seconds": 20.0
+     },
+     "MUR2.0_MUF2.0": {
+      "onnx": "clf5-MUR2.0_MUF2.0.onnx",
+      "c": 0.9952761874095677,
+      "n_iter": 130,
+      "max_abs_dp_onnx_vs_sklearn": 1.9082212798782194e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.5848716058419754e-06,
+      "n_eff_source": 460353.0968657519,
+      "seconds": 17.4
+     },
+     "MUR1.0_MUF0.5": {
+      "onnx": "clf5-MUR1.0_MUF0.5.onnx",
+      "c": 0.9945328457324568,
+      "n_iter": 158,
+      "max_abs_dp_onnx_vs_sklearn": 1.9754322877485464e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.6106743909727328e-06,
+      "n_eff_source": 461223.9805923296,
+      "seconds": 20.4
+     },
+     "MUR0.5_MUF1.0": {
+      "onnx": "clf5-MUR0.5_MUF1.0.onnx",
+      "c": 0.9945294077686687,
+      "n_iter": 153,
+      "max_abs_dp_onnx_vs_sklearn": 2.268088801216095e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.5716905887863675e-06,
+      "n_eff_source": 458954.72074137663,
+      "seconds": 20.4
+     },
+     "MUR0.5_MUF0.5": {
+      "onnx": "clf5-MUR0.5_MUF0.5.onnx",
+      "c": 0.9939763785437982,
+      "n_iter": 169,
+      "max_abs_dp_onnx_vs_sklearn": 2.2783866143738507e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.5207451653509452e-06,
+      "n_eff_source": 459471.0217047722,
+      "seconds": 17.3
+     },
+     "MUR0.5_MUF2.0": {
+      "onnx": "clf5-MUR0.5_MUF2.0.onnx",
+      "c": 0.9948692749380664,
+      "n_iter": 128,
+      "max_abs_dp_onnx_vs_sklearn": 1.8972346377266192e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.1605020913130204e-06,
+      "n_eff_source": 459129.9372272993,
+      "seconds": 14.3
+     }
+    }
+   },
+   "clf6": {
+    "inputs": [
+     {
+      "name": "mzh",
+      "definition": "invariant mass of the Z + H system",
+      "unit": "GeV"
+     },
+     {
+      "name": "ptzh",
+      "definition": "transverse momentum of the Z + H system",
+      "unit": "GeV"
+     },
+     {
+      "name": "ptz",
+      "definition": "transverse momentum of the Z boson",
+      "unit": "GeV"
+     },
+     {
+      "name": "njets",
+      "definition": "number of jets with p_T > 30 GeV, no rapidity requirement, capped at 3",
+      "unit": ""
+     },
+     {
+      "name": "ayzh",
+      "definition": "|rapidity| of the Z + H system",
+      "unit": ""
+     },
+     {
+      "name": "ptj1",
+      "definition": "transverse momentum of the leading jet with |eta| < 4.7; -1 without such a jet",
+      "unit": "GeV"
+     }
+    ],
+    "variations": {
+     "nominal": {
+      "onnx": "clf6-nominal.onnx",
+      "c": 0.9925762560272136,
+      "n_iter": 201,
+      "max_abs_dp_onnx_vs_sklearn": 2.9756632560773433e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.755389349877845e-06,
+      "n_eff_source": 455639.5232480922,
+      "seconds": 25.9
+     },
+     "MUR1.0_MUF2.0": {
+      "onnx": "clf6-MUR1.0_MUF2.0.onnx",
+      "c": 0.993752298857687,
+      "n_iter": 136,
+      "max_abs_dp_onnx_vs_sklearn": 2.3990622519121096e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.8913724597613424e-06,
+      "n_eff_source": 456750.0974034502,
+      "seconds": 19.6
+     },
+     "MUR2.0_MUF1.0": {
+      "onnx": "clf6-MUR2.0_MUF1.0.onnx",
+      "c": 0.9926748455045973,
+      "n_iter": 193,
+      "max_abs_dp_onnx_vs_sklearn": 2.7045226333455297e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.777264215241381e-06,
+      "n_eff_source": 456422.69329032174,
+      "seconds": 25.1
+     },
+     "MUR2.0_MUF2.0": {
+      "onnx": "clf6-MUR2.0_MUF2.0.onnx",
+      "c": 0.9930168290955317,
+      "n_iter": 187,
+      "max_abs_dp_onnx_vs_sklearn": 2.7861123008676714e-07,
+      "max_rel_dw_onnx_vs_sklearn": 2.4795394402143955e-06,
+      "n_eff_source": 455755.0681286356,
+      "seconds": 25.7
+     },
+     "MUR1.0_MUF0.5": {
+      "onnx": "clf6-MUR1.0_MUF0.5.onnx",
+      "c": 0.9929313483023089,
+      "n_iter": 161,
+      "max_abs_dp_onnx_vs_sklearn": 3.2448127362805224e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.8686671943157762e-06,
+      "n_eff_source": 458102.6330575197,
+      "seconds": 23.1
+     },
+     "MUR0.5_MUF1.0": {
+      "onnx": "clf6-MUR0.5_MUF1.0.onnx",
+      "c": 0.9928991440178906,
+      "n_iter": 130,
+      "max_abs_dp_onnx_vs_sklearn": 2.771419989611168e-07,
+      "max_rel_dw_onnx_vs_sklearn": 1.7610098034248622e-06,
+      "n_eff_source": 457086.175652619,
+      "seconds": 21.5
+     },
+     "MUR0.5_MUF0.5": {
+      "onnx": "clf6-MUR0.5_MUF0.5.onnx",
+      "c": 0.9914364416142778,
+      "n_iter": 207,
+      "max_abs_dp_onnx_vs_sklearn": 2.249677257815108e-07,
+      "max_rel_dw_onnx_vs_sklearn": 2.155156840655259e-06,
+      "n_eff_source": 454895.28567512764,
+      "seconds": 33.2
+     },
+     "MUR0.5_MUF2.0": {
+      "onnx": "clf6-MUR0.5_MUF2.0.onnx",
+      "c": 0.9918882122550223,
+      "n_iter": 190,
+      "max_abs_dp_onnx_vs_sklearn": 2.882201174392307e-07,
+      "max_rel_dw_onnx_vs_sklearn": 2.2103130041806196e-06,
+      "n_eff_source": 454234.32050053333,
+      "seconds": 28.5
+     }
+    }
+   }
+  },
+  "comparison_with_out_of_fold_weights": {
+   "file": "weights-clf.npz",
+   "mean_ratio": 1.0000663533784753,
+   "correlation": 0.9792819837900193,
+   "rms_rel_diff": 0.057729191088256485
+  }
+ },
+ "map": {
+  "file": "map-ptz-njets.json",
+  "correction": "ggzh_lo_to_nlo_ptz_njets",
+  "checks": {
+   "nominal": {
+    "max_abs_diff_correctionlib_vs_code": 5.10702591327572e-15,
+    "norm": 1.000057946719784,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR1.0_MUF2.0": {
+    "max_abs_diff_correctionlib_vs_code": 4.218847493575595e-15,
+    "norm": 1.0000582166069667,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR2.0_MUF1.0": {
+    "max_abs_diff_correctionlib_vs_code": 2.220446049250313e-16,
+    "norm": 1.000027236059519,
+    "fit_degrees": [
+     1,
+     1,
+     1
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR2.0_MUF2.0": {
+    "max_abs_diff_correctionlib_vs_code": 6.661338147750939e-16,
+    "norm": 1.00003020890058,
+    "fit_degrees": [
+     1,
+     1,
+     1
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR1.0_MUF0.5": {
+    "max_abs_diff_correctionlib_vs_code": 8.215650382226158e-15,
+    "norm": 1.0000578420858224,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR0.5_MUF1.0": {
+    "max_abs_diff_correctionlib_vs_code": 1.1879386363489175e-14,
+    "norm": 1.0000606748876446,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR0.5_MUF0.5": {
+    "max_abs_diff_correctionlib_vs_code": 7.216449660063518e-15,
+    "norm": 1.000062082372797,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   },
+   "MUR0.5_MUF2.0": {
+    "max_abs_diff_correctionlib_vs_code": 4.718447854656915e-15,
+    "norm": 1.0000597606845962,
+    "fit_degrees": [
+     1,
+     1,
+     2
+    ],
+    "fits_pass_p_gt_0p05": [
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "fit_from_ptz_gev": 250.0,
+  "correctionlib": "2.4.0"
+ },
+ "target_sigma_fb": {
+  "nominal": 13.037500166680003,
+  "MUR1.0_MUF2.0": 12.852754501794712,
+  "MUR2.0_MUF1.0": 11.435423326261786,
+  "MUR2.0_MUF2.0": 11.235744824351935,
+  "MUR1.0_MUF0.5": 13.271686464282583,
+  "MUR0.5_MUF1.0": 14.950671638183472,
+  "MUR0.5_MUF0.5": 15.17233551621041,
+  "MUR0.5_MUF2.0": 14.804502876093837
+ },
+ "emulation_scope": "Public ATLAS-style settings with ggxy amplitudes (m_b = 0), the paper's 15 < m_ll < 150 GeV window, no EvtGen, kappa or shower-variation weights, and POWHEG:nFinal = -1 for the LO source. This is not an official ATLAS sample or an exact reproduction of an ATLAS gridpack.",
+ "source_weight_convention": "Each LO event is counted once when deriving the shape weights, including events carrying upper-bound-excess weights; this matches the closure study.",
+ "closure_tests": {
+  "clf5": {
+   "source_file": "bdt-clf-atlas.json",
+   "criteria": {
+    "1_stage13": false,
+    "2_variables": false,
+    "2b_features": false,
+    "3_stability": false,
+    "failing_full": [
+     "pth",
+     "ptj1",
+     "drzh",
+     "yh",
+     "lhe_mll",
+     "ayzh"
+    ],
+    "all_pass": false
+   }
+  },
+  "clf6": {
+   "source_file": "bdt-clf-jet-atlas.json",
+   "criteria": {
+    "1_stage13": false,
+    "2_variables": false,
+    "2b_features": false,
+    "3_stability": false,
+    "failing_full": [
+     "pth",
+     "drzh",
+     "yh",
+     "lhe_mll",
+     "ayzh",
+     "ptj1"
+    ],
+    "all_pass": false
+   }
+  }
+ },
+ "seconds": 380.6
+}

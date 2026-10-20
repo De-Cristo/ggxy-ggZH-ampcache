@@ -91,3 +91,30 @@ normalised for the source sample.  The weights reshape a sample like the source;
 has none (the paper's hard-jet test).
 
 `ggzh_reweight_2d.py` (a map in m_ZH × p_T(ZH)) is not used in the paper; the classifier uses its helpers.
+
+
+## Included ATLAS model files
+
+[`../models/atlas13600/`](../models/atlas13600/) contains the actual trained delivery files:
+`map-ptz-njets.json`, `clf5-*.onnx`, `clf6-*.onnx`, and `model-card.json`. Each classifier has
+one nominal model and seven target-scale variations. `SHA256SUMS` covers all 18 files;
+`provenance.json` links them to the package commits and the original data-release archive
+`rwt/model-atlas-13600.tgz`. These are byte-identical to that archive's contents.
+
+The export was checked against scikit-learn and the map implementation on the source events:
+maximum classifier probability difference 3.25e-7, maximum map-weight difference 1.19e-14.
+The closure study does **not** pass: both classifiers fail the STXS, differential (including
+inputs), and split-sample criteria. The map passes the STXS criterion but fails the other two.
+Use the files as documented shape corrections within their stated scope, with these limitations.
+
+For ONNX inference use float32 inputs in the card's order and `probabilities[:, 1]` as p;
+apply p/(1-p)/c with the normalization c for that model and variation in the card. For a new
+sample, normalize to unit mean inside the mass window. For correctionlib, evaluate
+`ggzh_lo_to_nlo_ptz_njets(systematic, ptz, njets)` with real-valued ptz and njets; the map is
+already normalized for the production source. Apply weight 1 outside the mass window for
+both methods. Neither file format automatically tests the event's dilepton mass.
+
+The exported classifiers use all training events. The paper's closure numbers instead use
+out-of-fold weights; `closure_tests` in the card preserves those tests, while the export's
+normalizations and numerical comparisons describe the all-event models. Production job
+archives omit the root `models/` directory; regenerating the models uses `rwt-model-atlas`.

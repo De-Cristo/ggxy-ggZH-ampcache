@@ -1,0 +1,10 @@
+{
+  "production_package": "924b3a10f245ab47bc0a5e041937618ae75d7766",
+  "export_and_analysis_package": "13794aa53f6e131b373f8d49eabc33205301a8d4",
+  "set": "atlas13600",
+  "run": "rwt-model-atlas",
+  "data_release_product": "rwt/model-atlas-13600.tgz",
+  "archive_sha256": "e907a7537e8653a011d808c622dc7e031decd1e862c40a7af0b7427b95c79ff0",
+  "files": "SHA256SUMS",
+  "model_card_matches_analysis": true
+}
