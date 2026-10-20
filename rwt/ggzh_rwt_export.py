@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ggzh_reweight_common import FIT_PT_MIN, MU_OF_ID, N_JET, PT_EDGES, SCALE7, Sample, dumps  # noqa: E402
 from ggzh_reweight_map import FIRST_FIT_BIN, apply_map, build_map  # noqa: E402
 from ggzh_reweight_bdt import CLF, fit, prepare  # noqa: E402
+from model_metadata import channel_card, channel_map  # noqa: E402
 
 INPUTS = {
     "mzh": ("invariant mass of the Z + H system", "GeV"),
@@ -147,9 +148,12 @@ def main(argv=None) -> int:
     ap.add_argument("--compare-weights", type=Path, default=None, help="per-event out-of-fold weights of rwt-clf, for a comparison")
     ap.add_argument("--package", default=None, help="package version for the card (default: the first line of VERSION)")
     ap.add_argument("--style", choices=sorted(STYLES), default="cms", help="the source and target descriptions of the card")
+    ap.add_argument("--channel", choices=("ll", "vv"), default="ll", help="Z decay channel for model documentation")
     ap.add_argument("--closure-check", action="append", default=[], metavar="MODEL=JSON",
                     help="record the preregistered classifier closure outcomes in the model card")
     args = ap.parse_args(argv)
+    if args.style == "atlas" and args.channel == "vv":
+        ap.error("ATLAS-style vv production is not part of this package's completed study")
     sty = STYLES[args.style]
     t0 = time.time()
     out = args.out_dir; out.mkdir(parents=True, exist_ok=True)
@@ -229,7 +233,7 @@ def main(argv=None) -> int:
         card["classifier"]["models"][name] = mc
     # the binned map
     maps = {wid: build_map(src, tgt, wid) for wid in wids}
-    cset = map_correction(maps, sty["label"])
+    cset = channel_map(map_correction(maps, sty["label"]), args.channel)
     (out / "map-ptz-njets.json").write_text(json.dumps(cset, indent=1) + "\n")
     import correctionlib
     ev = correctionlib.CorrectionSet.from_file(str(out / "map-ptz-njets.json"))["ggzh_lo_to_nlo_ptz_njets"]
@@ -243,6 +247,7 @@ def main(argv=None) -> int:
     card["map"]["fit_from_ptz_gev"] = FIT_PT_MIN
     card["map"]["correctionlib"] = correctionlib.__version__
     card["seconds"] = round(time.time() - t0, 1)
+    card = channel_card(card, args.channel)
     (out / "model-card.json").write_text(dumps(card))
     worst = max(v["max_abs_dp_onnx_vs_sklearn"] for m in card["classifier"]["models"].values() for v in m["variations"].values())
     worstmap = max(v["max_abs_diff_correctionlib_vs_code"] for v in card["map"]["checks"].values())

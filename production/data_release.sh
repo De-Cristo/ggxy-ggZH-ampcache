@@ -67,6 +67,15 @@ case $CMD in
     while read -r a prod; do
       case $prod in analysis:*) continue ;; esac
       d=$OUTD/files/$a; mkdir -p "$d/$(dirname "$prod")"
+      # The native vv weights are unchanged; ship their corrected channel documentation.
+      # Rebuild even in a resumed staging directory so an older archive is not silently reused.
+      if [ "$prod" = rwt/model-vv-13600.tgz ]; then
+        models=$HERE/../models/vv13600
+        ( cd "$models" && sha256sum --quiet -c SHA256SUMS &&
+          { awk '{print $2}' SHA256SUMS; echo SHA256SUMS; echo provenance.json; } |
+          tar czf "$d/$prod" --transform='s,^,model/,' -T - ) || { echo "MODEL BUNDLE $prod" >&2; bad=1; }
+        continue
+      fi
       [ -s "$d/$prod" ] && continue
       u=$(src "$prod")
       xrdcp -s -f "$u/$prod" "$d/$prod" || { echo "MISSING $prod" >&2; bad=1; continue; }

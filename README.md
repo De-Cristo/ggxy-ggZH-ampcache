@@ -7,13 +7,16 @@ J. Davies, K. Schönwald, M. Steinhauser, D. Stremmer, [arXiv:2603.15762](https:
 and a reproduction package for gg → ZH with Z → ℓ⁻ℓ⁺ or Z → νν̄ at NLO and NLO+PS
 at √s = 13.6 and 13 TeV. Both channels include all three lepton flavours.
 The `vv13600` and `vv13000` sets in [`production/`](production/README.md) reproduce the neutrino
-channel; [`rwt/`](rwt/README.md) includes its own reweighting map and exported models.
+channel; its independently trained CMS-style map and 16 ONNX models are included in
+[`models/vv13600/`](models/vv13600/), with channel-specific metadata and original closure outcomes.
 The `atlas13600` set adds a public ATLAS-style charged-lepton source (PDF4LHC21, H_T scale,
 A14 and the ATLAS shower veto), its A14 NLO+PS target, and separate correctionlib/ONNX exports.
 The validated export files are included in [`models/atlas13600/`](models/atlas13600/):
 the correctionlib map, five-/six-input ONNX classifiers, nominal and seven scale variations,
 model card and checksums. The emulation scope and failed physics closure criteria are documented
 in [`rwt/README.md`](rwt/README.md); successful export checks do not imply physics closure.
+CMS-style reweighting covers both ℓℓ and νν̄ in the paper and package. ATLAS-style reweighting
+covers ℓℓ only; no ATLAS-style νν̄ samples or corrections have been produced.
 
 **The cache is part of `ggxy_ggZH` since 2026-10-07** (merge request !1, commit `1a6dbc6`; the
 process README documents it). Use `ggxy_ggZH` at `0fbaccf` or later; the patch in `patch/` is

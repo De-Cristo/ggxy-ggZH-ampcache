@@ -1,0 +1,30 @@
+{
+  "set": "vv13600",
+  "style": "CMS-style",
+  "run": "rwt-model",
+  "original_package": "ec962c1d9f47cc0679f763bb58e38963ebd68386 2026-10-16",
+  "data_release_product": "rwt/model-vv-13600.tgz",
+  "original_archive_sha256": "8677a023a287dd100ad1befec019910650acec6d6b789f85842c251a5afa460f",
+  "original_file_sha256": {
+    "clf5-MUR0.5_MUF0.5.onnx": "a53694310c929664d5bae3e29be49b5a24d9e7eb0ca57f4f825240614c7deb24",
+    "clf5-MUR0.5_MUF1.0.onnx": "dfa336208678a9aac4b271c4ff036e2496ce128d17757ba3d06159149fbac0c7",
+    "clf5-MUR0.5_MUF2.0.onnx": "949aecb7fb074f27ebf2a8d027893dc8209a37bfdd4217cd8d74ad9b6317b7f8",
+    "clf5-MUR1.0_MUF0.5.onnx": "11a8509a3c20bd327b3a03d417e1bc8abbacd71a35fa9dd51b6cb862ce44b77d",
+    "clf5-MUR1.0_MUF2.0.onnx": "bfeddec1c6b2628dae15d194d7a84488437c78b06f817f5ea845faa680a0e557",
+    "clf5-MUR2.0_MUF1.0.onnx": "909fa50f4178f0a4e214894cefe7a964de47a6cdfb34d10a331d43081cf7704d",
+    "clf5-MUR2.0_MUF2.0.onnx": "94c9b5dd4aeb78e597a2e668e76af619110135b2621520a3651792b5bcabbdc1",
+    "clf5-nominal.onnx": "db78432e2fcbf77136e1a08d7fbe06eca463ca8038a42022db7b5fd7d66bc84e",
+    "clf6-MUR0.5_MUF0.5.onnx": "da9d4d71cb58376392d5fbde59355883d4b49511f1d337dc1e5f611a913ac458",
+    "clf6-MUR0.5_MUF1.0.onnx": "1a2fa2f635694e86a79f973b3ca195c93db75c8a48138f785b97593069797c56",
+    "clf6-MUR0.5_MUF2.0.onnx": "498117de009a3ec4ab22fd01110e649e34cb0fcc6e302fc68313ca7d70e1a3e3",
+    "clf6-MUR1.0_MUF0.5.onnx": "49d48a1d208119643cca8d1d086d74d5f991f2b91457dd38aea140c8e3f9cf4d",
+    "clf6-MUR1.0_MUF2.0.onnx": "bec077ccb56c690caee4f39e8cca37debc41bd8c249c4a3678db3da9e65c19eb",
+    "clf6-MUR2.0_MUF1.0.onnx": "cbd5aa6a742803d625357dc6eaf246750b9e7680925d24d2d34e7d19e9770ddb",
+    "clf6-MUR2.0_MUF2.0.onnx": "dd22a49d6d42540939303523ba884dc8f2c69713c3710bb74733a21a775801e3",
+    "clf6-nominal.onnx": "7cce7461956c1ffada50c2d51411b6d09218dacfcac1c6a781aeedf261ee9ac6",
+    "map-ptz-njets.json": "128ec67fca8efa028360ddd468aa5b8bc57ab072d71cb7fd8968b0d705aa867d",
+    "model-card.json": "1b44ff0aea0568d0a93b19b70bc8a1f98f0f87292f57bfa28d0318d72745cef8"
+  },
+  "files": "SHA256SUMS",
+  "changes": "Only model-card/map descriptions corrected for the neutrino channel and closure outcomes attached. All 16 ONNX files are byte-identical; all map numerical data and model normalizations unchanged. Original paper analysis files retain their historical metadata and checksums."
+}

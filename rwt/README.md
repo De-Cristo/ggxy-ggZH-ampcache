@@ -9,6 +9,8 @@ map in p_T(Z) × N_jets.  Settings and pass criteria were fixed before each test
 
 The same runs exist in set `vv13600` for Z → νν̄ (`vdecaymode 12`; products named `…-vv-13600`, seeds independent
 of the ℓℓ ones: CMS-style LO events 45001+, NLO events 30001+).
+These are independently derived neutrino corrections, also discussed in the paper's
+reweighting section. ATLAS-style samples and corrections cover only the charged-lepton channel.
 
 Set `atlas13600` repeats the study with an ATLAS-style source, the settings of the public ATLAS Run-3 gg → ZH job
 options (LHE 602411, shower 603335) with public tools: `events-lo` with the card's `dynscale 3` (μ_R = μ_F = H_T =
@@ -92,6 +94,36 @@ has none (the paper's hard-jet test).
 
 `ggzh_reweight_2d.py` (a map in m_ZH × p_T(ZH)) is not used in the paper; the classifier uses its helpers.
 
+
+## Included CMS-style neutrino model files
+
+[`../models/vv13600/`](../models/vv13600/) contains the native neutrino `map-ptz-njets.json`,
+five- and six-input classifiers (`clf5-*.onnx`, `clf6-*.onnx`), and `model-card.json`.
+There are 16 ONNX files: nominal and seven target-scale variations for each input choice.
+Use the generator-level Z momentum from its neutrino decay and the mass window
+15 < m_νν < 150 GeV. These models were trained on the neutrino source and target themselves.
+
+`SHA256SUMS` covers the 18 delivery files. `provenance.json` retains the original worker
+package commit, archive checksum and per-file checksums. The ONNX files are byte-identical
+to the original `rwt/model-vv-13600.tgz`; numerical map contents and all model normalizations
+are unchanged. The curated card and map correct inherited charged-lepton descriptions,
+and the card attaches the original out-of-fold classifier closure outcomes. Historical
+analysis outputs retain their original bytes and checksums. In those outputs the shared
+column name `lhe_mll` denotes the neutrino-pair mass for this channel.
+
+The original export checks give a maximum probability difference of 3.20e-7 and a maximum
+map-weight difference of 1.45e-15. Both classifiers and the map fail the full physics
+closure criteria: the improved STXS agreement does not resolve the hard-recoil deficit.
+The card records classifier closure separately from numerical conversion checks.
+For inference use the formula and per-model normalization in the card, with weight 1
+outside the neutrino mass window; neither portable format checks that window itself.
+
+`production/data_release.sh stage` bundles this curated directory as
+`rwt/model-vv-13600.tgz`, including its checksum manifest and provenance, replacing a
+previously staged copy if present. The original production archive remains unchanged.
+To regenerate on workers, the `vv13600` `rwt-model` definition passes `--channel vv`
+and includes the original classifier tests; the charged-lepton export defaults to `ll`.
+Production job archives omit root `models/`, while the source publication package includes it.
 
 ## Included ATLAS model files
 

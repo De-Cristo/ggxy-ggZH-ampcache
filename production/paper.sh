@@ -324,6 +324,11 @@ def() {
                     IN+=("wheels/$x sources/$x")
                   done
                   STEP=(rwt/run.sh model)
+                  case $SET in vv*)
+                    STEP=(rwt/run.sh model lo-cms nlo-cp5 cms vv)
+                    IN+=("rwt-in/bdt-clf.json rwt/$(sname bdt-clf).json"
+                         "rwt-in/bdt-clf-jet.json rwt/$(sname bdt-clf-jet).json") ;;
+                  esac
                   OUTP=("model.tgz rwt/$(sname model).tgz") ;;
     # ---- the reweighting study with an ATLAS-style source (set atlas13600; rwt/README.md).  LO events of run
     #      events-lo (dynscale 3, PDF4LHC21) showered with A14 as athena sets it (tune a14-athena), the ATLAS base

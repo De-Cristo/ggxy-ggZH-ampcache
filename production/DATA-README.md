@@ -45,6 +45,15 @@ definitions were unchanged. The generator installation adds `fo-ggvvh`; the prod
 build also recorded decay-fermion information. The additional columns are documented above,
 and the shared event-table columns and shower summaries passed the build comparisons.
 
+The distributed neutrino model archive uses the curated `models/vv13600/` files from the
+source package. Its ONNX files are byte-identical to the original production archive;
+only the card/map channel descriptions were corrected and the original classifier closure
+outcomes attached. Numerical map contents and model normalizations are unchanged.
+The included `provenance.json` retains the original archive and file checksums, and
+`SHA256SUMS` covers the curated files. `data_release.sh stage` rebuilds this small archive
+from those checked files even when resuming an existing staging directory. The historical
+analysis archive, including its original model card, keeps its original checksums.
+
 ## Event weights
 
 The production LHE files carry 155 weights per event (`generator/cards/pwg-rwl-pdf4lhc21.dat`): ids 1001–1009 the
@@ -58,7 +67,8 @@ samples: the cross section is the sum of the weights divided by the number of ev
 See `rwt/README.md` of the package and `model-card.json`: inputs in the card's order as float32, p = `probabilities`[:, 1],
 w = p/(1−p), normalised to mean 1 over the sample's events inside 15 < m_ℓℓ (or m_νν) < 150 GeV.  The weights reshape a sample
 defined like the source specified in the model card; they do not create events where it has none (the paper's hard-jet test).
-For Z → νν̄ samples use the separately trained `model-vv-13600` (m_νν in place of m_ℓℓ).
+For CMS-style Z → νν̄ samples use the separately trained `model-vv-13600`
+(m_νν in place of m_ℓℓ), also included unpacked in the source package's `models/vv13600/`.
 The two decay channels have different NLO corrections near threshold, where γ* → ℓℓ contributes
 only to the charged-lepton channel.
 For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and the ATLAS POWHEG veto) use
@@ -66,6 +76,8 @@ For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and th
 sample has severely depleted support for jets harder than m_ZH. The ATLAS model card records
 the emulation scope, unit-event LO convention and classifier closure-test outcomes; a successful
 ONNX/correctionlib conversion does not imply that the physics closure criteria passed.
+CMS-style reweighting covers both decay channels in the paper and package; ATLAS-style
+reweighting covers ℓℓ only. No ATLAS-style neutrino sample or correction is included.
 
 ## Citation
 

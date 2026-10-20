@@ -73,7 +73,7 @@ case $WHAT in
         rwt-out/grids-xsec.json rwt-out/lo-atlas.json rwt-out/nlo-a14.json rwt-out/*.log
     exit $rc ;;
   model)
-    MSRC=${1:-lo-cms}; MTGT=${2:-nlo-cp5}; MSTYLE=${3:-cms}
+    MSRC=${1:-lo-cms}; MTGT=${2:-nlo-cp5}; MSTYLE=${3:-cms}; MCHANNEL=${4:-ll}
     for s in "$MSRC" "$MTGT"; do npz "$s" || exit 2; done
     mkdir -p pylib
     python3 -m pip install --no-index --no-deps --require-hashes --find-links wheels --target pylib -r "$HERE/requirements-export.txt" \
@@ -82,8 +82,10 @@ case $WHAT in
     checks=()
     if [ "$MSTYLE" = atlas ]; then
       checks=(--closure-check clf5=rwt-in/bdt-clf-atlas.json --closure-check clf6=rwt-in/bdt-clf-jet-atlas.json)
+    elif [ "$MCHANNEL" = vv ]; then
+      checks=(--closure-check clf5=rwt-in/bdt-clf.json --closure-check clf6=rwt-in/bdt-clf-jet.json)
     fi
-    python3 "$HERE/ggzh_rwt_export.py" --source "rwt-out/$MSRC.npz" --target "rwt-out/$MTGT.npz" --out-dir model --style "$MSTYLE" \
+    python3 "$HERE/ggzh_rwt_export.py" --source "rwt-out/$MSRC.npz" --target "rwt-out/$MTGT.npz" --out-dir model --style "$MSTYLE" --channel "$MCHANNEL" \
         --compare-weights rwt-in/weights-clf.npz "${checks[@]}" 2>&1 | tee rwt-out/export.log
     rc=${PIPESTATUS[0]}
     [ -s model/model-card.json ] || rc=10
