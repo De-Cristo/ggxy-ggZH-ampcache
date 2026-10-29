@@ -91,6 +91,10 @@ def main(argv=None) -> int:
         "ifile": np.concatenate([np.full(len(p[1]), p[2], np.int16) for p in parts]),
         "w0": nom, "genw": nom, "sw": sw.astype(np.float32), "nb_from_h": np.full(n, 2, np.int8), "nl_from_z": np.full(n, 2, np.int8),
     }
+    # Optional appended schema: legacy tables retain their original columns and remain readable.
+    for key in ("etaj1", "phij1", "ptj2", "etaj2", "phij2", "ptl1", "etal1", "phil1", "ptl2", "etal2", "phil2"):
+        if key in ix:
+            out[key] = d[:, ix[key]].astype(np.float32)
     for k in ["ptz", "yz", "mz", "pth", "yh", "mzh", "ptzh", "yzh", "drzh", "etaz", "phiz", "etah", "phih", "mll_dressed", "ptj1", "htxs_pth", "htxs_vpt",
               "lhe_vpt", "lhe_pth", "lhe_mll", "lhe_mzh", "scalepdf"]:
         out[k] = out[k].astype(np.float32)

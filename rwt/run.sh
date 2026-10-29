@@ -27,11 +27,11 @@ HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 VIEW=${RWT_LCG_VIEW:-/cvmfs/sft.cern.ch/lcg/views/LCG_106/x86_64-el9-gcc13-opt}
 [ -f "$VIEW/setup.sh" ] || { echo "FATAL: no $VIEW" >&2; exit 64; }
 source "$VIEW/setup.sh" > /dev/null 2>&1
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 MPLBACKEND=Agg
+export OMP_NUM_THREADS=${RWT_THREADS:-1} OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 MPLBACKEND=Agg PYTHONDONTWRITEBYTECODE=1
 mkdir -p rwt-out
 npz() {  # npz <sample>
   [ -f "rwt-out/$1.npz" ] && return 0
-  local nom=nominal; [ "$1" = nlo-cp5 ] && nom=2000
+  local nom=nominal; [[ "$1" = *nlo-cp5 ]] && nom=2000
   ls tables/"$1"/table-*.csv.gz > /dev/null 2>&1 || { echo "FATAL: no tables/$1/table-*.csv.gz" >&2; return 2; }
   python3 "$HERE/ggzh_table.py" --label "$1" --tables "tables/$1/table-*.csv.gz" --out "rwt-out/$1.npz" --nominal "$nom"
 }
@@ -43,8 +43,23 @@ case $WHAT in
     python3 "$HERE/ggzh_reweight_bdt.py" --source "rwt-out/$SRC.npz" --target "rwt-out/$TGT.npz" --out "rwt-out/bdt-$NAME.json" \
         --weights-out "weights-$NAME.npz" "$@" 2>&1 | tee "rwt-out/bdt-$NAME.log"
     rc=${PIPESTATUS[0]}
+    if [ -d ensemble ]; then tar czf ensemble.tgz ensemble || rc=10; fi
     [ -s "rwt-out/bdt-$NAME.json" ] && [ -s "weights-$NAME.npz" ] || rc=10
     tar czf "out-rwt-$NAME.tgz" rwt-out/*.json rwt-out/*.log
+    exit $rc ;;
+  summary-10m|transfer-10m|model-10m)
+    for s in lo-cms nlo-cp5; do npz "$s" || exit 2; done
+    if [ "$WHAT" = transfer-10m ]; then
+      for s in old-lo-cms old-nlo-cp5; do npz "$s" || exit 2; done
+    fi
+    if [ "$WHAT" = model-10m ]; then
+      mkdir -p pylib
+      python3 -m pip install --no-index --no-deps --require-hashes --find-links wheels --target pylib -r "$HERE/requirements-export.txt" > rwt-out/pip.log 2>&1 || exit 2
+      export PYTHONPATH=$PWD/pylib${PYTHONPATH:+:$PYTHONPATH}
+    fi
+    python3 "$HERE/ggzh_rwt10m.py" "$WHAT" --dir rwt-out --inputs rwt-in --out rwt-out/rwt10m.json 2>&1 | tee rwt-out/study.log
+    rc=${PIPESTATUS[0]}
+    tar czhf "out-rwt-$WHAT.tgz" rwt-out/*.json rwt-out/*.log
     exit $rc ;;
   summary)
     for s in lo-cms lo-cms-default nlo-cp5; do npz "$s" || exit 2; done

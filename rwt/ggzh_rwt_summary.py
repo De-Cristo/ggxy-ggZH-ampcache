@@ -47,12 +47,17 @@ def frac_region(s, w, sel, var, a, b):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--study10m", action="store_true", help="pre-registered A/B/C campaign; inputs in --dir/../rwt-in")
     ap.add_argument("--dir", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--grids-xsec", type=Path, default=None, help="grids-xsec.json of the LO grids of the source (LO cross section)")
     ap.add_argument("--package", default=None, help="package version for the provenance (default: the first line of VERSION)")
     args = ap.parse_args(argv)
     D = args.dir
+    if args.study10m:
+        from ggzh_rwt10m import summary
+        args.out.write_text(dumps(summary(D, D.parent / "rwt-in")))
+        return 0
     version = args.package
     if version is None:
         vf = Path(__file__).resolve().parents[1] / "VERSION"

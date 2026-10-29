@@ -42,6 +42,47 @@ CLOSURE_VARS = {
     "drzh": (np.arange(0.0, 6.4 + 1e-9, 0.2), "dR(Z,H)", ""),
     "lhe_mll": (np.arange(15.0, 150.0 + 1e-9, 5.0), "m(ll) at LHE [GeV]", "the Z line shape, unchanged by the shower"),
 }
+# Additional feature diagnostics, separate so legacy map closure tests are unchanged.
+EXTRA_VARS = {
+    "dphizzh": (np.linspace(0, np.pi, 25), "Delta phi(Z,ZH)", "wrapped absolute azimuthal difference"),
+    "drj1zh": (np.arange(0, 10.01, .25), "Delta R(j1,ZH)", "jet |eta|<4.7; -1 without a jet"),
+    "drj2zh": (np.arange(0, 10.01, .25), "Delta R(j2,ZH)", "jet |eta|<4.7; -1 without second jet"),
+    "dphij1j2": (np.linspace(0, np.pi, 25), "Delta phi(j1,j2)", "-1 without two jets"),
+    "etaj1": (np.linspace(-4.7, 4.7, 25), "eta(j1)", "jet |eta|<4.7"),
+    "ptj2": (np.arange(25., 1000.01, 25.), "pT(j2) [GeV]", "jet |eta|<4.7"),
+    "etaj2": (np.linspace(-4.7, 4.7, 25), "eta(j2)", "jet |eta|<4.7"),
+    "ptl1": (np.arange(0., 1000.01, 25.), "pT(l1) [GeV]", "pT-ordered Z children before their FSR"),
+    "ptl2": (np.arange(0., 1000.01, 25.), "pT(l2) [GeV]", "pT-ordered Z children before their FSR"),
+    "etal1": (np.arange(-6., 6.01, .3), "eta(l1)", ""),
+    "etal2": (np.arange(-6., 6.01, .3), "eta(l2)", ""),
+}
+FEATURE_SETS = {"A": ["mzh", "ptzh", "ptz", "njets", "ayzh", "ptj1"]}
+FEATURE_SETS["B"] = FEATURE_SETS["A"] + ["lhe_mll", "dphizzh", "drj1zh"]
+FEATURE_SETS["C"] = FEATURE_SETS["B"] + ["etaj1", "ptj2", "etaj2", "drj2zh", "ptl1", "ptl2", "etal1", "etal2"]
+
+
+def append_derived(cols):
+    """Reconstruct the ZH direction from stored boson momenta; never treat missing jets as vectors."""
+    if "phiz" not in cols or "phih" not in cols:
+        return
+    def dphi(a, b):
+        return np.abs(np.arctan2(np.sin(a-b), np.cos(a-b)))
+    zphi, hphi = cols["phiz"].astype(float), cols["phih"].astype(float)
+    zpt, hpt = cols["ptz"].astype(float), cols["pth"].astype(float)
+    px, py = zpt*np.cos(zphi)+hpt*np.cos(hphi), zpt*np.sin(zphi)+hpt*np.sin(hphi)
+    phi = np.arctan2(py, px)
+    pz = zpt*np.sinh(cols["etaz"].astype(float)) + hpt*np.sinh(cols["etah"].astype(float))
+    eta = np.arcsinh(pz / np.maximum(np.hypot(px, py), 1e-30))
+    cols["dphizzh"] = dphi(zphi, phi).astype(np.float32)
+    for j in (1, 2):
+        if f"etaj{j}" not in cols:
+            continue
+        good = cols[f"ptj{j}"] > 0
+        dr = np.hypot(cols[f"etaj{j}"].astype(float)-eta, dphi(cols[f"phij{j}"], phi))
+        cols[f"drj{j}zh"] = np.where(good, dr, -1).astype(np.float32)
+    if "phij2" in cols:
+        cols["dphij1j2"] = np.where(cols["ptj2"]>0, dphi(cols["phij1"],cols["phij2"]), -1).astype(np.float32)
+
 OTHER_VARS = {
     "ptz": (np.arange(0.0, 1000.0 + 1e-9, 25.0), "pT(Z) [GeV]", "last-copy generator Z (the map variable)"),
     "lhe_vpt": (np.arange(0.0, 1000.0 + 1e-9, 25.0), "pT(V) at LHE [GeV]", "before the shower"),
@@ -70,6 +111,7 @@ class Sample:
             self.meta = json.loads(self.path.with_suffix(".json").read_text()) if self.path.with_suffix(".json").exists() else {}
         else:
             self.meta = {}
+        append_derived(cols)
         self.cols = cols
         self.n = len(self.cols["ptz"])
         w0 = self.cols["w0"].astype(np.float64)
@@ -178,7 +220,7 @@ def chi2_shape(f1, e1, f2, e2):
 def dumps(obj) -> str:
     def conv(o):
         if isinstance(o, np.ndarray):
-            return [conv(x) for x in o.tolist()]
+            return conv(o.tolist())
         if isinstance(o, (np.floating, float)):
             return None if (isinstance(o, float) and (np.isnan(o) or np.isinf(o))) else float(o)
         if isinstance(o, np.integer):

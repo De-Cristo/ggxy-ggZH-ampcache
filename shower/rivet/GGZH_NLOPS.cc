@@ -11,6 +11,8 @@
 // x 0J/1J/>=2J, index 3*ptbin + jetbin; 18 = |y_H| > 2.5), to cross-check the STXS routine.
 // "sigma": one bin with every event, i.e. the inclusive cross section.
 #include "Rivet/Analysis.hh"
+#include <cstdio>
+#include <algorithm>
 #include "Rivet/Projections/FinalState.hh"
 #include "Rivet/Projections/FastJets.hh"
 
@@ -23,6 +25,12 @@ namespace Rivet {
 
     void init() {
       declare(FinalState(), "FS");
+      const std::string check = getOption("CHECKOUT", "");
+      if (!check.empty()) {
+        _check = std::fopen(check.c_str(), "w");
+        if (!_check) throw Error("cannot open GGZH_NLOPS CHECKOUT");
+        std::fprintf(_check, "ptz,pth,mzh,ptzh,njets30,ptj1,etaj1,phij1,ptj2,etaj2,phij2,ptl1,etal1,phil1,ptl2,etal2,phil2\n");
+      }
       auto edges = [](double lo, double hi, double step) {
         std::vector<double> e;
         for (double x = lo; x <= hi + 1e-9; x += step) e.push_back(x);
@@ -81,6 +89,25 @@ namespace Rivet {
       const Jets jets = fj.jetsByPt(Cuts::pT > 30.0);
 
       const FourMomentum pz = Z.momentum(), ph = H.momentum(), pzh = pz + ph;
+      if (_check) {
+        Jets accepted;
+        for (const Jet& j : jets) if (j.abseta() < 4.7) accepted.push_back(j);
+        std::fprintf(_check, "%.12g,%.12g,%.12g,%.12g,%zu,%.12g", pz.pT(), ph.pT(), pzh.mass(), pzh.pT(),
+                     jets.size(), accepted.empty() ? -1.0 : accepted[0].pT());
+        for (size_t k = 0; k < 2; ++k) {
+          if (k) std::fprintf(_check, ",%.12g", accepted.size() > k ? accepted[k].pT() : -1.0);
+          std::fprintf(_check, ",%.12g,%.12g", accepted.size() > k ? accepted[k].eta() : -1.0,
+                       accepted.size() > k ? accepted[k].phi() : -1.0);
+        }
+        Particles children;
+        for (const Particle& child : Z.children())
+          if (child.abspid() == 11 || child.abspid() == 13 || child.abspid() == 15) children.push_back(child);
+        std::sort(children.begin(), children.end(), [](const Particle& a, const Particle& b) { return a.pT() > b.pT(); });
+        for (size_t k = 0; k < 2; ++k)
+          std::fprintf(_check, ",%.12g,%.12g,%.12g", children.size() > k ? children[k].pT() : -1.0,
+                       children.size() > k ? children[k].eta() : -1.0, children.size() > k ? children[k].phi() : -1.0);
+        std::fprintf(_check, "\n");
+      }
       _h["ptz"]->fill(pz.pT());
       _h["ptzwide"]->fill(pz.pT());
       _h["pth"]->fill(ph.pT());
@@ -101,6 +128,7 @@ namespace Rivet {
     }
 
     void finalize() {
+      if (_check) { std::fclose(_check); _check = nullptr; }
       if (_nMissing) MSG_WARNING(_nMissing << " events without a Z or Higgs boson in the record");
       const double sf = 1.0 / numEvents();
       for (auto& h : _h) scale(h.second, sf);
@@ -109,6 +137,7 @@ namespace Rivet {
   private:
     std::map<std::string, Histo1DPtr> _h;
     size_t _nMissing = 0;
+    std::FILE* _check = nullptr;
   };
 
   RIVET_DECLARE_PLUGIN(GGZH_NLOPS);

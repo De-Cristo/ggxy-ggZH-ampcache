@@ -34,6 +34,8 @@ CHECK_VARS = {"mzh": CLOSURE_VARS["mzh"], "ptzh": CLOSURE_VARS["ptzh"]}
 
 
 def values(s: Sample, name):
+    if name in ("etaj1", "etaj2"):
+        return np.where(s["ptj"+name[-1]] > 0, s[name].astype(float), np.nan)
     return np.minimum(s["htxs_njets30"].astype(float), 3) if name == "njets" else s[name].astype(float)
 
 

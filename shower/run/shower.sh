@@ -39,7 +39,8 @@ name=$base.$MODE.$TUNE
 t=$SECONDS
 opts=(); [ "$MODE" = noshower ] && opts+=(--no-beam-check)
 if [ -n "${GGZH_SHOWER_TABLE:-}" ]; then    # the two default analyses, and the table
-  opts+=(--analysis "SimplifiedTemplateCrossSections:HiggsProdMode=GG2ZH" --analysis GGZH_NLOPS --analysis "GGZH_EVENTTABLE:OUT=table.csv")
+  check=GGZH_NLOPS; [ -n "${GGZH_TABLE_CHECK:-}" ] && check=GGZH_NLOPS:CHECKOUT=reference.csv
+  opts+=(--analysis "SimplifiedTemplateCrossSections:HiggsProdMode=GG2ZH" --analysis "$check" --analysis "GGZH_EVENTTABLE:OUT=table.csv")
 fi
 ( cd "$work" && ggzh-shower --lhe events.lhe --out "$OUT/$name" "${cmnds[@]}" ${SEED:+--seed "$SEED"} "${opts[@]}" ) > "$OUT/$name.log" 2>&1
 rc=$?
@@ -47,5 +48,8 @@ echo "$name rc $rc wall $((SECONDS - t)) s; $(grep -h '^ggzh-shower:' "$OUT/$nam
 [ $rc = 0 ] && [ -s "$OUT/$name.yoda" ] || { tail -20 "$OUT/$name.log" >&2; exit 3; }
 if [ -n "${GGZH_SHOWER_TABLE:-}" ]; then
   [ "$(wc -l < "$work/table.csv" 2>/dev/null || echo 0)" -gt 1 ] || { echo "FATAL: no event table" >&2; exit 4; }
+  if [ -n "${GGZH_TABLE_CHECK:-}" ]; then
+    PYTHONDONTWRITEBYTECODE=1 python3 "$HERE/../rwt/check_eventtable.py" "$work/table.csv" "$work/reference.csv" > "$OUT/$name.check.json" || exit 5
+  fi
   gzip -c "$work/table.csv" > "$OUT/$name.table.csv.gz"
 fi

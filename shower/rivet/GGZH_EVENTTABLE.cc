@@ -16,6 +16,10 @@
 //   njets30eta47 ptj1eta47        the same with |eta| < 4.7
 //   cell                          Stage 1.3 cell 3*ptbin + min(njets30, 2), pT(Z) edges 75/150/250/400/600;
 //                                 -1 if |y_H| > 2.5 (FWDH); as GGZH_NLOPS's stxs13_fine_own
+// Appended: etaj1,phij1,ptj2,etaj2,phij2 (jets with |eta|<4.7);
+// ptl1,etal1,phil1,ptl2,etal2,phil2 (pT-ordered charged children of the last-copy Z).
+// Child momenta include their subsequent FSR: ancestry-dressed, without a cone prescription.
+// Missing jets/leptons: -1. Old columns and their precision are unchanged.
 // Events without a Z or H in the record are written with nan kinematics (counted in the log).
 // Option OUT=<file> (default ggzh-events.csv).
 #include "Rivet/Analysis.hh"
@@ -23,6 +27,7 @@
 #include "Rivet/Projections/FinalState.hh"
 #include "Rivet/Projections/FastJets.hh"
 #include <cstdio>
+#include <algorithm>
 #include <limits>
 
 namespace Rivet {
@@ -84,7 +89,7 @@ namespace Rivet {
       std::fprintf(_f, "ievt");
       std::fprintf(_f, ",w:nominal");
       for (const std::string& n : _keepName) std::fprintf(_f, ",w:%s", n.c_str());
-      std::fprintf(_f, ",ptz,yz,etaz,phiz,mz,pth,yh,etah,phih,mzh,ptzh,yzh,drzh,njets30,ptj1,njets30eta47,ptj1eta47,cell\n");
+      std::fprintf(_f, ",ptz,yz,etaz,phiz,mz,pth,yh,etah,phih,mzh,ptzh,yzh,drzh,njets30,ptj1,njets30eta47,ptj1eta47,cell,etaj1,phij1,ptj2,etaj2,phij2,ptl1,etal1,phil1,ptl2,etal2,phil2\n");
       MSG_INFO("weights: " << names.size() << " in the event, " << _keep.size() << " written (nominal index " << inom << ")");
       for (size_t k = 0; k < _keepName.size(); ++k) MSG_INFO("  w:" << _keepName[k] << " = " << names[_keep[k + 1]]);
       _header = true;
@@ -105,7 +110,7 @@ namespace Rivet {
       }
       if (!hasZ || !hasH) {
         ++_nMissing;
-        std::fprintf(_f, ",nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,-1,-1,-1,-1,-1\n");
+        std::fprintf(_f, ",nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,nan,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1\n");
         return;
       }
       Particles hadrons;
@@ -117,8 +122,9 @@ namespace Rivet {
       FastJets fj(fsTemp, JetAlg::ANTIKT, 0.4);
       fj.calc(hadrons);
       const Jets jets = fj.jetsByPt(Cuts::pT > 30.0);
+      Jets jets47;
       int n47 = 0; double pt47 = -1;
-      for (const Jet& j : jets) if (j.abseta() < 4.7) { if (n47 == 0) pt47 = j.pT(); ++n47; }
+      for (const Jet& j : jets) if (j.abseta() < 4.7) { if (n47 == 0) pt47 = j.pT(); ++n47; jets47.push_back(j); }
 
       const FourMomentum pz = Z.momentum(), ph = H.momentum(), pzh = pz + ph;
       const double drzh = deltaR(pz.eta(), pz.phi(), ph.eta(), ph.phi());
@@ -128,9 +134,24 @@ namespace Rivet {
         const int ptbin = pt < 75 ? 0 : pt < 150 ? 1 : pt < 250 ? 2 : pt < 400 ? 3 : pt < 600 ? 4 : 5;
         cell = 3 * ptbin + std::min<int>(jets.size(), 2);
       }
-      std::fprintf(_f, ",%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%zu,%.6g,%d,%.6g,%d\n",
+      std::fprintf(_f, ",%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%zu,%.6g,%d,%.6g,%d",
                    pz.pT(), pz.rapidity(), pz.eta(), pz.phi(), pz.mass(), ph.pT(), ph.rapidity(), ph.eta(), ph.phi(),
                    pzh.mass(), pzh.pT(), pzh.rapidity(), drzh, jets.size(), jets.empty() ? -1.0 : jets[0].pT(), n47, pt47, cell);
+      for (size_t k = 0; k < 2; ++k) {
+        const bool exists = jets47.size() > k;
+        if (k) std::fprintf(_f, ",%.6g", exists ? jets47[k].pT() : -1.0);
+        std::fprintf(_f, ",%.6g,%.6g", exists ? jets47[k].eta() : -1.0, exists ? jets47[k].phi() : -1.0);
+      }
+      Particles leptons;
+      for (const Particle& c : Z.children())
+        if (c.abspid() == 11 || c.abspid() == 13 || c.abspid() == 15) leptons.push_back(c);
+      std::sort(leptons.begin(), leptons.end(), [](const Particle& a, const Particle& b) { return a.pT() > b.pT(); });
+      for (size_t k = 0; k < 2; ++k) {
+        const bool exists = leptons.size() > k;
+        std::fprintf(_f, ",%.6g,%.6g,%.6g", exists ? leptons[k].pT() : -1.0,
+                     exists ? leptons[k].eta() : -1.0, exists ? leptons[k].phi() : -1.0);
+      }
+      std::fprintf(_f, "\n");
     }
 
     void finalize() {

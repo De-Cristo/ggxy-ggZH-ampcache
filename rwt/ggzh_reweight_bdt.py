@@ -38,10 +38,28 @@ NFOLD = 5
 LABELS = {"official": "CMS-style LO+PS", "reweighted": "CMS-style LO x rwt + PS", "nlo": "NLO+PS"}
 
 
-def prepare(s: Sample):
+def prepare(s: Sample, features=None):
     s.cols["ayzh"] = np.abs(s["yzh"].astype(float))
     s.cols["njets"] = np.minimum(s["htxs_njets30"].astype(float), 3)
-    return np.stack([s[k].astype(float) for k in FEATURES], axis=1)
+    return np.stack([s[k].astype(float) for k in (FEATURES if features is None else features)], axis=1)
+
+
+MODEL_DIR = None
+
+
+def configure(features):
+    global FEATURES, FEATURE_VARS, TEST_VARS
+    if len(features) != len(set(features)):
+        raise ValueError("duplicate features")
+    available = {**CLOSURE_VARS, **C.EXTRA_VARS, "ptz": OTHER_VARS["ptz"], "njets": OTHER_VARS["njets"],
+                 "ayzh": (np.arange(0., 3.01, .25), "|y(ZH)|", "")}
+    unknown = set(features)-available.keys()
+    if unknown:
+        raise ValueError(f"unknown features: {unknown}")
+    FEATURES = list(features)
+    FEATURE_VARS = {k: available[k] for k in FEATURES}
+    # All original closure variables survive, moving only inputs to criterion 2b.
+    TEST_VARS = {k: v for k,v in CLOSURE_VARS.items() if k not in FEATURES}
 
 
 def fit(Xs, Xt, wt):
@@ -62,6 +80,10 @@ def lo_weights(src: Sample, Xs, ssel, tgt: Sample, Xt, tsel, log, tag):
     for k in range(NFOLD):
         t0 = time.time()
         clf = fit(Xs[idx[fold != k]], Xt[tsel], tgt.w0[tsel])
+        if tag == "full" and MODEL_DIR is not None:
+            import joblib
+            MODEL_DIR.mkdir(parents=True, exist_ok=True)
+            joblib.dump({"features": FEATURES[:], "classifier": CLF, "fold": k, "model": clf}, MODEL_DIR / f"fold-{k}.joblib")
         p = clf.predict_proba(Xs[idx[fold == k]])[:, 1]
         w[idx[fold == k]] = p / (1.0 - p)
         info.append({"fold": k, "n_iter": int(clf.n_iter_), "seconds": round(time.time() - t0, 1)})
@@ -93,7 +115,7 @@ def figure(path, res, title):
     from ggzh_reweight_plots import figure as fig_grid, plt, shape_panel
     saved = dict(C.LABELS); C.LABELS.update(LABELS)
     names = list(FEATURE_VARS) + list(TEST_VARS)
-    fig, pairs = fig_grid(4, 3)
+    fig, pairs = fig_grid((len(names) + 2) // 3, 3)
     for (ax, rax), name in zip(pairs, names):
         sec = "features" if name in FEATURE_VARS else "variables"
         v = res["reweighted"][sec][name]; u = res["unweighted"][sec][name]
@@ -116,10 +138,18 @@ def main(argv=None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--fig-dir", type=Path, default=None)
     ap.add_argument("--weights-out", type=Path, default=None)
+    ap.add_argument("--features", help="comma-separated input names, or pre-registered set A, B, C")
+    ap.add_argument("--retuned", action="store_true", help="R6 only after a recorded input-closure failure: 1000 iterations, 63 leaves, min 500")
+    ap.add_argument("--model-out", type=Path, help="save the full-target fold ensemble for the transfer test")
     ap.add_argument("--jet-feature", action="store_true", help="leading-jet pT as a sixth input (step 4)")
     args = ap.parse_args(argv)
-    if args.jet_feature:
-        FEATURES.append("ptj1"); FEATURE_VARS["ptj1"] = TEST_VARS.pop("ptj1")
+    if args.features and args.jet_feature:
+        ap.error("use --features or --jet-feature, not both")
+    selected = (C.FEATURE_SETS.get(args.features.upper()) or args.features.split(",")) if args.features else (C.FEATURE_SETS["A"] if args.jet_feature else FEATURES[:])
+    if args.features or args.jet_feature:
+        configure(selected)
+    if args.retuned:
+        CLF.update(max_iter=1000, max_leaf_nodes=63, min_samples_leaf=500)
     t0 = time.time(); lines = []
     def log(s):
         print(s, flush=True); lines.append(s)
@@ -132,6 +162,8 @@ def main(argv=None) -> int:
     out = {"plan": "rwt/README.md", "features": FEATURES, "classifier": CLF, "nfold": NFOLD,
            "inputs": {"source": str(args.source), "target": str(args.target)}}
     weights = {}
+    global MODEL_DIR
+    MODEL_DIR = args.model_out
     for tag, train, test in (("full", ts, ts), ("A_to_B", A, B), ("B_to_A", B, A)):
         w, info = lo_weights(src, Xs, ss, tgt, Xt, train, log, tag)
         res = evaluate(src, w, ss, tgt, test, tag, log); res["folds"] = info

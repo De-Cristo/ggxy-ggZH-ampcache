@@ -150,3 +150,48 @@ The exported classifiers use all training events. The paper's closure numbers in
 out-of-fold weights; `closure_tests` in the card preserves those tests, while the export's
 normalizations and numerical comparisons describe the all-event models. Production job
 archives omit the root `models/` directory; regenerating the models uses `rwt-model-atlas`.
+
+## Pre-registered 10 M-event test (2026-10-29)
+
+Set `rwt10m` adds 4000 x 2500 NLO events (seeds 100001–104000) and 2000 x 5000 CMS-style LO
+ events (110001–112000), reusing the 13600 grids. Shower seeds are LHE seed + 100000.
+The old sets, products and closure criteria remain the baseline. The NLO weight list
+`pwg-rwl-rwt.dat` contains ids 1001–1009 and 2000; the latter remains the target nominal.
+A new shower installation, `install/shower-install-rwt10m-0.tgz`, carries the appended table schema.
+
+`--features A|B|C` or an explicit comma-separated list selects classifier inputs:
+
+- A: mzh, ptzh, ptz, njets, ayzh, ptj1 (`--jet-feature` is an alias).
+- B: A + lhe_mll, dphizzh, drj1zh.
+- C: B + etaj1, ptj2, etaj2, drj2zh, ptl1, ptl2, etal1, etal2.
+
+Jet coordinates refer to the pT-ordered jets with |eta|<4.7, consistently with the existing ptj1 input.
+The leptons are the pT-ordered charged children of the last-copy Z, before their subsequent FSR;
+this is ancestry dressing, retaining radiation in the parent's momentum, rather than a cone dressing.
+Absolute phi values are stored but never classifier inputs. Missing jets have -1 coordinates;
+angular differences involving them stay -1 and conditional jet-coordinate closure excludes missing jets.
+Old tables remain readable. All original CLOSURE_VARS are checked; inputs move to criterion 2b.
+New inputs have closure binning in `EXTRA_VARS`, separate from the legacy map tests.
+
+`rwt10m-pilot` defines two jobs of every step. Its generation/table jobs use the first two seeds
+and the same immutable LHE/table products as production; do not regenerate those jobs in production.
+Build replicas have separate installation products; analysis replicas also have separate products.
+Pilot tables are compared event by event with the optional independent GGZH_NLOPS CHECKOUT stream
+by `check_eventtable.py`. Only the pilot enables that stream.
+
+Run order is defined exclusively in `production/paper.sh`. `rwt-clf-{a,b,c}-10m` retains the full-target
+five-fold ensemble for the transfer test. `rwt-summary-10m` records the original regions, low-mass
+m_ll x pT(Z) diagnostic, hard-jet shares and scale bands, criteria and effective sample sizes.
+`rwt-transfer-10m` applies the actual baseline clf6 ONNX model to the new source and the new full-target
+fold ensemble to the baseline source, with normalization in the same mass window. This uses the
+five models by independent source index; the baseline all-event model and ensemble conventions are
+explicit in the output provenance. `rwt-model-10m` exports only sets passing all criteria and the
+hard-jet scale-band condition; otherwise it writes a card recording that nothing was exported.
+
+The unchanged classifier settings are always tested first. `--retuned` is reserved for the
+pre-registered conditional R6 test after an input-closure failure; it uses max_iter=1000,
+max_leaf_nodes=63 and min_samples_leaf=500. A held-out failure alone does not authorize retuning.
+No reweighting success is inferred from a pilot or from an ONNX numerical check.
+
+The new analysis jobs request 8 CPUs and 16 GB; `RWT_THREADS=8` controls OpenMP on workers.
+Run all analysis and figure scripts with `PYTHONDONTWRITEBYTECODE=1`.

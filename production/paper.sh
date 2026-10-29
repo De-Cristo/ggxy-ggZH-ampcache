@@ -71,6 +71,12 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
     RWL=pwg-rwl-pdf4lhc21.dat
     S0LO=70001 ;;                   # seeds independent of every other LO sample
+  rwt10m|rwt10m-pilot)
+    E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB"
+    RWL=pwg-rwl-rwt.dat; S0NLO=100001; S0CMS=110001
+    NNLO=4000; NCMS=2000; NREP=1; PILOT=""
+    if [ "$SET" = rwt10m-pilot ]; then NNLO=2; NCMS=2; NREP=2; PILOT=1; fi ;;
   verify)
     E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
     CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
@@ -82,6 +88,9 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    rwt10m|rwt10m-pilot)
+      echo shower-build-rwt10m events-nlo-10m events-lo-cms-10m table-nlo-cp5-10m table-lo-cms-10m \
+           rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
     13600|13000)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-nlo powheg-lo grids-lo grids-nlo mcfm \
            events-nlo events-lo cache
@@ -135,6 +144,7 @@ G=generator; S=shower
 # ggzh-install-v3: v2 plus bin/fo-ggvvh (Z -> nu nubar), for the vv sets; built by run build of vv13600
 # ggzh-install-v4: v3 plus the scale option dynscale 3 (H_T, generator/patches), for set atlas13600; built by its run build
 INSTALL=install/ggzh-install-v2; SHOWER_INSTALL=install/shower-install-v2
+case $SET in rwt10m*) SHOWER_INSTALL=install/shower-install-rwt10m-0 ;; esac
 case $SET in vv*) INSTALL=install/ggzh-install-v3 ;; atlas*) INSTALL=install/ggzh-install-v4 ;; esac
 need_install() { IN+=("ggzh-install.tgz $INSTALL.tgz"); }
 need_grids()   { IN+=("grids.tgz grids/$1.tgz"); }
@@ -146,7 +156,8 @@ need_lhe() {  # need_lhe <sample> <first seed> <files per job> <p>
 }
 # reweighting study: the per-event tables of <n> consecutive seeds of a sample (production run table-<sample>)
 need_tables() {  # need_tables <sample> <first seed> <n>
-  local k; for k in $(seq 0 $(($3 - 1))); do IN+=("tables/$1/table-$(($2 + k)).csv.gz tables/$(sname "$1")/table-$(($2 + k)).csv.gz"); done
+  local k sample; sample=$(sname "$1")
+  for k in $(seq 0 $(($3 - 1))); do IN+=("tables/$1/table-$(($2 + k)).csv.gz tables/$sample/table-$(($2 + k)).csv.gz"); done
 }
 # the same with an explicit product sample name (set atlas13600: tables of another set's samples, tables/<product>/)
 need_tables_as() {  # need_tables_as <sample in the job> <product sample> <first seed> <n>
@@ -156,12 +167,80 @@ res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 
 # sample names: production lhe/<nlo|lo>-<sqrt(s)>, verification lhe/<...>-nnpdf31-13600, Z -> nu nubar <...>-vv-<sqrt(s)>,
 # ATLAS-style <...>-atlas-<sqrt(s)>
-sname() { case $SET in verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
+sname() { case $SET in rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
+
+campaign_product() { echo "rwt/$1-rwt10m${PILOT:+-pilot-$2}.$3"; }
+campaign_tables() { need_tables lo-cms "$S0CMS" "$NCMS"; need_tables nlo-cp5 "$S0NLO" "$NNLO"; }
+campaign_checks() {
+  local a
+  for a in a b c; do
+    IN+=("rwt-in/weights-clf-$a.npz $(campaign_product weights-clf-$a "$1" npz)"
+         "rwt-in/bdt-clf-$a.json $(campaign_product bdt-clf-$a "$1" json)")
+  done
+}
 
 def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    # ---- Pre-registered 10M test; pilot uses the first two seeds/products, which production must reuse.
+    shower-build-rwt10m)
+                  res "$NREP" 2 4 2
+                  STEP=(bash -c "$S/build.sh shower-install && tar czf shower-install.tgz -C shower-install bin lib env.sh BUILD-MANIFEST.txt")
+                  OUTP=("shower-install.tgz install/shower-install-rwt10m-$p.tgz") ;;
+    events-nlo-10m|events-lo-cms-10m)
+                  need_install
+                  if [ "$run" = events-nlo-10m ]; then
+                    res "$NNLO" 1 4 12; m=2500; s=$((S0NLO+p)); t=nlo
+                    need_grids grids-nlo-13600; n="$G/cards/$RWL"
+                  else
+                    res "$NCMS" 1 4 12; m=5000; s=$((S0CMS+p)); t=lo-cms
+                    need_grids grids-lo-cms-13600; n=none
+                  fi
+                  STEP=("$G/condor/run_job.sh" events "$m" "$s" "$n")
+                  OUTP=("events-$s.lhe.gz lhe/$(sname "$t")/events-$s.lhe.gz") ;;
+    table-nlo-cp5-10m|table-lo-cms-10m)
+                  if [ "$run" = table-nlo-cp5-10m ]; then
+                    res "$NNLO" 1 4 6; s=$((S0NLO+p)); need_lhe "$(sname nlo)" "$S0NLO" 1 "$p"; m=nlo; t=nlo-cp5
+                  else
+                    res "$NCMS" 1 4 6; s=$((S0CMS+p)); need_lhe "$(sname lo-cms)" "$S0CMS" 1 "$p"; m=cms-lo-veto; t=lo-cms
+                  fi
+                  ENVS=("GGZH_SHOWER_TABLE=1" "GGZH_SHOWER_TABLE_DIR=tables" "PYTHONDONTWRITEBYTECODE=1")
+                  [ -z "$PILOT" ] || ENVS+=("GGZH_TABLE_CHECK=1")
+                  STEP=("$S/run/shower_batch.sh" shower-out "$m" cp5 cms-common -- lhe/*.lhe.gz)
+                  OUTP=("tables/table-$s.csv.gz tables/$(sname "$t")/table-$s.csv.gz") ;;
+    rwt-clf-a-10m|rwt-clf-b-10m|rwt-clf-c-10m)
+                  res "$NREP" 8 16 12; campaign_tables
+                  n=${run#rwt-clf-}; n=${n%-10m}; t=${n^^}
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(rwt/run.sh clf "clf-$n" lo-cms nlo-cp5 --features "$t" --model-out ensemble)
+                  OUTP=("weights-clf-$n.npz $(campaign_product weights-clf-$n "$p" npz)"
+                        "rwt-out/bdt-clf-$n.json $(campaign_product bdt-clf-$n "$p" json)"
+                        "ensemble.tgz $(campaign_product ensemble-clf-$n "$p" tgz)") ;;
+    rwt-summary-10m)
+                  res "$NREP" 8 16 6; campaign_tables; campaign_checks "$p"
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(rwt/run.sh summary-10m)
+                  OUTP=("rwt-out/rwt10m.json $(campaign_product summary "$p" json)") ;;
+    rwt-transfer-10m)
+                  res "$NREP" 8 16 8; campaign_tables
+                  need_tables_as old-lo-cms lo-cms-13600 40001 100
+                  need_tables_as old-nlo-cp5 nlo-cp5-13600 10001 200
+                  IN+=("rwt-in/ensemble-clf-a.tgz $(campaign_product ensemble-clf-a "$p" tgz)"
+                       "rwt-in/model-baseline.tgz rwt/model-13600.tgz")
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(rwt/run.sh transfer-10m)
+                  OUTP=("rwt-out/rwt10m.json $(campaign_product transfer "$p" json)") ;;
+    rwt-model-10m)
+                  res "$NREP" 8 16 12; campaign_tables
+                  IN+=("rwt-in/summary.json $(campaign_product summary "$p" json)")
+                  for x in skl2onnx-1.16.0-py2.py3-none-any.whl onnxconverter_common-1.14.0-py2.py3-none-any.whl; do
+                    IN+=("wheels/$x sources/$x")
+                  done
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(rwt/run.sh model-10m)
+                  OUTP=("model.tgz $(campaign_product model "$p" tgz)"
+                        "rwt-out/rwt10m.json $(campaign_product model-status "$p" json)") ;;
     # ---- builds
     build)        res 1 8 24 6;  STEP=("$G/condor/run_job.sh" build); OUTP=("ggzh-install.tgz $INSTALL.tgz") ;;
     shower-build) res 1 2 4 2;   STEP=(bash -c "$S/build.sh shower-install && tar czf shower-install.tgz -C shower-install bin lib env.sh BUILD-MANIFEST.txt")
