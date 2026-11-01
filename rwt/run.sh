@@ -35,20 +35,31 @@ npz() {  # npz <sample>
   ls tables/"$1"/table-*.csv.gz > /dev/null 2>&1 || { echo "FATAL: no tables/$1/table-*.csv.gz" >&2; return 2; }
   python3 "$HERE/ggzh_table.py" --label "$1" --tables "tables/$1/table-*.csv.gz" --out "rwt-out/$1.npz" --nominal "$nom"
 }
+verify_selection() {
+  [ -n "${RWT_INPUT_MANIFEST:-}" ] || return 0
+  python3 "$HERE/ggzh_rwt_manifest.py" verify "$RWT_INPUT_MANIFEST" --dir rwt-out
+}
+annotate_selection() {
+  [ -n "${RWT_INPUT_MANIFEST:-}" ] || return 0
+  python3 "$HERE/ggzh_rwt_manifest.py" annotate "$RWT_INPUT_MANIFEST" --dir rwt-out --result "$@"
+}
 WHAT=${1:?clf|summary|summary-atlas|model}; shift
 case $WHAT in
   clf)
     NAME=${1:?name}; SRC=${2:?source sample}; TGT=${3:?target sample}; shift 3
     npz "$SRC" && npz "$TGT" || exit 2
+    verify_selection || exit 2
     python3 "$HERE/ggzh_reweight_bdt.py" --source "rwt-out/$SRC.npz" --target "rwt-out/$TGT.npz" --out "rwt-out/bdt-$NAME.json" \
         --weights-out "weights-$NAME.npz" "$@" 2>&1 | tee "rwt-out/bdt-$NAME.log"
     rc=${PIPESTATUS[0]}
     if [ -d ensemble ]; then tar czf ensemble.tgz ensemble || rc=10; fi
     [ -s "rwt-out/bdt-$NAME.json" ] && [ -s "weights-$NAME.npz" ] || rc=10
+    if [ "$rc" = 0 ]; then annotate_selection "rwt-out/bdt-$NAME.json" || rc=10; fi
     tar czf "out-rwt-$NAME.tgz" rwt-out/*.json rwt-out/*.log
     exit $rc ;;
   summary-10m|transfer-10m|model-10m)
     for s in lo-cms nlo-cp5; do npz "$s" || exit 2; done
+    verify_selection || exit 2
     if [ "$WHAT" = transfer-10m ]; then
       for s in old-lo-cms old-nlo-cp5; do npz "$s" || exit 2; done
     fi
@@ -59,6 +70,13 @@ case $WHAT in
     fi
     python3 "$HERE/ggzh_rwt10m.py" "$WHAT" --dir rwt-out --inputs rwt-in --out rwt-out/rwt10m.json 2>&1 | tee rwt-out/study.log
     rc=${PIPESTATUS[0]}
+    if [ "$rc" = 0 ]; then
+      if [ "$WHAT" = model-10m ] && [ -n "${RWT_INPUT_MANIFEST:-}" ]; then
+        annotate_selection rwt-out/rwt10m.json --model model && tar czf model.tgz model || rc=10
+      else
+        annotate_selection rwt-out/rwt10m.json || rc=10
+      fi
+    fi
     tar czhf "out-rwt-$WHAT.tgz" rwt-out/*.json rwt-out/*.log
     exit $rc ;;
   summary)

@@ -52,6 +52,7 @@ MTFAC=(1 2 4)                       # MS-bar top-mass scale mu_t = m_ZH / f
 S0NLO=10001                        # first seed of the production NLO events
 S0LO=20001; S0HD=10001; S0CMS=40001  # first seeds of the LO, h_damp = inf and CMS-style LO events
 VDM=""                             # Z decay setting added to the grids of the CMS-style LO (vv sets: vdecaymode=12)
+RWT_AVAILABLE_MANIFEST=""           # only the user-authorized available-table analysis sets
 case $SET in
   common) ;;
   13600|13000)
@@ -77,6 +78,16 @@ case $SET in
     RWL=pwg-rwl-rwt.dat; S0NLO=100001; S0CMS=110001
     NNLO=4000; NCMS=2000; NREP=1; PILOT=""
     if [ "$SET" = rwt10m-pilot ]; then NNLO=2; NCMS=2; NREP=2; PILOT=1; fi ;;
+  rwt10m-available|rwt10m-available-pilot)
+    E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB"
+    RWL=pwg-rwl-rwt.dat; S0NLO=100001; S0CMS=110001
+    NNLO=4000; NCMS=2000; NREP=1; PILOT=""
+    RWT_AVAILABLE_MANIFEST=production/rwt10m-available.json
+    if [ "$SET" = rwt10m-available-pilot ]; then
+      NNLO=2; NCMS=2; NREP=2; PILOT=1
+      RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
+    fi ;;
   verify)
     E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
     CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
@@ -91,6 +102,8 @@ runs() {
     rwt10m|rwt10m-pilot)
       echo shower-build-rwt10m events-nlo-10m events-lo-cms-10m table-nlo-cp5-10m table-lo-cms-10m \
            rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
+    rwt10m-available|rwt10m-available-pilot)
+      echo rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
     13600|13000)
       echo fo-llh-lo fo-llh-nlo fo-zh-lo fo-zh-nlo powheg-lo grids-lo grids-nlo mcfm \
            events-nlo events-lo cache
@@ -169,8 +182,18 @@ res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 # ATLAS-style <...>-atlas-<sqrt(s)>
 sname() { case $SET in rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
 
-campaign_product() { echo "rwt/$1-rwt10m${PILOT:+-pilot-$2}.$3"; }
-campaign_tables() { need_tables lo-cms "$S0CMS" "$NCMS"; need_tables nlo-cp5 "$S0NLO" "$NNLO"; }
+campaign_product() { echo "rwt/$1-rwt10m${RWT_AVAILABLE_MANIFEST:+-available}${PILOT:+-pilot-$2}.$3"; }
+campaign_tables() {
+  if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
+    # Resource listing is independent of the selection file and also works from git-show stdin.
+    [ "$CMD_" != list ] || return 0
+    local selection f prod
+    selection=$(python3 "$PKG/rwt/ggzh_rwt_manifest.py" inputs "$PKG/$RWT_AVAILABLE_MANIFEST") || exit 2
+    while read -r f prod; do IN+=("$f $prod"); done <<< "$selection"
+  else
+    need_tables lo-cms "$S0CMS" "$NCMS"; need_tables nlo-cp5 "$S0NLO" "$NNLO"
+  fi
+}
 campaign_checks() {
   local a
   for a in a b c; do
@@ -450,6 +473,9 @@ def() {
                   OUTP=("model.tgz rwt/model-atlas-$E.tgz") ;;
     *) echo "unknown run $run in set $SET" >&2; exit 2 ;;
   esac
+  if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
+    ENVS+=("RWT_INPUT_MANIFEST=$RWT_AVAILABLE_MANIFEST")
+  fi
 }
 
 known() { runs | tr ' ' '\n' | grep -qx "$1" || { echo "run $1 is not in set $SET" >&2; exit 2; }; }

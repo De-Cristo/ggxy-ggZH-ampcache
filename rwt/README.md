@@ -195,3 +195,34 @@ No reweighting success is inferred from a pilot or from an ONNX numerical check.
 
 The new analysis jobs request 8 CPUs and 16 GB; `RWT_THREADS=8` controls OpenMP on workers.
 Run all analysis and figure scripts with `PYTHONDONTWRITEBYTECODE=1`.
+
+## Available-table amendment (2026-11-01)
+
+The user authorized analysis if at most two of the nominal 6000 table files remain unavailable,
+with the actual source/target counts and every omission recorded. The original full-product
+completeness condition is explicitly waived for this analysis; A/B/C, classifier settings,
+criteria 1–3 (including 2b), diagnostics and the hard-jet condition are unchanged. Generation and
+showers remain pinned to 3161a6224c1c354da81671c6b54fe66a27f303e8 with their original seeds.
+
+Set `rwt10m-available` defines the six analysis runs using a frozen manifest,
+`production/rwt10m-available.json`. It has separate `rwt/*-rwt10m-available.*` products.
+`rwt10m-available-pilot` uses the four immutable original pilot tables, two jobs per analysis
+step, with separate `*-rwt10m-available-pilot-<replica>.*` products. Resource listing works before
+the full selection is frozen. The original run definitions and products are unchanged.
+
+Freeze once from a small inventory JSON containing `checked_utc`, the list of relative EOS
+`products` (including sidecars), and optional `omission_reasons` keyed by sample and seed:
+
+    PYTHONDONTWRITEBYTECODE=1 python3 rwt/ggzh_rwt_manifest.py freeze \
+        --inventory inventory.json --out production/rwt10m-available.json
+
+The tool derives the nominal seeds and events/file from `production/paper.sh`, includes every
+available paired table, refuses more than two omissions, records expected event counts and a
+selection hash, and refuses to replace an existing manifest. Late files do not change this
+analysis. The frozen selection must be committed with its analysis code before submission;
+every included product/checksum and event count is validated on workers before closure work.
+
+On workers, `rwt/run.sh` verifies that the loaded filenames, per-file event counts and nominal
+weights match the frozen manifest before training. Every result JSON and model card records the
+same selection and actual event counts. The numerical closure tests are unchanged. Claims are
+for the recorded sample, with its deviation from nominal 10 M statistics disclosed.
