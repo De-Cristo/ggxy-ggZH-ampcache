@@ -8,11 +8,13 @@ criteria are inherited from the original rwt10m definitions.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 from pathlib import Path
 import re
 import subprocess
+import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
 SCHEMA = "ggzh-rwt-available-v1"
@@ -130,8 +132,58 @@ def verify(manifest, directory):
             raise ValueError("loaded event count differs from frozen selection: " + sample)
         if meta["nominal_column"] != ("2000" if sample == "nlo-cp5" else "nominal"):
             raise ValueError("wrong nominal weight: " + sample)
+        npz = directory/(sample+".npz")
+        if npz.exists():
+            with zipfile.ZipFile(npz) as archive:
+                required = {"run","event","w0","sw","ptz","pth","mzh","ptzh","yzh",
+                            "etaj1","ptj2","etaj2","ptl1","ptl2","etal1","etal2"}
+                for member in archive.namelist():
+                    if not member.endswith(".npy"): continue
+                    required.discard(member[:-4])
+                    with archive.open(member) as f:
+                        if f.read(6) != b"\x93NUMPY": raise ValueError("invalid NPZ member")
+                        version=tuple(f.read(2))
+                        if version not in ((1,0),(2,0),(3,0)): raise ValueError("unsupported NPY version")
+                        size=int.from_bytes(f.read(2 if version==(1,0) else 4),"little")
+                        if size>65536: raise ValueError("invalid NPY header size")
+                        header=ast.literal_eval(f.read(size).decode("utf-8" if version==(3,0) else "latin1").strip())
+                    shape=header["shape"]
+                    if not shape or shape[0]!=meta["events"]:
+                        raise ValueError("NPZ array count differs from bookkeeping: "+sample+"/"+member)
+                    if member=="sw.npy" and shape!=(meta["events"],9):
+                        raise ValueError("wrong scale-weight matrix shape")
+                if required: raise ValueError("missing prepared columns: "+str(sorted(required)))
         counts[sample] = meta["events"]
     return counts
+
+
+def prepared(manifest, directory, result):
+    verify(manifest,directory)
+    result.write_text(json.dumps(dict(prepared=True,samples={s:json.loads((directory/(s+".json")).read_text()) for s in SAMPLES}))+"\n")
+    annotate(manifest,directory,result)
+
+
+def compare_weights(manifest, raw_weights, cached_weights, raw_check, cached_check, result):
+    # This command is a worker-only pilot check. The preparation/parser and fit code are unchanged.
+    import numpy as np
+    raw=json.loads(raw_check.read_text());cached=json.loads(cached_check.read_text())
+    assert raw["input_selection"]==cached["input_selection"]==manifest
+    for key in ("features","classifier","nfold","summary"):assert raw[key]==cached[key],key
+    differences={}
+    with np.load(raw_weights) as a,np.load(cached_weights) as b:
+        assert set(a.files)==set(b.files)
+        assert len(a["run"])==manifest["expected_events"]["lo-cms"]
+        for key in a.files:
+            if key.startswith("w_"):
+                assert np.isfinite(a[key]).all() and np.isfinite(b[key]).all()
+                np.testing.assert_allclose(a[key],b[key],rtol=1e-12,atol=1e-12)
+                differences[key]=float(np.max(np.abs(a[key]-b[key])))
+            else:np.testing.assert_array_equal(a[key],b[key])
+    d=dict(cache_equals_raw=True,max_abs_weight_difference=differences,input_selection=manifest,
+           provenance=dict(package=(PACKAGE/"VERSION").read_text().strip(),study="rwt10m-available-cached-pilot",
+                           source_events=manifest["expected_events"]["lo-cms"],target_events=manifest["expected_events"]["nlo-cp5"],
+                           input_selection_sha256=manifest["selection_sha256"]))
+    result.write_text(json.dumps(d,indent=2)+"\n")
 
 
 def annotate(manifest, directory, result, model=None):
@@ -166,6 +218,9 @@ def main():
     v = sub.add_parser("verify"); v.add_argument("manifest",type=Path);v.add_argument("--dir",type=Path,required=True)
     a = sub.add_parser("annotate");a.add_argument("manifest",type=Path);a.add_argument("--dir",type=Path,required=True)
     a.add_argument("--result",type=Path,required=True);a.add_argument("--model",type=Path)
+    p = sub.add_parser("prepared");p.add_argument("manifest",type=Path);p.add_argument("--dir",type=Path,required=True);p.add_argument("--out",type=Path,required=True)
+    c = sub.add_parser("compare");c.add_argument("manifest",type=Path)
+    for name in ("raw-weights","cached-weights","raw-check","cached-check","out"):c.add_argument("--"+name,type=Path,required=True)
     args = ap.parse_args()
     if args.command == "freeze":
         d = freeze(args.inventory,args.out,args.pilot)
@@ -175,7 +230,9 @@ def main():
         if args.command == "inputs":
             for local, product in products(d): print(local,product)
         elif args.command == "verify": print(json.dumps(verify(d,args.dir)))
-        else: annotate(d,args.dir,args.result,args.model)
+        elif args.command == "annotate": annotate(d,args.dir,args.result,args.model)
+        elif args.command == "prepared": prepared(d,args.dir,args.out)
+        else: compare_weights(d,args.raw_weights,args.cached_weights,args.raw_check,args.cached_check,args.out)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,17 @@ annotate_selection() {
 }
 WHAT=${1:?clf|summary|summary-atlas|model}; shift
 case $WHAT in
+  prepare-10m)
+    for s in lo-cms nlo-cp5; do npz "$s" || exit 2; done
+    python3 "$HERE/ggzh_rwt_manifest.py" prepared "$RWT_INPUT_MANIFEST" --dir rwt-out --out rwt-out/rwt10m.json || exit 2
+    tar czf out-rwt-prepare-10m.tgz rwt-out/*.json
+    exit 0 ;;
+  cache-check-10m)
+    python3 "$HERE/ggzh_rwt_manifest.py" compare "$RWT_INPUT_MANIFEST" \
+      --raw-weights rwt-in/raw-weights.npz --cached-weights rwt-in/cached-weights.npz \
+      --raw-check rwt-in/raw-check.json --cached-check rwt-in/cached-check.json --out rwt-out/rwt10m.json
+    rc=$?; tar czf out-rwt-cache-check-10m.tgz rwt-out/*.json
+    exit $rc ;;
   clf)
     NAME=${1:?name}; SRC=${2:?source sample}; TGT=${3:?target sample}; shift 3
     npz "$SRC" && npz "$TGT" || exit 2

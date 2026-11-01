@@ -226,3 +226,17 @@ On workers, `rwt/run.sh` verifies that the loaded filenames, per-file event coun
 weights match the frozen manifest before training. Every result JSON and model card records the
 same selection and actual event counts. The numerical closure tests are unchanged. Claims are
 for the recorded sample, with its deviation from nominal 10 M statistics disclosed.
+
+`rwt10m-available-cached` stages this same frozen sample efficiently. Its first run,
+`rwt-prepare-10m`, invokes the unchanged `ggzh_table.py` once per sample and stores the two
+NPZ files plus their bookkeeping as EOS products. Later fits/checks fetch those products;
+the full event tables are not returned through Condor. The worker verifies all array lengths,
+required columns, file lists, per-file counts and nominal weights before fitting. No event,
+feature, precision or statistical test changes. The source/target input arrays are shared by
+A/B/C, summary, transfer and export.
+
+The separate `rwt10m-available-cached-pilot` namespace tests preparation and a six-input fit
+on the original four pilot tables. `rwt-cache-check-10m` compares all source weights/identifiers
+with the raw-table pilot and requires identical classifier settings and closure decisions;
+weight comparisons use a 1e-12 numerical tolerance. This is an I/O equivalence check, not a
+relaxation of the physics criteria. Passing models retain the frozen selection in their cards.

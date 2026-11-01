@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import zipfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import ggzh_rwt_manifest as M
@@ -54,6 +55,12 @@ class Selection(unittest.TestCase):
             self.assertEqual(M.verify(d,directory),{'lo-cms':10000,'nlo-cp5':5000})
             p=directory/'nlo-cp5.json';meta=json.loads(p.read_text());meta['nominal_column']='nominal';p.write_text(json.dumps(meta))
             with self.assertRaises(ValueError):M.verify(d,directory)
+            meta['nominal_column']='2000';p.write_text(json.dumps(meta))
+            # A small NPY header fixture checks the cached array geometry without event data.
+            header=repr(dict(descr='<f4',fortran_order=False,shape=(4999,))).encode()+b'\n'
+            with zipfile.ZipFile(directory/'nlo-cp5.npz','w') as z:
+                z.writestr('w0.npy',b'\x93NUMPY\x01\x00'+len(header).to_bytes(2,'little')+header)
+            with self.assertRaisesRegex(ValueError,'array count differs'):M.verify(d,directory)
 
 
 if __name__=='__main__':unittest.main()
