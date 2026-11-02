@@ -1,0 +1,221 @@
+{
+  "reason": "Registered R6 trigger: input-closure failure with original hyperparameters",
+  "production_commit": "3161a6224c1c354da81671c6b54fe66a27f303e8",
+  "default_analysis_commit": "869cbaa1f0c214b5b95af195ee90958439119194",
+  "selection_sha256": "32c95d293745caeae3809978bcba7689e50bf97ff1be6c90b41cdf01deda54f8",
+  "selected_events": {
+    "lo-cms": 9995000,
+    "nlo-cp5": 9997500
+  },
+  "retuned": {
+    "max_iter": 1000,
+    "max_leaf_nodes": 63,
+    "min_samples_leaf": 500
+  },
+  "sets": {
+    "A": {
+      "default_result_sha256": "11c1ec577cb9ae11cf63d13ec04414aa2e14436dfb935e24bc226dc3888c49d7",
+      "default_cluster": 1442211,
+      "input_failures": {
+        "full": [
+          "mzh",
+          "ptz",
+          "ptj1"
+        ],
+        "A_to_B": [
+          "mzh",
+          "ptz",
+          "ayzh",
+          "ptj1"
+        ],
+        "B_to_A": [
+          "mzh",
+          "ptzh",
+          "ptz",
+          "njets",
+          "ptj1"
+        ]
+      },
+      "default_classifier": {
+        "learning_rate": 0.05,
+        "max_iter": 400,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 100,
+        "l2_regularization": 1.0,
+        "early_stopping": true,
+        "validation_fraction": 0.2,
+        "n_iter_no_change": 20,
+        "random_state": 1
+      },
+      "default_criteria": {
+        "1_stage13": false,
+        "2_variables": false,
+        "2b_features": false,
+        "3_stability": false,
+        "failing_full": [
+          "pth",
+          "yh",
+          "drzh",
+          "lhe_mll",
+          "mzh",
+          "ptz",
+          "ptj1"
+        ],
+        "all_pass": false
+      }
+    },
+    "B": {
+      "default_result_sha256": "eb123fc2756d30c867ec1428af08faccd25e70b7c2842178699d9904b95fcf14",
+      "default_cluster": 1442212,
+      "input_failures": {
+        "full": [
+          "mzh",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "drj1zh"
+        ],
+        "A_to_B": [
+          "mzh",
+          "ptz",
+          "njets",
+          "ayzh",
+          "ptj1",
+          "lhe_mll",
+          "drj1zh"
+        ],
+        "B_to_A": [
+          "mzh",
+          "ptz",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "drj1zh"
+        ]
+      },
+      "default_classifier": {
+        "learning_rate": 0.05,
+        "max_iter": 400,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 100,
+        "l2_regularization": 1.0,
+        "early_stopping": true,
+        "validation_fraction": 0.2,
+        "n_iter_no_change": 20,
+        "random_state": 1
+      },
+      "default_criteria": {
+        "1_stage13": true,
+        "2_variables": false,
+        "2b_features": false,
+        "3_stability": false,
+        "failing_full": [
+          "pth",
+          "yh",
+          "drzh",
+          "mzh",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "drj1zh"
+        ],
+        "all_pass": false
+      }
+    },
+    "C": {
+      "default_result_sha256": "ae61f9a9fbde3d460bed44d4017537f02b0774afd6acdd24a67485675ac4be2b",
+      "default_cluster": 1442237,
+      "input_failures": {
+        "full": [
+          "mzh",
+          "ptzh",
+          "ptz",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "dphizzh",
+          "drj1zh",
+          "ptj2",
+          "etaj2",
+          "drj2zh",
+          "ptl1",
+          "ptl2",
+          "etal1",
+          "etal2"
+        ],
+        "A_to_B": [
+          "mzh",
+          "ptzh",
+          "ptz",
+          "njets",
+          "ayzh",
+          "ptj1",
+          "lhe_mll",
+          "dphizzh",
+          "drj1zh",
+          "etaj1",
+          "ptj2",
+          "etaj2",
+          "drj2zh",
+          "ptl1",
+          "ptl2",
+          "etal2"
+        ],
+        "B_to_A": [
+          "mzh",
+          "ptzh",
+          "ptz",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "dphizzh",
+          "drj1zh",
+          "ptj2",
+          "etaj2",
+          "drj2zh",
+          "ptl1",
+          "ptl2",
+          "etal2"
+        ]
+      },
+      "default_classifier": {
+        "learning_rate": 0.05,
+        "max_iter": 400,
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 100,
+        "l2_regularization": 1.0,
+        "early_stopping": true,
+        "validation_fraction": 0.2,
+        "n_iter_no_change": 20,
+        "random_state": 1
+      },
+      "default_criteria": {
+        "1_stage13": false,
+        "2_variables": false,
+        "2b_features": false,
+        "3_stability": false,
+        "failing_full": [
+          "pth",
+          "yh",
+          "drzh",
+          "mzh",
+          "ptzh",
+          "ptz",
+          "njets",
+          "ptj1",
+          "lhe_mll",
+          "dphizzh",
+          "drj1zh",
+          "ptj2",
+          "etaj2",
+          "drj2zh",
+          "ptl1",
+          "ptl2",
+          "etal1",
+          "etal2"
+        ],
+        "all_pass": false
+      }
+    }
+  }
+}

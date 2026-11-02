@@ -240,3 +240,19 @@ on the original four pilot tables. `rwt-cache-check-10m` compares all source wei
 with the raw-table pilot and requires identical classifier settings and closure decisions;
 weight comparisons use a 1e-12 numerical tolerance. This is an I/O equivalence check, not a
 relaxation of the physics criteria. Passing models retain the frozen selection in their cards.
+
+## Conditional capacity test R6 (2026-11-02)
+
+All three default full-sample fits failed criterion 2b on inputs, activating the single
+pre-registered capacity variant. `production/rwt10m-r6-trigger.json` records their result
+checksums, input failures, original settings and fixed selection. The defaults are retained.
+Sets `rwt10m-available-cached-r6` and `rwt10m-available-cached-r6-pilot` define the same six
+analysis steps, using `--retuned`: 1000 iterations, 63 leaves, minimum 500 events per leaf.
+All remaining settings, input sets, criteria and diagnostics are unchanged. No further tuning
+is authorized by these definitions.
+
+R6 reads the existing immutable cached inputs; it never prepares or selects another sample.
+Outputs have a distinct `-r6` suffix. The pilot uses two replicas of every analysis step.
+Summary, transfer provenance and export cards identify the classifier settings; an export
+must use the settings that passed closure. Default and R6 results are both reported, including
+failures. Production remains pinned to 3161a62; only analysis uses this later commit.

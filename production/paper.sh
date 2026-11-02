@@ -54,6 +54,7 @@ S0LO=20001; S0HD=10001; S0CMS=40001  # first seeds of the LO, h_damp = inf and C
 VDM=""                             # Z decay setting added to the grids of the CMS-style LO (vv sets: vdecaymode=12)
 RWT_AVAILABLE_MANIFEST=""           # only the user-authorized available-table analysis sets
 RWT_CACHED_INPUTS=""                # parsed tables are staged once through EOS
+RWT_RETUNED=""                      # only the registered conditional R6 capacity test
 case $SET in
   common) ;;
   13600|13000)
@@ -89,13 +90,14 @@ case $SET in
       NNLO=2; NCMS=2; NREP=2; PILOT=1
       RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
     fi ;;
-  rwt10m-available-cached|rwt10m-available-cached-pilot)
+  rwt10m-available-cached|rwt10m-available-cached-pilot|rwt10m-available-cached-r6|rwt10m-available-cached-r6-pilot)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB"
     RWL=pwg-rwl-rwt.dat; S0NLO=100001; S0CMS=110001
     NNLO=4000; NCMS=2000; NREP=1; PILOT=""; RWT_CACHED_INPUTS=1
     RWT_AVAILABLE_MANIFEST=production/rwt10m-available.json
-    if [ "$SET" = rwt10m-available-cached-pilot ]; then
+    case $SET in *-r6|*-r6-pilot) RWT_RETUNED=1 ;; esac
+    if [[ "$SET" = *-pilot ]]; then
       NNLO=2; NCMS=2; NREP=2; PILOT=1
       RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
     fi ;;
@@ -114,6 +116,8 @@ runs() {
       echo shower-build-rwt10m events-nlo-10m events-lo-cms-10m table-nlo-cp5-10m table-lo-cms-10m \
            rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
     rwt10m-available|rwt10m-available-pilot)
+      echo rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
+    rwt10m-available-cached-r6|rwt10m-available-cached-r6-pilot)
       echo rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
     rwt10m-available-cached|rwt10m-available-cached-pilot)
       echo rwt-prepare-10m rwt-clf-a-10m
@@ -197,7 +201,8 @@ res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 # ATLAS-style <...>-atlas-<sqrt(s)>
 sname() { case $SET in rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
 
-campaign_product() { echo "rwt/$1-rwt10m${RWT_AVAILABLE_MANIFEST:+-available}${RWT_CACHED_INPUTS:+-cached}${PILOT:+-pilot-$2}.$3"; }
+campaign_product() { echo "rwt/$1-rwt10m${RWT_AVAILABLE_MANIFEST:+-available}${RWT_CACHED_INPUTS:+-cached}${RWT_RETUNED:+-r6}${PILOT:+-pilot-$2}.$3"; }
+campaign_data_product() { echo "rwt/$1-rwt10m-available-cached${PILOT:+-pilot-$2}.$3"; }
 campaign_raw_tables() {
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
     # Resource listing is independent of the selection file and also works from git-show stdin.
@@ -213,8 +218,8 @@ campaign_tables() {
   if [ -n "$RWT_CACHED_INPUTS" ]; then
     local sample
     for sample in lo-cms nlo-cp5; do
-      IN+=("rwt-out/$sample.npz $(campaign_product sample-$sample "$p" npz)"
-           "rwt-out/$sample.json $(campaign_product sample-$sample "$p" json)")
+      IN+=("rwt-out/$sample.npz $(campaign_data_product sample-$sample "$p" npz)"
+           "rwt-out/$sample.json $(campaign_data_product sample-$sample "$p" json)")
     done
   else
     campaign_raw_tables
@@ -282,6 +287,7 @@ def() {
                   n=${run#rwt-clf-}; n=${n%-10m}; t=${n^^}
                   ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
                   STEP=(rwt/run.sh clf "clf-$n" lo-cms nlo-cp5 --features "$t" --model-out ensemble)
+                  [ -z "$RWT_RETUNED" ] || STEP+=(--retuned)
                   OUTP=("weights-clf-$n.npz $(campaign_product weights-clf-$n "$p" npz)"
                         "rwt-out/bdt-clf-$n.json $(campaign_product bdt-clf-$n "$p" json)"
                         "ensemble.tgz $(campaign_product ensemble-clf-$n "$p" tgz)") ;;
@@ -521,6 +527,7 @@ def() {
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
     ENVS+=("RWT_INPUT_MANIFEST=$RWT_AVAILABLE_MANIFEST")
   fi
+  [ -z "$RWT_RETUNED" ] || ENVS+=("RWT_RETUNED=1")
 }
 
 known() { runs | tr ' ' '\n' | grep -qx "$1" || { echo "run $1 is not in set $SET" >&2; exit 2; }; }

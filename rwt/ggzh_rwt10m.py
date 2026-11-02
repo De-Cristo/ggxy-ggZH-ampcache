@@ -4,12 +4,17 @@ Physics failures are recorded as failures; an execution error is a separate fail
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import numpy as np
 from ggzh_reweight_common import Sample, SCALE7, FEATURE_SETS, dumps
 from ggzh_rwt_summary import REGIONS, HARDJET_EDGES, frac_region
 from ggzh_reweight_closure import test_pois
 import ggzh_reweight_bdt as BDT
+
+
+def variant():
+    return 'R6' if os.environ.get('RWT_RETUNED') == '1' else 'default'
 
 
 def aligned(path, src):
@@ -78,14 +83,15 @@ def diagnostics(src, w, tgt):
 def summary(D,I):
     src,tgt=Sample('source',D/'lo-cms.npz'),Sample('target',D/'nlo-cp5.npz')
     out={'provenance':{'package':Path('VERSION').read_text().strip(),'study':'rwt10m',
-                       'source_events':src.n,'target_events':tgt.n},
+                       'source_events':src.n,'target_events':tgt.n,'variant':variant()},
          'unweighted':diagnostics(src,np.ones(src.n),tgt),'sets':{}}
     for letter in 'ABC':
         label='clf-'+letter.lower()
         c=json.loads((I/f'bdt-{label}.json').read_text())
         assert c['features']==FEATURE_SETS[letter]
+        assert c['classifier']==BDT.CLF, 'closure classifier settings do not match this variant'
         d=diagnostics(src,aligned(I/f'weights-{label}.npz',src),tgt)
-        d['criteria']=c['summary']; d['features']=c['features']
+        d['criteria']=c['summary']; d['features']=c['features']; d['classifier']=c['classifier']
         d['claim_reweighting_works']=bool(c['summary']['all_pass'] and d['hardjet']['pth450']['within_band'])
         out['sets'][letter]=d
     out['target_neff']={}
@@ -127,16 +133,20 @@ def transfer(D,I):
             'new_model_on_old_source_vs_new_target':diagnostics(old,wnew,tgt),
             'new_model_on_old_source_vs_old_target':diagnostics(old,wnew,oldt),
             'provenance':{'old_model_sha256':__import__('hashlib').sha256(model.read_bytes()).hexdigest(),
+                          'variant':variant(),'new_model_classifier':saved['classifier'],
                           'new_model':'full-target five-fold ensemble, assigned by independent source index'}}
 
 
 def export(D,I):
     study=json.loads((I/'summary.json').read_text())
     passing=[k for k,v in study['sets'].items() if v['claim_reweighting_works']]
+    assert study.get('provenance',{}).get('variant','default')==variant()
     outdir=Path('model'); outdir.mkdir()
     if passing:
         import ggzh_rwt_export as E
         E.MODELS={f'clf{k}':FEATURE_SETS[k] for k in passing}
+        for k in passing:
+            assert study['sets'][k]['classifier']==E.CLF, 'export settings differ from the closure test'
         extra={**__import__('ggzh_reweight_common').EXTRA_VARS,
                'lhe_mll':(None,'dilepton invariant mass','GeV')}
         for key,value in extra.items():
@@ -153,7 +163,7 @@ def export(D,I):
                                                    'closure_tests':{k:v['criteria'] for k,v in study['sets'].items()}}))
     import tarfile
     with tarfile.open('model.tgz','w:gz') as f: f.add(outdir,arcname='model')
-    return {'passing_sets':passing,'exported':bool(passing)}
+    return {'passing_sets':passing,'exported':bool(passing),'variant':variant(),'classifier':BDT.CLF}
 
 
 def main():
@@ -162,6 +172,8 @@ def main():
     ap.add_argument('--dir',type=Path,required=True); ap.add_argument('--inputs',type=Path,required=True)
     ap.add_argument('--out',type=Path,required=True)
     a=ap.parse_args()
+    if variant()=='R6':
+        BDT.CLF.update(max_iter=1000,max_leaf_nodes=63,min_samples_leaf=500)
     result={'summary-10m':summary,'transfer-10m':transfer,'model-10m':export}[a.step](a.dir,a.inputs)
     a.out.write_text(dumps(result))
     print('Wrote',a.out,flush=True)
