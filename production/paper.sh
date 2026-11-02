@@ -101,6 +101,12 @@ case $SET in
       NNLO=2; NCMS=2; NREP=2; PILOT=1
       RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
     fi ;;
+  rwt10m-dnn-c|rwt10m-dnn-c-pilot)
+    E=13600; NREP=1; PILOT=""; RWT_CACHED_INPUTS=1
+    RWT_AVAILABLE_MANIFEST=production/rwt10m-available.json
+    if [[ "$SET" = *-pilot ]]; then
+      NREP=2; PILOT=1; RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
+    fi ;;
   verify)
     E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
     CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
@@ -112,6 +118,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    rwt10m-dnn-c|rwt10m-dnn-c-pilot) echo rwt-dnn-c-10m ;;
     rwt10m|rwt10m-pilot)
       echo shower-build-rwt10m events-nlo-10m events-lo-cms-10m table-nlo-cp5-10m table-lo-cms-10m \
            rwt-clf-a-10m rwt-clf-b-10m rwt-clf-c-10m rwt-summary-10m rwt-transfer-10m rwt-model-10m ;;
@@ -237,6 +244,17 @@ def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    rwt-dnn-c-10m)
+                  res "$NREP" 16 32 8; [ -z "$PILOT" ] || res "$NREP" 4 8 2
+                  campaign_tables
+                  IN+=("vh-code.tgz sources/vh-dnn-14e64cafe1af51a4f6261703cdf0790fd24aa698.tgz")
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1"
+                        "VH_TRAINER_COMMIT=14e64cafe1af51a4f6261703cdf0790fd24aa698")
+                  STEP=(bash production/run_vh_dnn.sh)
+                  OUTP=("dnn-out/dnn-clf-c.json rwt/dnn-clf-c-$SET-$p.json"
+                        "dnn-out/weights-clf-c.npz rwt/dnn-weights-clf-c-$SET-$p.npz"
+                        "dnn-models.tgz rwt/dnn-models-clf-c-$SET-$p.tgz"
+                        "dnn-out/verification.json rwt/dnn-verification-clf-c-$SET-$p.json") ;;
     rwt-prepare-10m)
                   res "$NREP" 1 16 8; campaign_raw_tables
                   ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1")
