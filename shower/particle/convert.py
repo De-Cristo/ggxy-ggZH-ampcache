@@ -76,6 +76,8 @@ def main():
     ap.add_argument('--order',required=True);ap.add_argument('--expected',type=int,required=True);a=ap.parse_args()
     start=time.time();out=Path('particle-out');out.mkdir(exist_ok=True)
     metadata=json.loads(Path('particle-context.json').read_text());metadata.update(seed=a.seed,shower_seed=a.seed+100000,channel=a.channel,order=a.order)
+    metadata['frozen_manifest']=json.loads(Path('production/rwt10m-available.json').read_text())['selection_sha256'] if a.channel=='zll' else None
+    metadata['primary_included']=(a.seed not in (100872,111933)) if a.channel=='zll' else True
     metadata['versions']={'numpy':np.__version__,'pyarrow':pa.__version__}
     metadata['build']=Path('particle-install/BUILD-MANIFEST.txt').read_text()
     metadata['cards']={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('shower/cards').glob('*.cmnd')}

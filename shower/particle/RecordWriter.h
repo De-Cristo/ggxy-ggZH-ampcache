@@ -66,11 +66,11 @@ public:
       const auto& q=e[i];fastjet::PseudoJet v(q.px(),q.py(),q.pz(),q.e());v.set_user_index(i);
       if(q.isFinal())stable.push_back(v);
       int id=std::abs(q.id()),st=std::abs(q.status());
-      if((id<=6 || id==21)&&st>=71&&st<=79&&q.pT()>=10.) {
+      if(((id>=1 && id<=6) || id==21)&&st>=71&&st<=79&&q.pT()>=10.) {
         ref.push_back(i);bool copied=false;
         for(int d:q.daughterList())if(d>0&&d<e.size()) {
           int di=std::abs(e[d].id()),ds=std::abs(e[d].status());
-          if((di<=6||di==21)&&ds>=71&&ds<=79)copied=true;
+          if(((di>=1&&di<=6)||di==21)&&ds>=71&&ds<=79)copied=true;
         }
         if(!copied)partons.push_back(v);
       }
