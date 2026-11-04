@@ -92,7 +92,15 @@ def main():
     numeric=np.array([[float(r[k]) for k in r] for r in closure]);old=np.array([[float(r[k]) for k in r] for r in reference])
     assert list(reference[0])==list(closure[0]),'Legacy schema differs'
     assert np.isfinite(numeric).all(),'Nonfinite closure data'
-    assert np.allclose(old,numeric,rtol=2e-5,atol=2e-5),'Replay differs from legacy table'
+    # One least printed unit per column: weights %.8g, kinematics %.6g.
+    # A shared absolute tolerance would conceal percent-level changes to tiny weights.
+    digits=np.array([8 if k.startswith('w:') else 6 for k in closure[0]])
+    magnitude=np.floor(np.log10(np.where(old!=0,np.abs(old),1.0)))
+    rounding=np.where(old!=0,1.01*np.power(10.0,magnitude-digits[None,:]+1),0.)
+    difference=np.abs(old-numeric);within=difference<=rounding
+    bad=[k for j,k in enumerate(closure[0]) if not within[:,j].all()]
+    assert not bad,('Replay differs beyond stored rounding',bad)
+    max_lsb=float(np.max(np.divide(difference,rounding,out=np.zeros_like(difference),where=rounding!=0)))
     lhe=list(lhe_events('input.lhe.gz'));assert len(lhe)==a.expected
     raw_writer=obj_writer=None;rows=[];batch=[];obatch=[];seen=set();stable_check=[]
     with open('particle.particles.jsonl') as f:
@@ -171,7 +179,8 @@ def main():
     assert pq.read_metadata(out/'records.parquet').num_rows==len(rows)
     assert pq.read_metadata(out/'objects.parquet').num_rows==len(rows)
     report=dict(schema='ggzh-particle-v1',metadata=metadata,events=len(rows),expected=a.expected,missing_ordinals=missing,
-        legacy_comparison=dict(pass_=True,max_absolute_difference=float(np.max(abs(old-numeric))),rtol=2e-5,atol=2e-5),
+        legacy_comparison=dict(pass_=True,max_absolute_difference=float(np.max(abs(old-numeric))),within_stored_rounding=True,
+            precision='one printed unit: weights8 significant digits; kinematics6; exact zero',max_fraction_of_printed_unit=max_lsb),
         sumw=float(sw.sum()),sumw2=float(sw@sw),negative_fraction=float(np.mean(sw<0)),
         multiplicity_counts={str(j):stable_check.count(j) for j in sorted(set(stable_check))},views=summaries,
         extraction_seconds=time.time()-start,peak_rss_kb=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
