@@ -129,7 +129,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
-    particle-zll|particle-zvv) echo particle-build particle-nlo particle-lo-cms ;;
+    particle-zll|particle-zvv) echo particle-build particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
     rwt10m-transformer-c) echo rwt-transformer-fold-10m rwt-transformer-merge-10m ;;
     rwt10m-dnn-c|rwt10m-dnn-c-pilot) echo rwt-dnn-c-10m ;;
@@ -309,6 +309,12 @@ def() {
                   ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1")
                   STEP=(rwt/run.sh cache-check-10m)
                   OUTP=("rwt-out/rwt10m.json $(campaign_product cache-check "$p" json)") ;;
+    particle-splits)
+                  res 1 1 4 2
+                  IN=("split-input/lo-cms.npz rwt/sample-lo-cms-rwt10m-available-cached.npz"
+                      "split-input/nlo-cp5.npz rwt/sample-nlo-cp5-rwt10m-available-cached.npz")
+                  STEP=(bash -c 'source shower/versions.sh && source "$SHOWER_LCG_VIEW/setup.sh" >/dev/null 2>&1 && PYTHONDONTWRITEBYTECODE=1 python3 shower/particle/make_splits.py')
+                  OUTP=("split-map.json particle-v1/splits/zll.json") ;;
     particle-build)
                   res 1 1 4 2
                   IN=("shower-install.tgz install/shower-install-rwt10m-0.tgz")
@@ -322,6 +328,7 @@ def() {
                   IN=("input.lhe.gz ${prefix}lhe/$order-$suffix-13600/events-$s.lhe.gz"
                       "particle-install.tgz particle-v1/install/particle-install.tgz")
                   if [ "$channel" = zll ]; then
+                    IN+=("split-map.json particle-v1/splits/zll.json")
                     IN+=("legacy.csv.gz tables/$legacy-rwt10m-13600/table-$s.csv.gz")
                   else
                     IN+=("reference-install.tgz install/shower-install-rwt10m-0.tgz")

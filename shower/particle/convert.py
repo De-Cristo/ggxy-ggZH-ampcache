@@ -162,11 +162,23 @@ def main():
     for view,cap in (('jets-v1',64),('partons-v1',128)):
         t=tensors(rows,view,cap)
         ids=np.array([r['lhe_ordinal'] for r in rows],np.int32)
-        # Full shard counts and frozen omitted shards are multiples of 5 and 2.
-        # Thus shard-local accepted ordinal reproduces global window folds/target halves.
-        assert np.all((cc['mz']>15)&(cc['mz']<150)),'Window-index mapping requires explicit prefix manifest'
+        in_window=(cc['mz']>15)&(cc['mz']<150)
+        source_fold=np.full(len(rows),-1,np.int8)
+        if a.channel=='zll':
+            split=json.loads(Path('split-map.json').read_text())
+            assert split['selection_sha256']==metadata['frozen_manifest']
+            entry=split['samples'][a.order]['seeds'].get(str(a.seed))
+            if metadata['primary_included']:
+                assert entry is not None and entry['rows']==len(rows)
+                assert np.array_equal(np.flatnonzero(~in_window),entry['excluded_rows'])
+                if a.order=='lo-cms':source_fold[in_window]=(entry['window_offset']+np.arange(in_window.sum()))%5
+            # Archival LO111933 has no assignment in the frozen primary sample.
+        else:
+            # Prospective Zvv split is stable per original event ID, independent
+            # of missing shards or mass-window exclusions; frozen before any fit.
+            if a.order=='lo-cms':source_fold[in_window]=np.flatnonzero(in_window)%5
         np.savez_compressed(out/f'{view}.npz',**t,lhe_ordinal=ids,table_row=np.arange(len(rows)),seed=np.full(len(rows),a.seed),
-            source_fold=np.arange(len(rows))%5,target_half=np.arange(len(rows))%2,weight=sw)
+            in_window=in_window,source_fold=source_fold,target_half=np.arange(len(rows))%2,weight=sw)
         with np.load(out/f'{view}.npz') as inp:
             for key in ('pf_features','pf_vectors','pf_mask','event_features','ps_encoding_features'):
                 assert np.isfinite(inp[key]).all()
@@ -181,6 +193,7 @@ def main():
     report=dict(schema='ggzh-particle-v1',metadata=metadata,events=len(rows),expected=a.expected,missing_ordinals=missing,
         legacy_comparison=dict(pass_=True,max_absolute_difference=float(np.max(abs(old-numeric))),within_stored_rounding=True,
             precision='one printed unit: weights8 significant digits; kinematics6; exact zero',max_fraction_of_printed_unit=max_lsb),
+        in_window_events=int(in_window.sum()),outside_window_rows=np.flatnonzero(~in_window).tolist(),
         sumw=float(sw.sum()),sumw2=float(sw@sw),negative_fraction=float(np.mean(sw<0)),
         multiplicity_counts={str(j):stable_check.count(j) for j in sorted(set(stable_check))},views=summaries,
         extraction_seconds=time.time()-start,peak_rss_kb=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
