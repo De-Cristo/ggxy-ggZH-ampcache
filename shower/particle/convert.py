@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Worker-only conversion of native Pythia records to lossless Parquet and ZH tensors."""
-import argparse, csv, gzip, hashlib, json, math, os, resource, time
+import argparse, csv, gzip, hashlib, json, math, os, re, resource, time
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -10,19 +10,37 @@ pa.set_cpu_count(1)
 pa.set_io_thread_count(1)
 
 
+def lhe_nodes(path):
+    # POWHEG can append plain-text run/seed information after the XML root.
+    # Like generator/analysis/lhe_xsec.py, read complete event records only.
+    block=None
+    with gzip.open(path,'rt') as f:
+        for line in f:
+            if re.match(r"\s*<event(?:\s|>)",line):
+                assert block is None,'Nested LHE event'
+                block=[]
+            if block is not None:
+                closing=line.find('</event>')
+                block.append(line if closing<0 else line[:closing+len('</event>')])
+                if closing>=0:
+                    yield ET.fromstring(''.join(block));block=None
+    assert block is None,'Incomplete LHE event at EOF'
+
+
+def fnum(value):
+    return float(value.replace('D','E').replace('d','e'))
+
+
 def lhe_events(path):
-    with gzip.open(path, 'rt') as f:
-        for _, node in ET.iterparse(f, events=('end',)):
-            if node.tag != 'event':
-                continue
-            lines=[x.strip() for x in node.text.strip().splitlines() if x.strip() and not x.lstrip().startswith('#')]
-            head=lines[0].split(); n=int(head[0]); particles=[]
-            for line in lines[1:n+1]:
-                x=line.split(); particles.append(dict(id=int(x[0]),status=int(x[1]),mothers=[int(x[2]),int(x[3])],
-                    colours=[int(x[4]),int(x[5])],p4=[float(a) for a in x[6:10]],mass=float(x[10]),lifetime=float(x[11]),spin=float(x[12])))
-            weights={x.attrib['id']:float(x.text) for x in node.findall('./rwgt/wgt')}
-            yield dict(particles=particles,weight=float(head[2]),scalup=float(head[3]),weights=weights)
-            node.clear()
+    for node in lhe_nodes(path):
+        lines=[x.strip() for x in node.text.strip().splitlines() if x.strip() and not x.lstrip().startswith('#')]
+        head=lines[0].split(); n=int(head[0]); particles=[]
+        for line in lines[1:n+1]:
+            x=line.split(); particles.append(dict(id=int(x[0]),status=int(x[1]),mothers=[int(x[2]),int(x[3])],
+                colours=[int(x[4]),int(x[5])],p4=[fnum(a) for a in x[6:10]],mass=fnum(x[10]),lifetime=fnum(x[11]),spin=fnum(x[12])))
+        weights={x.attrib['id']:fnum(x.text) for x in node.findall('./rwgt/wgt')}
+        yield dict(particles=particles,weight=fnum(head[2]),scalup=fnum(head[3]),weights=weights)
+        node.clear()
 
 
 def collection(c):
