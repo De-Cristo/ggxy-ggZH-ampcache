@@ -25,6 +25,10 @@ def lhe_events(path):
             node.clear()
 
 
+def collection(c):
+    return dict(jets=[dict(p4=j[:4],constituents=j[4]) for j in c['jets']],dmerge=c['dmerge'])
+
+
 def particle(x):
     return dict(id=int(x[0]),status=int(x[1]),p4=x[2:6],mass=x[6],col=int(x[7]),acol=int(x[8]),
                 final=bool(x[9]),mothers=x[10],daughters=x[11])
@@ -112,8 +116,8 @@ def main():
                 z_index=r['z'],h_index=r['h'],lhe=lp,lhe_incoming=dict(x=x,ids=[p['id'] for p in incoming]),
                 pythia_incoming=r['pythia_incoming'],shower_weights=w)
             batch.append(raw)
-            obj=dict(seed=a.seed,lhe_ordinal=ordinal,radiation=r['radiation'],partons=r['partons'],
-                     parton_indices=r['parton_indices'],status71_79_indices=r['status71_79_indices'],replacement_kt=r['replacement_kt'])
+            obj=dict(seed=a.seed,lhe_ordinal=ordinal,radiation=collection(r['radiation']),partons=collection(r['partons']),
+                     parton_indices=r['parton_indices'],status71_79_indices=r['status71_79_indices'],replacement_kt=collection(r['replacement_kt']))
             obatch.append(obj)
             # Stable analysis-jet definition cross-check with independent native-record clustering.
             js=r['radiation']['jets'];nj=sum(kin(j[:4])[0]>30 for j in js)
