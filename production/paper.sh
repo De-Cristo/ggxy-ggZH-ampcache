@@ -112,6 +112,9 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
+  particle-zll|particle-zvv)
+    E=13600; NNLO=4000; NCMS=2000
+    if [ "$SET" = particle-zll ]; then S0NLO=100001; S0CMS=110001; else S0NLO=300001; S0CMS=310001; fi ;;
   rwt10m-transformer-c)
     E=13600; NREP=1; PILOT=""; RWT_CACHED_INPUTS=1
     RWT_AVAILABLE_MANIFEST=production/rwt10m-available.json ;;
@@ -126,6 +129,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    particle-zll|particle-zvv) echo particle-build particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
     rwt10m-transformer-c) echo rwt-transformer-fold-10m rwt-transformer-merge-10m ;;
     rwt10m-dnn-c|rwt10m-dnn-c-pilot) echo rwt-dnn-c-10m ;;
@@ -305,6 +309,32 @@ def() {
                   ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1")
                   STEP=(rwt/run.sh cache-check-10m)
                   OUTP=("rwt-out/rwt10m.json $(campaign_product cache-check "$p" json)") ;;
+    particle-build)
+                  res 1 1 4 2
+                  IN=("shower-install.tgz install/shower-install-rwt10m-0.tgz")
+                  STEP=(bash production/run_particle_build.sh)
+                  OUTP=("particle-install.tgz particle-v1/install/particle-install.tgz") ;;
+    particle-nlo|particle-lo-cms)
+                  channel=zll; prefix=""; suffix=rwt10m
+                  if [ "$SET" = particle-zvv ]; then channel=zvv; prefix="@vv/"; suffix=vv-rwt10m; fi
+                  if [ "$run" = particle-nlo ]; then res "$NNLO" 1 8 12; s=$((S0NLO+p)); order=nlo; expected=2500; legacy=nlo-cp5
+                  else res "$NCMS" 1 8 12; s=$((S0CMS+p)); order=lo-cms; expected=5000; legacy=lo-cms; fi
+                  IN=("input.lhe.gz ${prefix}lhe/$order-$suffix-13600/events-$s.lhe.gz"
+                      "particle-install.tgz particle-v1/install/particle-install.tgz")
+                  if [ "$channel" = zll ]; then
+                    IN+=("legacy.csv.gz tables/$legacy-rwt10m-13600/table-$s.csv.gz")
+                  else
+                    IN+=("reference-install.tgz install/shower-install-rwt10m-0.tgz")
+                  fi
+                  STEP=(bash production/run_particle.sh "$channel" "$order" "$s" "$expected")
+                  OUTP=("particle-out/records.parquet particle-v1/$channel/$order/records/$s.parquet"
+                         "particle-out/objects.parquet particle-v1/$channel/$order/objects/$s.parquet"
+                         "particle-out/jets-v1.npz particle-v1/$channel/$order/inputs/jets-v1/$s.npz"
+                         "particle-out/partons-v1.npz particle-v1/$channel/$order/inputs/partons-v1/$s.npz"
+                         "particle-out/closure.npz particle-v1/$channel/$order/closure/$s.npz"
+                         "particle-out/legacy.csv.gz particle-v1/$channel/$order/closure/$s.csv.gz"
+                         "particle-out/schema.json particle-v1/$channel/$order/validation/$s.schema.json"
+                         "particle-out/validation.json particle-v1/$channel/$order/validation/$s.json") ;;
     # ---- Pre-registered 10M test; pilot uses the first two seeds/products, which production must reuse.
     shower-build-rwt10m)
                   res "$NREP" 2 4 2
