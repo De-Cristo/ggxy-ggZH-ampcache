@@ -11,7 +11,7 @@ report={}
 for view in ('jets-v1','partons-v1'):
     with np.load(f'particle-out/{view}.npz') as d:
         x=torch.from_numpy(d['pf_features'][:8]);v=torch.from_numpy(d['pf_vectors'][:8]);m=torch.from_numpy(d['pf_mask'][:8]).bool()
-    model=ParticleTransformer(input_dim=x.shape[1],num_classes=1,embed_dims=[64],pair_input_dim=0,
+    model=ParticleTransformer(input_dim=x.shape[1],num_classes=1,embed_dims=[64],pair_input_dim=4,
         num_heads=4,num_layers=2,num_cls_layers=2,trim=False)
     model.eval()
     with torch.no_grad():y=model(x,v=v,mask=m)

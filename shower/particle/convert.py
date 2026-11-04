@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
+pa.set_cpu_count(1)
+pa.set_io_thread_count(1)
 
 
 def lhe_events(path):
