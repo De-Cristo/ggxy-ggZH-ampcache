@@ -208,7 +208,14 @@ res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 # ATLAS-style <...>-atlas-<sqrt(s)>
 sname() { case $SET in rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
 
-campaign_product() { echo "rwt/$1-rwt10m${RWT_AVAILABLE_MANIFEST:+-available}${RWT_CACHED_INPUTS:+-cached}${RWT_RETUNED:+-r6}${PILOT:+-pilot-$2}.$3"; }
+campaign_product() {
+  local recovery=""
+  # B computed but its first upload failed; preserve every original/partial product.
+  if [ "$SET" = rwt10m-available-cached-r6 ]; then
+    case $1 in weights-clf-b|bdt-clf-b|ensemble-clf-b) recovery=-recovery1 ;; esac
+  fi
+  echo "rwt/$1-rwt10m${RWT_AVAILABLE_MANIFEST:+-available}${RWT_CACHED_INPUTS:+-cached}${RWT_RETUNED:+-r6}${recovery}${PILOT:+-pilot-$2}.$3"
+}
 campaign_data_product() { echo "rwt/$1-rwt10m-available-cached${PILOT:+-pilot-$2}.$3"; }
 campaign_raw_tables() {
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
@@ -245,7 +252,7 @@ def() {
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
     rwt-dnn-c-10m)
-                  res "$NREP" 16 32 8; [ -z "$PILOT" ] || res "$NREP" 4 8 2
+                  res "$NREP" 8 18 12; [ -z "$PILOT" ] || res "$NREP" 4 8 2
                   campaign_tables
                   IN+=("vh-code.tgz sources/vh-dnn-14e64cafe1af51a4f6261703cdf0790fd24aa698.tgz")
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1"

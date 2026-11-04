@@ -31,8 +31,7 @@ record = dict(torch=str(torch.__version__), cuda=torch.version.cuda,
 print(json.dumps(record), flush=True)
 open('dnn-logs/gpu.json', 'w').write(json.dumps(record, indent=2)+'\n')
 PY
-VH_WORKER_TEST=1 python -m unittest discover -s vh/tests -v 2>&1 | tee dnn-logs/smoke.log
-/usr/bin/time -p -o dnn-logs/train-time.txt python vh/train.py --worker --device cuda \
+/usr/bin/time -v -o dnn-logs/train-resources.txt /usr/bin/time -p -o dnn-logs/train-time.txt python vh/train.py --worker --device cuda \
     --paper-package "$PWD" --manifest "$RWT_INPUT_MANIFEST" \
     --source rwt-out/lo-cms.npz --target rwt-out/nlo-cp5.npz \
     --config vh/config.json --out dnn-out 2>&1 | tee dnn-logs/train.log
