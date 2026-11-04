@@ -107,6 +107,14 @@ case $SET in
     if [[ "$SET" = *-pilot ]]; then
       NREP=2; PILOT=1; RWT_AVAILABLE_MANIFEST=production/rwt10m-available-pilot.json
     fi ;;
+  vv-rwt10m)
+    E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
+    RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
+    NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
+  rwt10m-transformer-c)
+    E=13600; NREP=1; PILOT=""; RWT_CACHED_INPUTS=1
+    RWT_AVAILABLE_MANIFEST=production/rwt10m-available.json ;;
   verify)
     E=13600; PDF=NNPDF31_nnlo_as_0118_mc_hessian_pdfas
     CARD=""                       # the card's own settings: NNPDF3.1, 13.6 TeV
@@ -118,6 +126,8 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
+    rwt10m-transformer-c) echo rwt-transformer-fold-10m rwt-transformer-merge-10m ;;
     rwt10m-dnn-c|rwt10m-dnn-c-pilot) echo rwt-dnn-c-10m ;;
     rwt10m|rwt10m-pilot)
       echo shower-build-rwt10m events-nlo-10m events-lo-cms-10m table-nlo-cp5-10m table-lo-cms-10m \
@@ -206,7 +216,7 @@ res() { JOBS=$1; CPUS=$2; MEM=$3; HOURS=$4; }
 
 # sample names: production lhe/<nlo|lo>-<sqrt(s)>, verification lhe/<...>-nnpdf31-13600, Z -> nu nubar <...>-vv-<sqrt(s)>,
 # ATLAS-style <...>-atlas-<sqrt(s)>
-sname() { case $SET in rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
+sname() { case $SET in vv-rwt10m) echo "$1-vv-rwt10m-$E" ;; rwt10m*) echo "$1-rwt10m-$E" ;; verify) echo "$1-nnpdf31-13600" ;; vv*) echo "$1-vv-$E" ;; atlas*) echo "$1-atlas-$E" ;; *) echo "$1-$E" ;; esac; }
 
 campaign_product() {
   local recovery=""
@@ -251,6 +261,20 @@ def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    rwt-transformer-fold-10m)
+                  res 15 8 18 12; campaign_tables
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(bash production/run_transformer.sh fold "$p")
+                  OUTP=("transformer-part.tgz rwt/transformer-c/fold-$p.tgz"
+                        "transformer-part.json rwt/transformer-c/fold-$p.json") ;;
+    rwt-transformer-merge-10m)
+                  res 1 8 18 6; campaign_tables
+                  for x in $(seq 0 14); do IN+=("parts/fold-$x.tgz rwt/transformer-c/fold-$x.tgz"); done
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  STEP=(bash production/run_transformer.sh merge 0)
+                  OUTP=("transformer-out/result.json rwt/transformer-c/result.json"
+                        "transformer-out/weights.npz rwt/transformer-c/weights.npz"
+                        "transformer-models.tgz rwt/transformer-c/models.tgz") ;;
     rwt-dnn-c-10m)
                   res "$NREP" 8 18 12; [ -z "$PILOT" ] || res "$NREP" 4 8 2
                   campaign_tables
@@ -290,10 +314,10 @@ def() {
                   need_install
                   if [ "$run" = events-nlo-10m ]; then
                     res "$NNLO" 1 4 12; m=2500; s=$((S0NLO+p)); t=nlo
-                    need_grids grids-nlo-13600; n="$G/cards/$RWL"
+                    if [ "$SET" = vv-rwt10m ]; then need_grids grids-nlo-vv-13600; else need_grids grids-nlo-13600; fi; n="$G/cards/$RWL"
                   else
                     res "$NCMS" 1 4 12; m=5000; s=$((S0CMS+p)); t=lo-cms
-                    need_grids grids-lo-cms-13600; n=none
+                    if [ "$SET" = vv-rwt10m ]; then need_grids grids-lo-cms-vv-13600; else need_grids grids-lo-cms-13600; fi; n=none
                   fi
                   STEP=("$G/condor/run_job.sh" events "$m" "$s" "$n")
                   OUTP=("events-$s.lhe.gz lhe/$(sname "$t")/events-$s.lhe.gz") ;;

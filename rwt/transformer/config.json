@@ -1,0 +1,1 @@
+{"features":"C","hidden":[64],"epochs":100,"patience":10,"batch_size":2048,"learning_rate":0.0003,"weight_decay":0.0001,"validation_fraction":0.2,"seed":20261104,"folds":5,"architecture":"ParT feature-token adaptation: 64/4 heads/2 self/2 class/FFN256","public_source":"hqucms/weaver-core@dba9ae15a9e564faceee5ee8d0bb8726753a23d3"}
