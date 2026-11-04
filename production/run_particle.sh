@@ -24,10 +24,12 @@ fi
  --analysis 'SimplifiedTemplateCrossSections:HiggsProdMode=GG2ZH' --analysis GGZH_NLOPS \
  --analysis GGZH_EVENTTABLE:OUT=particle.table.csv >particle-logs/shower.log 2>&1
 gzip particle.table.csv
-python3 -m venv --system-site-packages particle-env
-source particle-env/bin/activate
-python -m pip install --disable-pip-version-check --no-cache-dir numpy==1.26.4 pyarrow==18.1.0 torch==2.5.1 --index-url https://pypi.org/simple >particle-logs/pip.log 2>&1
-python -m pip freeze >particle-logs/environment.txt
+# Dependencies pinned by the production LCG view; avoid per-shard package downloads.
+python3 - <<'VERSIONS' >particle-logs/environment.txt
+from importlib.metadata import version
+for name,want in [('numpy','2.1.3'),('pyarrow','20.0.0'),('torch','2.7.1')]:
+ actual=version(name);print(name,actual);assert actual.split('+')[0]==want,(name,actual,want)
+VERSIONS
 /usr/bin/time -v -o particle-logs/convert-resources.txt python shower/particle/convert.py --seed "$SEED" --channel "$CHANNEL" --order "$ORDER" --expected "$EXPECTED" >particle-logs/convert.log 2>&1
 python shower/particle/forward.py >particle-logs/forward.log 2>&1
 cp shower/particle/schema.json particle-out/schema.json

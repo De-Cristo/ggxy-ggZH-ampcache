@@ -17,7 +17,7 @@ def lhe_events(path):
             head=lines[0].split(); n=int(head[0]); particles=[]
             for line in lines[1:n+1]:
                 x=line.split(); particles.append(dict(id=int(x[0]),status=int(x[1]),mothers=[int(x[2]),int(x[3])],
-                    colours=[int(x[4]),int(x[5])],p4=[float(a) for a in x[6:10]],mass=float(x[10])))
+                    colours=[int(x[4]),int(x[5])],p4=[float(a) for a in x[6:10]],mass=float(x[10]),lifetime=float(x[11]),spin=float(x[12])))
             weights={x.attrib['id']:float(x.text) for x in node.findall('./rwgt/wgt')}
             yield dict(particles=particles,weight=float(head[2]),scalup=float(head[3]),weights=weights)
             node.clear()
@@ -102,6 +102,7 @@ def main():
             beam=[float(x) for x in metadata['beams']]
             x=[p['p4'][3]/beam[k] for k,p in enumerate(incoming)]
             w={k:float(v) for k,v in closure[i].items() if k.startswith('w:')}
+            lp=dict(lp,weights=[dict(id=k,value=v) for k,v in lp['weights'].items()])
             raw=dict(channel=a.channel,order=a.order,seed=a.seed,lhe_ordinal=ordinal,accepted=i,table_row=i,
                 event=[particle(p) for p in r['event']],process=[particle(p) for p in r['process']],
                 z_index=r['z'],h_index=r['h'],lhe=lp,lhe_incoming=dict(x=x,ids=[p['id'] for p in incoming]),
