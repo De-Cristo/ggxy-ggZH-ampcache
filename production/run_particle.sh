@@ -6,6 +6,7 @@ export PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NU
 mkdir -p particle-install particle-logs
 tar xzf particle-install.tgz -C particle-install
 source particle-install/env.sh >/dev/null 2>&1
+source shower/particle/python_env.sh
 # Preserve all current shower cards and order; only output and LHE ordinal instrumentation added.
 gunzip -c input.lhe.gz > input.lhe
 MODE=nlo; [[ $ORDER != lo-cms ]] || MODE=cms-lo-veto
@@ -17,6 +18,7 @@ if [[ $CHANNEL = zvv ]]; then
   bash shower/run/shower.sh input.lhe.gz reference-out "$MODE" cp5 "$((SEED+100000))" cms-common >particle-logs/reference.log 2>&1
   cp reference-out/*.table.csv.gz legacy.csv.gz
   source particle-install/env.sh >/dev/null 2>&1
+source shower/particle/python_env.sh
 fi
 /usr/bin/time -v -o particle-logs/shower-resources.txt ggzh-shower --lhe input.lhe --out particle \
  --cmnd shower/cards/common.cmnd --cmnd shower/cards/tune-cp5.cmnd --cmnd shower/cards/tune-cp5-ecm13600.cmnd \

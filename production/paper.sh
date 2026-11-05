@@ -129,7 +129,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
-    particle-zll|particle-zvv) echo particle-build particle-splits particle-nlo particle-lo-cms ;;
+    particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
     rwt10m-transformer-c) echo rwt-transformer-fold-10m rwt-transformer-merge-10m ;;
     rwt10m-dnn-c|rwt10m-dnn-c-pilot) echo rwt-dnn-c-10m ;;
@@ -309,6 +309,11 @@ def() {
                   ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1")
                   STEP=(rwt/run.sh cache-check-10m)
                   OUTP=("rwt-out/rwt10m.json $(campaign_product cache-check "$p" json)") ;;
+    particle-python)
+                  res 1 1 2 1
+                  STEP=(bash production/run_particle_python.sh)
+                  OUTP=("pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl particle-v1/install/pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl"
+                         "python-codec.json particle-v1/install/python-codec.json") ;;
     particle-splits)
                   res 1 1 4 2
                   IN=("split-input/lo-cms.npz rwt/sample-lo-cms-rwt10m-available-cached.npz"
@@ -325,7 +330,8 @@ def() {
                   if [ "$SET" = particle-zvv ]; then channel=zvv; prefix="@vv/"; suffix=vv-rwt10m; fi
                   if [ "$run" = particle-nlo ]; then res "$NNLO" 1 8 12; s=$((S0NLO+p)); order=nlo; expected=2500; legacy=nlo-cp5
                   else res "$NCMS" 1 8 12; s=$((S0CMS+p)); order=lo-cms; expected=5000; legacy=lo-cms; fi
-                  IN=("input.lhe.gz ${prefix}lhe/$order-$suffix-13600/events-$s.lhe.gz"
+                  IN=("pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl particle-v1/install/pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl"
+                      "input.lhe.gz ${prefix}lhe/$order-$suffix-13600/events-$s.lhe.gz"
                       "particle-install.tgz particle-v1/install/particle-install.tgz")
                   if [ "$channel" = zll ]; then
                     IN+=("split-map.json particle-v1/splits/zll.json")
