@@ -1,0 +1,36 @@
+{
+  "study": "parton-zll-1m-v1",
+  "selection_sha256": "e656b2bef79777d978111a0e0fa106320d5bd584cb3f7d8600d6ab89674f4160",
+  "epochs": 30,
+  "patience": 5,
+  "min_delta": 1e-06,
+  "batch_size": 256,
+  "learning_rate": 0.0003,
+  "weight_decay": 0.01,
+  "gradient_clip": 1.0,
+  "validation_fraction": 0.1,
+  "seed_base": 730000,
+  "folds": 5,
+  "normalization": "training partitions only; masked particle features; global24; four-vectors unchanged",
+  "model": {
+    "embed_dims": [
+      128,
+      512,
+      128
+    ],
+    "pair_embed_dims": [
+      64,
+      64,
+      64
+    ],
+    "num_heads": 8,
+    "num_layers": 8,
+    "num_cls_layers": 2,
+    "global_features": 24
+  },
+  "tags": [
+    "full",
+    "A_to_B",
+    "B_to_A"
+  ]
+}

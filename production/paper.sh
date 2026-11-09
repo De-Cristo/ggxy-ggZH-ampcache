@@ -112,6 +112,7 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
+  parton-zll-1m-v1) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -133,6 +134,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-report-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -330,6 +332,37 @@ def() {
                   IN=("shower-install.tgz install/shower-install-rwt10m-0.tgz")
                   STEP=(bash production/run_particle_build.sh)
                   OUTP=("particle-install.tgz particle-v1/install/particle-install.tgz") ;;
+    parton-prepare-1m)
+                  res 1 4 24 8
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  # Bulk inputs are the frozen storage-independent artifact/SHA catalog in the package.
+                  STEP=(bash production/run_parton_study.sh prepare)
+                  OUTP=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz"
+                         "parton-prepare.json rwt/parton-zll-1m-v1/prepare-audit.json") ;;
+    parton-fit-1m)
+                  res 15 4 24 36
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz")
+                  STEP=(bash production/run_parton_study.sh fit "$p")
+                  OUTP=("parton-fit.tgz rwt/parton-zll-1m-v1/fits/fit-$p.tgz"
+                         "parton-fit.json rwt/parton-zll-1m-v1/fits/fit-$p.json") ;;
+    parton-bdt-1m)
+                  res 1 8 24 24
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz")
+                  STEP=(bash production/run_parton_study.sh bdt)
+                  OUTP=("parton-bdt.tgz rwt/parton-zll-1m-v1/bdt/control.tgz"
+                         "parton-bdt.json rwt/parton-zll-1m-v1/bdt/result.json") ;;
+    parton-report-1m)
+                  res 1 4 24 8
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz"
+                      "bdt/control.tgz rwt/parton-zll-1m-v1/bdt/control.tgz")
+                  for k in $(seq 0 14); do IN+=("parts/fit-$k.tgz rwt/parton-zll-1m-v1/fits/fit-$k.tgz"); done
+                  STEP=(bash production/run_parton_study.sh report)
+                  OUTP=("parton-report.tgz rwt/parton-zll-1m-v1/report.tgz"
+                         "parton-models.tgz rwt/parton-zll-1m-v1/models.tgz"
+                         "parton-summary.json rwt/parton-zll-1m-v1/summary.json") ;;
     events-lo-atlas-10m)
                   res "$NATLAS" 2 4 12; s=$((S0ATLAS+p))
                   IN=("ggzh-install.tgz @atlas/install/ggzh-install-v4.tgz"
