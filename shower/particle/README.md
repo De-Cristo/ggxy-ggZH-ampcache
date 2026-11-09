@@ -47,3 +47,20 @@ assumed. Exact sample inclusion/exclusions, package commits, cluster/index maps
 and cost live in the planning repo ledger and campaign manifests. Physical
 signed weights are preserved; future training loss and feature normalization
 must be prospectively fixed separately.
+
+ATLAS-style charged-lepton inputs use set `particle-atlas-zll` and the prospective
+contract `production/atlas-parton10m.json`. The independent LO source uses
+PDF4LHC21 and the validated ATLAS dynamic scale; both source and target use A14
+with `atlas-common`. The target reuses the rwt10m NLO hard events and selects
+PDF4LHC21 weight1001, while the source uses its nominal weight. Shower seeds are
+independent of the CMS campaign. Run definitions, input/output names and resources
+are in `production/paper.sh`; the `@atlas/` product prefix selects the separately
+stored validated ATLAS prerequisites. A staging provider must resolve that prefix.
+
+`run_particle_atlas.sh` compares the full real shard with an original same-seed,
+same-card public shower replay before publication. `convert_atlas.py` retains the
+same native records, feature functions,128-parton capacity and overflow counters;
+the full raw record has no tensor cap. ATLAS splits are assigned by original row,
+without a CMS split map. Inspect actual multiplicities and overflow before freezing
+a training capacity. Production of these inputs does not establish closure or a
+trained model. Existing CMS scripts, definitions and frozen split maps are unchanged.

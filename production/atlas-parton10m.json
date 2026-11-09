@@ -1,0 +1,38 @@
+{
+  "schema": "ggzh-atlas-parton10m-v1",
+  "style": "atlas",
+  "channel": "zll",
+  "events_per_sample": 10000000,
+  "source": {
+    "order": "lo-atlas",
+    "pdf": 93300,
+    "dynscale": 3,
+    "first_seed": 500001,
+    "jobs": 2000,
+    "events_per_job": 5000,
+    "first_shower_seed": 600001,
+    "nominal_weight": "nominal"
+  },
+  "target": {
+    "order": "nlo-a14",
+    "lhe_sample": "nlo-rwt10m-13600",
+    "pdf": 93300,
+    "first_seed": 100001,
+    "jobs": 4000,
+    "events_per_job": 2500,
+    "first_shower_seed": 700001,
+    "nominal_weight": "1001",
+    "shared_hard_events": true
+  },
+  "shower": {
+    "tune": "a14-athena",
+    "extra": "atlas-common",
+    "lo_mode": "atlas-lo-veto",
+    "nlo_mode": "nlo"
+  },
+  "split": "Source in-window original table_row modulo5; target original table_row parity; never renumber",
+  "tensors": "unchanged particle-v1 feature functions;128 radiation plus4 fixed slots; raw record untruncated",
+  "closure": "Original public same-seed/card reference vs passive writer; unchanged column-specific printed-rounding tolerance",
+  "source_window": "15 < mll <150 GeV; all generated ordinals retained in archive",
+  "primary_exclusions": []
+}

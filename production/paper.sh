@@ -112,6 +112,10 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
+  particle-atlas-zll)
+    E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
+    CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
+    NNLO=4000; NATLAS=2000; S0NLO=100001; S0ATLAS=500001 ;;
   particle-zll|particle-zvv)
     E=13600; NNLO=4000; NCMS=2000
     if [ "$SET" = particle-zll ]; then S0NLO=100001; S0CMS=110001; else S0NLO=300001; S0CMS=310001; fi ;;
@@ -129,6 +133,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
     rwt10m-transformer-c) echo rwt-transformer-fold-10m rwt-transformer-merge-10m ;;
@@ -325,6 +330,33 @@ def() {
                   IN=("shower-install.tgz install/shower-install-rwt10m-0.tgz")
                   STEP=(bash production/run_particle_build.sh)
                   OUTP=("particle-install.tgz particle-v1/install/particle-install.tgz") ;;
+    events-lo-atlas-10m)
+                  res "$NATLAS" 2 4 12; s=$((S0ATLAS+p))
+                  IN=("ggzh-install.tgz @atlas/install/ggzh-install-v4.tgz"
+                      "grids.tgz @atlas/grids/grids-lo-atlas-13600.tgz")
+                  STEP=(bash production/run_atlas_events.sh "$s")
+                  OUTP=("events-$s.lhe.gz lhe/lo-atlas-parton10m-13600/events-$s.lhe.gz") ;;
+    particle-nlo-a14-10m|particle-lo-atlas-10m)
+                  if [ "$run" = particle-nlo-a14-10m ]; then
+                    res "$NNLO" 2 8 12; s=$((S0NLO+p)); ss=$((700001+p)); order=nlo-a14; expected=2500
+                    lheprod="lhe/nlo-rwt10m-13600/events-$s.lhe.gz"
+                  else
+                    res "$NATLAS" 2 8 12; s=$((S0ATLAS+p)); ss=$((600001+p)); order=lo-atlas; expected=5000
+                    lheprod="lhe/lo-atlas-parton10m-13600/events-$s.lhe.gz"
+                  fi
+                  IN=("pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl particle-v1/install/pyarrow-20.0.0-cp312-cp312-manylinux_2_28_x86_64.whl"
+                      "input.lhe.gz $lheprod"
+                      "particle-install.tgz particle-v1/install/particle-install.tgz"
+                      "reference-install.tgz install/shower-install-rwt10m-0.tgz")
+                  STEP=(bash production/run_particle_atlas.sh "$order" "$s" "$expected" "$ss")
+                  OUTP=("particle-out/records.parquet particle-v1/atlas-zll/$order/records/$s.parquet"
+                         "particle-out/objects.parquet particle-v1/atlas-zll/$order/objects/$s.parquet"
+                         "particle-out/jets-v1.npz particle-v1/atlas-zll/$order/inputs/jets-v1/$s.npz"
+                         "particle-out/partons-v1.npz particle-v1/atlas-zll/$order/inputs/partons-v1/$s.npz"
+                         "particle-out/closure.npz particle-v1/atlas-zll/$order/closure/$s.npz"
+                         "particle-out/legacy.csv.gz particle-v1/atlas-zll/$order/closure/$s.csv.gz"
+                         "particle-out/schema.json particle-v1/atlas-zll/$order/validation/$s.schema.json"
+                         "particle-out/validation.json particle-v1/atlas-zll/$order/validation/$s.json") ;;
     particle-nlo|particle-lo-cms)
                   channel=zll; prefix=""; suffix=rwt10m
                   if [ "$SET" = particle-zvv ]; then channel=zvv; prefix="@vv/"; suffix=vv-rwt10m; fi

@@ -1,0 +1,52 @@
+{
+  "schema": "ggzh-particle-v1",
+  "public_reference": "check_reweighting 54ef2a62, feature organization only; no private extractor or weights",
+  "native_record": "Pythia signed statuses, original mother/daughter lists, px py pz E mass float64; original LHE record and consumed ordinal",
+  "partons": "QCD abs(id)<=6 or id=21, abs(native status)71..79, pT>=10GeV, exclude Z/H descendants, keep terminal selected parton copies. MPI included; status63 remnants excluded. All preselection indices retained separately.",
+  "jets": "anti-kT R0.4, all stable particles except Z/H descendants, pT>=10GeV; legacy jets pT>30GeV; native constituents retained",
+  "kt": "kT R1 E-scheme, true selected partons or replacement radiation jets; exclusive_dmerge(n) n=0..7 in GeV^2, -1 when n>=number inputs; leading inclusive jets pT>=10GeV for count/DeltaR",
+  "tensor_axes": "pf_features N,7,L; pf_vectors N,4,L; pf_mask N,1,L; event_features N,5; ps_encoding_features N,19",
+  "tokens": "fixed slots Z,H,leading two direct Z charged-lepton/neutrino children (legacy ancestry dressed), then pT ordered radiation; missing slots masked; type 1Z 2H 3charged 4neutrino 5jet 6parton",
+  "capacities": {
+    "jets-v1": 64,
+    "partons-v1": 128
+  },
+  "capacity_status": "storage caps; inspect first real-shard occupancy and freeze final training schema before fits; complete raw records retained",
+  "pf_features": [
+    "log1p(pt/GeV)",
+    "eta",
+    "sin(phi-phiZ)",
+    "cos(phi-phiZ)",
+    "log1p(E/GeV)",
+    "log1p(m/GeV)",
+    "type"
+  ],
+  "pf_vectors": [
+    "px rotated by -phiZ",
+    "py rotated by -phiZ",
+    "pz",
+    "E"
+  ],
+  "event_features": [
+    "log1p(ptZH/GeV)",
+    "etaZH",
+    "log1p(mZH/GeV)",
+    "log1p(mZ/GeV)",
+    "isZvv"
+  ],
+  "ps_encoding_features": "log1p(n kt jets), DeltaR leading pair or -1, valid pair, log1p(max(dmerge,0)/GeV^2)[8], valid dmerge[8]",
+  "normalization": "stored physical/log features; no fitted preprocessing. Any standardization must be fitted only on training partition",
+  "weights": "Signed physical weights outside features; LO w:nominal, NLO PDF4LHC21 weight1001; no CMS weight2000 substitution",
+  "split": "Independent ATLAS source: original table row modulo5 inside mass window, -1 outside. Target: original row parity. No CMS split map; no renumbering.",
+  "forbidden_primary_inputs": [
+    "seed",
+    "order",
+    "weight",
+    "sign",
+    "incoming flavour",
+    "SCALUP",
+    "ME multiplicity"
+  ],
+  "style": "atlas",
+  "campaign": "production/atlas-parton10m.json; manifest SHA, explicit new shower seed and card hashes in validation metadata"
+}
