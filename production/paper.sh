@@ -134,7 +134,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
-    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-report-1m ;;
+    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -353,6 +353,20 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt)
                   OUTP=("parton-bdt.tgz rwt/parton-zll-1m-v1/bdt/control.tgz"
                          "parton-bdt.json rwt/parton-zll-1m-v1/bdt/result.json") ;;
+    parton-early-report-1m)
+                  res 1 4 16 4
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz")
+                  for k in $(seq 0 4); do IN+=("parts/fit-$k.tgz rwt/parton-zll-1m-v1/fits/fit-$k.tgz"); done
+                  STEP=(bash production/run_parton_early_report.sh)
+                  OUTP=("parton-early-report.tgz rwt/parton-zll-1m-v1/early-report.tgz"
+                         "parton-early-summary.json rwt/parton-zll-1m-v1/early-summary.json"
+                         "parton-early-report/index.html rwt/parton-zll-1m-v1/early/index.html"
+                         "parton-early-report/result.json rwt/parton-zll-1m-v1/early/result.json")
+                  for v in pth ptj1 ptz lhe_mll; do
+                    OUTP+=("parton-early-report/$v.png rwt/parton-zll-1m-v1/early/$v.png"
+                           "parton-early-report/$v.pdf rwt/parton-zll-1m-v1/early/$v.pdf")
+                  done ;;
     parton-report-1m)
                   res 1 4 24 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
