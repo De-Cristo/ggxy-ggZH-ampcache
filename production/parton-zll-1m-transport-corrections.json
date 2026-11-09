@@ -1,0 +1,12 @@
+{
+  "schema": "ggzh-transport-size-corrections-v1",
+  "selection_sha256": "e656b2bef79777d978111a0e0fa106320d5bd584cb3f7d8600d6ab89674f4160",
+  "corrections": {
+    "particle-v1/zll/nlo/validation/103036.schema.json": {
+      "frozen_bytes": 0,
+      "verified_bytes": 2774,
+      "sha256": "1fe57816f4d4c8a0a0625706e810cd7c2b728ba803515cf3318fa94cea506dbf",
+      "evidence": "Empty scratch cache; EOS metadata and original producer schema independently match the original frozen content SHA. No event or content hash changed."
+    }
+  }
+}

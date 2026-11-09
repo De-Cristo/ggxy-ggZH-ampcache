@@ -1,5 +1,5 @@
 """Verify the frozen real subset on a CPU worker and create reusable lossless arrays."""
-import concurrent.futures,json,os,subprocess,sys,tarfile,time
+import concurrent.futures,json,os,subprocess,sys,tarfile,threading,time
 from pathlib import Path
 from common import worker,configuration,sha
 worker()
@@ -8,6 +8,10 @@ sys.path.insert(0,str(Path('rwt').resolve()))
 import ggzh_table as Table
 from ggzh_reweight_common import Sample
 c=configuration();m=json.loads(Path('production/parton-zll-1m-v1.json').read_text())
+correction_path=Path('production/parton-zll-1m-transport-corrections.json')
+corrections=json.loads(correction_path.read_text())
+assert corrections['selection_sha256']==c['selection_sha256']
+progress_lock=threading.Lock();progress=0
 root=os.environ['PAPER_EOS_ROOT'].rstrip('/')
 stage=Path('parton-staged');out=Path('parton-data');assert not out.exists();out.mkdir()
 
@@ -17,13 +21,23 @@ def download(item):
     for url,target in ((remote+'.sha256',Path(str(local)+'.sha256')),(remote,local)):
         subprocess.run(['xrdcp','--retry','3','--cksum','adler32',url,str(target)],check=True,stdout=subprocess.DEVNULL)
     assert Path(str(local)+'.sha256').read_text().split()[0]==entry['sha256']
-    assert local.stat().st_size==entry['bytes'] and sha(local)==entry['sha256'],str(local)
+    expected=entry['bytes']
+    correction=corrections['corrections'].get(entry['product'])
+    if correction is not None:
+        assert expected==correction['frozen_bytes']==0 and entry['sha256']==correction['sha256']
+        expected=correction['verified_bytes'];assert expected>0
+    actual_size=local.stat().st_size;actual_sha=sha(local)
+    assert actual_size==expected and actual_sha==entry['sha256'],dict(file=str(local),expected_bytes=expected,actual_bytes=actual_size,expected_sha=entry['sha256'],actual_sha=actual_sha)
+    global progress
+    with progress_lock:
+        progress+=1
+        if progress%100==0:print('ARTIFACTS_VERIFIED',progress,'/3000',flush=True)
     return (order,seed,entry['role']),local
 
 items=[(order,x['seed'],f) for order,xs in m['samples'].items() for x in xs for f in x['files']]
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:files=dict(pool.map(download,items))
 print('Verified selected artifact files',len(files),flush=True)
-audit=dict(study=c['study'],selection_sha256=c['selection_sha256'],artifact_count=len(files),samples={},package=Path('VERSION').read_text().strip())
+audit=dict(study=c['study'],selection_sha256=c['selection_sha256'],artifact_count=len(files),transport_corrections=corrections,transport_corrections_sha256=sha(correction_path),samples={},package=Path('VERSION').read_text().strip())
 L=m['maximum_tensor_length'];assert L<=132
 for order,selection in m['samples'].items():
     selection=sorted(selection,key=lambda x:x['seed']);n=sum(x['events'] for x in selection);assert n==1000000
