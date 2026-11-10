@@ -101,7 +101,7 @@ def born_ratio(event,base_pdf,pdf,points,fixed):
 
 def download(product,path,expected):
     path.parent.mkdir(parents=True,exist_ok=True)
-    root=os.environ['PAPER_EOS_ROOT'].rstrip('/')
+    root=os.environ.get('PAPER_LHE_EOS_ROOT',os.environ['PAPER_EOS_ROOT']).rstrip('/')
     for suffix in ('.sha256',''):
         subprocess.run(['xrdcp','--retry','3','--cksum','adler32',root+'/'+product+suffix,str(path)+suffix],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
     assert Path(str(path)+'.sha256').read_text().split()[0]==expected
@@ -132,6 +132,7 @@ def unpack_prepared():
 
 def main():
     start=time.time();ch=sys.argv[1];assert ch in ('zll','zvv')
+    if ch=='zvv':assert os.environ.get('PAPER_LHE_EOS_ROOT'),'Explicit original Zvv LHE storage root required'
     selection=Path(f'production/parton-{ch}-1m-v1.json')
     m=json.loads(selection.read_text());unpack_prepared()
     oldaudit=json.loads(Path('parton-data/audit.json').read_text());assert oldaudit['selection_sha256']==sha(selection)
