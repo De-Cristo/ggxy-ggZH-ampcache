@@ -134,7 +134,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
-    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m ;;
+    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m parton-fold0-report-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -353,6 +353,18 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt)
                   OUTP=("parton-bdt.tgz rwt/parton-zll-1m-v1/bdt/control.tgz"
                          "parton-bdt.json rwt/parton-zll-1m-v1/bdt/result.json") ;;
+    parton-fold0-report-1m)
+                  res 1 4 16 4
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz"
+                      "reference-fit.tgz rwt/parton-zll-1m-v1/fits/fit-0.tgz"
+                      "reference-bdt.tgz rwt/parton-zll-1m-v1/bdt/control.tgz")
+                  STEP=(bash production/run_parton_fold0_report.sh)
+                  OUTP=("parton-fold0-report.tgz rwt/parton-zll-1m-v1/fold0-report.tgz"
+                         "parton-fold0-summary.json rwt/parton-zll-1m-v1/fold0-summary.json"
+                         "parton-fold0-report/index.html rwt/parton-zll-1m-v1/fold0/index.html"
+                         "parton-fold0-report/result.json rwt/parton-zll-1m-v1/fold0/result.json")
+                  for v in pth ptj1 ptz lhe_mll; do OUTP+=("parton-fold0-report/$v.png rwt/parton-zll-1m-v1/fold0/$v.png" "parton-fold0-report/$v.pdf rwt/parton-zll-1m-v1/fold0/$v.pdf"); done ;;
     parton-reload-diagnose-1m)
                   res 1 2 8 2
                   ENVS=("RWT_THREADS=2" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1")
