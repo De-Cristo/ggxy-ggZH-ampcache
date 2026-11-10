@@ -134,7 +134,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
-    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m ;;
+    parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -353,6 +353,13 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt)
                   OUTP=("parton-bdt.tgz rwt/parton-zll-1m-v1/bdt/control.tgz"
                          "parton-bdt.json rwt/parton-zll-1m-v1/bdt/result.json") ;;
+    parton-reload-diagnose-1m)
+                  res 1 2 8 2
+                  ENVS=("RWT_THREADS=2" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1")
+                  IN=("reference-fit.tgz rwt/parton-zll-1m-v1/fits/fit-0.tgz"
+                      "reference-input.npz particle-v1/zll/lo-cms/inputs/partons-v1/110011.npz")
+                  STEP=(bash production/run_parton_reload_diagnose.sh)
+                  OUTP=("parton-reload-diagnosis.json rwt/parton-zll-1m-v1/reload-diagnosis.json") ;;
     parton-early-report-1m)
                   res 1 4 16 4
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
