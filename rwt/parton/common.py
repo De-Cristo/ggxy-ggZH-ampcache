@@ -3,7 +3,15 @@ import hashlib,json,os,platform,sys
 from pathlib import Path
 
 def worker():
-    assert platform.node().split('.')[0]!='cmscon' and os.environ.get('_CONDOR_SCRATCH_DIR'),'Condor worker required'
+    host=platform.node().split('.')[0]
+    assert host!='cmscon' and not host.startswith('lxplus'),'Compute worker required; no login-node data work'
+    context=os.environ.get('RWT_EXECUTION_CONTEXT','condor')
+    if context=='external-gpu':
+        import re
+        assert os.environ.get('RWT_EXTERNAL_COMPUTE_NODE')=='1','Explicit allocated-compute-node declaration required'
+        assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}',os.environ.get('RWT_EXTERNAL_RUN_ID','')),'External run ID required'
+    else:
+        assert context=='condor' and os.environ.get('_CONDOR_SCRATCH_DIR'),'Condor worker required'
 
 def sha(path):
     h=hashlib.sha256()

@@ -60,3 +60,22 @@ claimed. Reports include N_eff, region/hard-jet/low-mass diagnostics, JSON, a
 self-contained HTML and PNG/PDF plots using `tools/prd_style.py`. A baseline/variant
 comparison is correlated because both use the same events; it is not two
 independent experiments. Bootstrap/PCA uncertainty production is a separate task.
+
+### External GPU workers
+
+The user-authorized external continuation uses the same public trainer on an
+allocated compute worker. `tools/run_parton_external.py` snapshots a clean
+committed checkout (or immutable exported source), checks prepared-data checksums
+and audit, selects an explicitly assigned CUDA GPU, and runs a complete real
+fold in a new work directory. Dependencies must already be installed. Declare
+`RWT_EXTERNAL_COMPUTE_NODE=1`; pass channel/context/task/data/work/run-id and set
+`CUDA_VISIBLE_DEVICES` to one GPU. Original Condor behavior is the default; cmscon
+and lxplus login hosts remain forbidden. No Condor environment is impersonated.
+`RWT_EXECUTION_CONTEXT=external-gpu` and the unique external campaign ID are saved
+in checkpoints and fit records. Local iterations require new commits/campaigns;
+publish only in a separate external namespace. Registered grid pins/results are
+not replaced automatically. Worker runs retain failure artifacts, exact code
+hashes, dependencies, GPU details, training logs and CPU/allocated GPU wall time.
+The receiving agent must check `external-run.json` AND fit/reload products, rather
+than treating exit status as sufficient. Actual real fits validate numerics; no
+synthetic or disposable-pilot test is part of this adapter.

@@ -93,6 +93,8 @@ with torch.no_grad():
 assert np.isfinite(logits).all()
 out=Path('parton-fit');assert not out.exists();out.mkdir()
 card=dict(state=best_state,config=c,normalization=norm,task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=Path('VERSION').read_text().strip())
+card['execution_context']=os.environ.get('RWT_EXECUTION_CONTEXT','condor')
+card['external_run_id']=os.environ.get('RWT_EXTERNAL_RUN_ID')
 torch.save(card,out/'model.pt')
 loaded=torch.load(out/'model.pt',map_location='cpu',weights_only=True);check=ZHParT(loaded['config'],loaded['normalization']).cuda();check.load_state_dict(loaded['state']);check.eval()
 reload_audit=dict(protocol='identical-batch-full-heldout-v2',batch_size=bs,rtol=1e-4,atol=2e-5,
@@ -122,6 +124,8 @@ np.savez_compressed(out/'logits.npz',source_index=test,seed=np.asarray(source['s
 record=dict(task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=card['package'],source_train=len(si),source_validation=len(sv),source_test=len(test),target_train=len(ti),target_validation=len(tv),target_half=None if not direction else direction-1,history=history,best_validation_loss=best,checkpoint_reload='PASS',model_sha256=sha(out/'model.pt'),torch=str(torch.__version__),gpu=torch.cuda.get_device_name(0),training_seconds=time.time()-start_time,parameters=sum(p.numel() for p in net.parameters()),particle_attention_layers=8,scalar_token_substitute=False)
 record['reload_audit']=reload_audit
 record['channel']=c['channel']
+record['execution_context']=card['execution_context']
+record['external_run_id']=card['external_run_id']
 record['context_variant']=c.get('context_variant','baseline24')
 record['global_features']=c['model']['global_features']
 record['jet_context_schema']=c.get('jet_context_schema')
