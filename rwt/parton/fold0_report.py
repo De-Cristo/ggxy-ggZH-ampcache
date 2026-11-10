@@ -48,7 +48,7 @@ for name,label in labels.items():
     x=(edges[:-1]+edges[1:])/2;ft=np.asarray(v['f_target'])
     fig,(ax,ra)=plt.subplots(2,1,sharex=True,figsize=(prd_style.DOUBLE,4.7),gridspec_kw={'height_ratios':[3,1]})
     ax.fill_between(x,v['band_lo'],v['band_hi'],color='#2a78d6',alpha=.2,label='NLO scale band');ax.errorbar(x,ft,yerr=v['e_target'],fmt='o',color='#2a78d6',label='NLO+PS')
-    for text,d,color in [('LO raw',u,'#eb6834'),('LO x ParT fold0',v,'#1baf7a'),('LO x BDT same fold',b,'#9a51a0')]:
+    for text,d,color in [('LO+PS (unreweighted)',u,'#eb6834'),('LO+PS x ParT fold0',v,'#1baf7a'),('LO+PS x BDT same fold',b,'#9a51a0')]:
         de=np.asarray(d['edges'],float)
         if np.isinf(de[-1]):de[-1]=de[-2]+de[-2]-de[-3]
         dx=(de[:-1]+de[1:])/2;df=np.asarray(d['f_test']);dt=np.asarray(d['f_target']);good=dt!=0

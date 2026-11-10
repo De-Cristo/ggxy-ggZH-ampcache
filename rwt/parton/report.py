@@ -1,7 +1,7 @@
 """OOF particle-ratio merge and real matched closure report; compute worker only."""
 import html,json,tarfile,sys
 from pathlib import Path
-from common import worker,configuration,arrays,scalar_samples,result
+from common import worker,configuration,arrays,scalar_samples,result,accepted_training_package
 worker()
 import numpy as np
 from scipy.special import logsumexp
@@ -18,7 +18,7 @@ for direction,tag in enumerate(c['tags']):
         base=directory/'parton-fit';record=json.loads((base/'record.json').read_text())
         assert record['task']==task and record['fold']==fold and record['tag']==tag
         assert record['selection_sha256']==c['selection_sha256'] and record['checkpoint_reload']=='PASS'
-        assert record['package']==Path('VERSION').read_text().strip()
+        assert accepted_training_package(record,c)
         with np.load(base/'logits.npz',allow_pickle=False) as d:
             expected=np.flatnonzero(src.in_window&(s['source_fold']==fold));assert np.array_equal(d['source_index'],expected)
             for key in ('seed','lhe_ordinal','table_row'):assert np.array_equal(d[key],s[key][expected])
@@ -52,26 +52,26 @@ for section in ('features','variables'):
         target=np.asarray(v['f_target']);err=np.asarray(v['e_target']);u=out['full']['unweighted'][section][name]
         ax.fill_between(x,v['band_lo'],v['band_hi'],color='#2a78d6',alpha=.18,label='NLO scale band')
         ax.errorbar(x,target,yerr=err,fmt='o',color='#2a78d6',label='NLO+PS')
-        for label,f,e,color in [('LO+PS',u['f_test'],u['e_test'],'#eb6834'),('LO x ParT',v['f_test'],v['e_test'],'#1baf7a'),('LO x BDT',control['full']['reweighted'][section][name]['f_test'],control['full']['reweighted'][section][name]['e_test'],'#9a51a0')]:
+        for label,f,e,color in [('LO+PS (unreweighted)',u['f_test'],u['e_test'],'#eb6834'),('LO+PS x ParT',v['f_test'],v['e_test'],'#1baf7a'),('LO+PS x BDT',control['full']['reweighted'][section][name]['f_test'],control['full']['reweighted'][section][name]['e_test'],'#9a51a0')]:
             # Independently merged BDT bins need not equal the ParT bins: plot its own centers.
             vx=x
-            if label=='LO x BDT':
+            if label=='LO+PS x BDT':
                 ce=np.asarray(control['full']['reweighted'][section][name]['edges'],float)
                 if np.isinf(ce[-1]):ce[-1]=ce[-2]+(ce[-2]-ce[-3])
                 vx=(ce[1:]+ce[:-1])/2
             ax.errorbar(vx,f,yerr=e,fmt='.',color=color,label=label)
-            if label!='LO x BDT':
+            if label!='LO+PS x BDT':
                 good=target!=0;ra.errorbar(x[good],np.asarray(f)[good]/target[good],yerr=np.asarray(e)[good]/np.abs(target[good]),fmt='.',color=color)
-        ax.set_ylabel('Normalized bin fraction');ax.set_title(f'Exploratory 1M/class: {name}; ParT p={v["pvalue"]:.3g}');ax.legend(ncol=2)
+        ax.set_ylabel('Normalized bin fraction');ax.set_title(f'Exploratory {c["channel"]} 1M/class: {name}; ParT p={v["pvalue"]:.3g}');ax.legend(ncol=2)
         if name not in ('yh','drzh','njets','ayzh','etaj1','etaj2','etal1','etal2'):ax.set_yscale('log')
-        ra.axhline(1,color='black',lw=.6);ra.set_ylabel('/ NLO');ra.set_xlabel(name);ra.set_ylim(0,2);fig.tight_layout()
+        ra.axhline(1,color='black',lw=.6);ra.set_ylabel('/ NLO');ra.set_xlabel('m(nu nu) [GeV]' if c['channel']=='zvv' and name=='lhe_mll' else name);ra.set_ylim(0,2);fig.tight_layout()
         stem=f'closure-{name}';fig.savefig(report/(stem+'.png'));fig.savefig(report/(stem+'.pdf'));plt.close(fig);images.append(stem+'.png')
         rows.append(f'<tr><td>{html.escape(name)}</td><td>{v["pvalue"]:.5g}</td><td>{v["bins_outside_band_2sigma"]}</td><td>{"PASS" if v["pass"] else "FAIL"}</td></tr>')
 fig,ax=plt.subplots(figsize=(prd_style.DOUBLE,3.2))
 for r in records:
     if r['tag']=='full':ax.plot([h['epoch'] for h in r['history']],[h['validation_loss'] for h in r['history']],label=f'fold{r["fold"]}')
 ax.set_xlabel('Epoch');ax.set_ylabel('Weighted validation BCE');ax.legend();fig.tight_layout();fig.savefig(report/'training-loss.png');plt.close(fig)
-body='<h1>Exploratory real Zll ParT: 1M LO + 1M NLO</h1><p>Full particle attention trained from scratch. Production and diagnosis continue separately. Scalar closure does not certify the full10M inventory or joint particle density.</p>'
+body=f'<h1>Exploratory real {c["channel"]} ParT: 1M LO+PS + 1M NLO+PS</h1><p>Full particle attention trained from scratch. Production and diagnosis continue separately. Scalar closure does not certify the full10M inventory or joint particle density.</p>'
 body+='<h2>ParT scalar/STXS/half results</h2><pre>'+html.escape(json.dumps(out['summary'],indent=2))+'</pre><h2>Matched BDT</h2><pre>'+html.escape(json.dumps(control['summary'],indent=2))+'</pre>'
 body+='<p><a href="result.json">Full ParT result and diagnostics</a> | <a href="matched-bdt.json">Matched BDT result</a></p><table border="1"><tr><th>Variable</th><th>p</th><th>Bins outside band by &gt;2sigma</th><th>Pass</th></tr>'+''.join(rows)+'</table><img width="800" src="training-loss.png">'
 body+=''.join('<p><img width="900" src="'+p+'"></p>' for p in images)

@@ -1,7 +1,7 @@
 """Early nominal closure from all five real OOF particle fits. Stability remains pending."""
 import html,json,sys,tarfile
 from pathlib import Path
-from common import worker,configuration,arrays,scalar_samples
+from common import worker,configuration,arrays,scalar_samples,accepted_training_package
 worker()
 import numpy as np
 from scipy.special import logsumexp
@@ -20,7 +20,7 @@ for fold in range(5):
     p=directory/'parton-fit';record=json.loads((p/'record.json').read_text())
     assert record['task']==fold and record['fold']==fold and record['tag']=='full'
     assert record['selection_sha256']==c['selection_sha256'] and record['checkpoint_reload']=='PASS'
-    assert record['package'].split()[0]=='4205b4d0af70628c0d7fbd053911ff3c34aa09b9'
+    assert accepted_training_package(record,c)
     with np.load(p/'logits.npz',allow_pickle=False) as z:
         ix=np.flatnonzero(src.in_window&(data['source_fold']==fold));assert np.array_equal(ix,z['source_index'])
         for key in ('seed','table_row','lhe_ordinal'):assert np.array_equal(z[key],data[key][ix])
@@ -46,12 +46,12 @@ for name in ('pth','ptj1','ptz','lhe_mll'):
     fig,(ax,ratio)=plt.subplots(2,1,sharex=True,figsize=(prd_style.DOUBLE,4.5),gridspec_kw={'height_ratios':[3,1]})
     ax.fill_between(x,v['band_lo'],v['band_hi'],color='#2a78d6',alpha=.2,label='NLO scale band')
     ax.errorbar(x,target,yerr=v['e_target'],fmt='o',color='#2a78d6',label='NLO+PS')
-    for label,values,errors,color in [('LO+PS',u['f_test'],u['e_test'],'#eb6834'),('LO x ParT',v['f_test'],v['e_test'],'#1baf7a')]:
+    for label,values,errors,color in [('LO+PS (unreweighted)',u['f_test'],u['e_test'],'#eb6834'),('LO+PS x ParT',v['f_test'],v['e_test'],'#1baf7a')]:
         ax.errorbar(x,values,yerr=errors,fmt='.',color=color,label=label);good=target!=0
         ratio.errorbar(x[good],np.asarray(values)[good]/target[good],yerr=np.asarray(errors)[good]/np.abs(target[good]),fmt='.',color=color)
-    ax.set_ylabel('Normalized bin fraction');ax.set_title(f'Early nominal 1M/class: {name}; p={v["pvalue"]:.3g}; outside band={v["bins_outside_band_2sigma"]}')
+    ax.set_ylabel('Normalized bin fraction');ax.set_title(f'Early nominal {c["channel"]} 1M/class: {name}; p={v["pvalue"]:.3g}; outside band={v["bins_outside_band_2sigma"]}')
     if name!='lhe_mll':ax.set_yscale('log')
-    ax.legend();ratio.axhline(1,color='black',lw=.6);ratio.set_xlabel(name);ratio.set_ylabel('/ NLO');ratio.set_ylim(0,2);fig.tight_layout()
+    ax.legend();ratio.axhline(1,color='black',lw=.6);ratio.set_xlabel('m(nu nu) [GeV]' if c['channel']=='zvv' and name=='lhe_mll' else name);ratio.set_ylabel('/ NLO');ratio.set_ylim(0,2);fig.tight_layout()
     fig.savefig(out/(name+'.png'));fig.savefig(out/(name+'.pdf'));plt.close(fig);plots.append(name+'.png')
 body='<h1>Early nominal particle ParT closure: 1M LO +1M NLO</h1><p>All five OOF source folds; independent target-half stability tests are PENDING. This is not the final physics conclusion.</p><pre>'+html.escape(json.dumps(result['summary'],indent=2))+'</pre><p><a href="result.json">Complete results and diagnostics</a></p>'+''.join('<p><img width="900" src="'+p+'"></p>' for p in plots)
 (out/'index.html').write_text('<!doctype html><html><meta charset="utf-8"><title>Early nominal ZH ParT closure</title><body>'+body+'</body></html>')

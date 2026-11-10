@@ -7,8 +7,8 @@ import numpy as np
 sys.path.insert(0,str(Path('rwt').resolve()))
 import ggzh_table as Table
 from ggzh_reweight_common import Sample
-c=configuration();m=json.loads(Path('production/parton-zll-1m-v1.json').read_text())
-correction_path=Path('production/parton-zll-1m-transport-corrections.json')
+c=configuration();channel=c['channel'];m=json.loads(Path(f'production/parton-{channel}-1m-v1.json').read_text())
+correction_path=Path(f'production/parton-{channel}-1m-transport-corrections.json')
 corrections=json.loads(correction_path.read_text())
 assert corrections['selection_sha256']==c['selection_sha256']
 progress_lock=threading.Lock();progress=0
@@ -50,7 +50,7 @@ for order,selection in m['samples'].items():
         seed=entry['seed'];rows=entry['events'];sl=slice(offset,offset+rows)
         report=json.loads(files[order,seed,'validation'].read_text());meta=report['metadata']
         assert meta['package'].split()[0]==entry['producer'] and meta['lhe_sha256']==entry['lhe_sha256']
-        assert meta['channel']=='zll' and meta['order']==order and meta['seed']==seed and meta['primary_included']
+        assert meta['channel']==channel and meta['order']==order and meta['seed']==seed and meta['primary_included']
         assert meta['frozen_manifest']==m['parent_selection_sha256']
         assert report['events']==report['expected']==rows and not report['missing_ordinals']
         assert report['legacy_comparison']['pass_'] and report['views']['partons-v1']['overflow_events']==0

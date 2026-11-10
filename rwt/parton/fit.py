@@ -87,10 +87,33 @@ out=Path('parton-fit');assert not out.exists();out.mkdir()
 card=dict(state=best_state,config=c,normalization=norm,task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=Path('VERSION').read_text().strip())
 torch.save(card,out/'model.pt')
 loaded=torch.load(out/'model.pt',map_location='cpu',weights_only=True);check=ZHParT(loaded['config'],loaded['normalization']).cuda();check.load_state_dict(loaded['state']);check.eval()
-with torch.no_grad():fresh=check(*batch(source,test[:128])).cpu().numpy()
-np.testing.assert_allclose(fresh,logits[:128],rtol=1e-4,atol=2e-5)
+reload_audit=dict(protocol='identical-batch-full-heldout-v2',batch_size=bs,rtol=1e-4,atol=2e-5,
+                  events=len(test),state_tensors_equal=False,same_batch_pass=False)
+try:
+    assert set(loaded['state'])==set(best_state)
+    assert all(torch.equal(best_state[k],loaded['state'][k]) for k in best_state)
+    reload_audit['state_tensors_equal']=True
+    maximum=0.
+    with torch.no_grad():
+        for start in range(0,len(test),bs):
+            sl=slice(start,start+bs);fresh=check(*batch(source,test[sl])).cpu().numpy()
+            maximum=max(maximum,float(np.max(np.abs(fresh-logits[sl]))))
+            np.testing.assert_allclose(fresh,logits[sl],rtol=1e-4,atol=2e-5)
+        short=check(*batch(source,test[:128])).cpu().numpy()
+    reload_audit.update(same_batch_pass=True,max_absolute_difference=maximum,
+        different_batch_max_absolute_difference=float(np.max(np.abs(short-logits[:128]))),
+        different_batch_pass=bool(np.allclose(short,logits[:128],rtol=1e-4,atol=2e-5)),
+        supported_inference='256-event batches in original order; final remainder as stored; arbitrary batch portability is not certified')
+except Exception as exc:
+    reload_audit['failure']=repr(exc)
+    raise
+finally:
+    (out/'reload-audit.json').write_text(json.dumps(reload_audit,indent=2)+'\n')
+    Path('parton-reload-audit.json').write_text(json.dumps(reload_audit,indent=2)+'\n')
 np.savez_compressed(out/'logits.npz',source_index=test,seed=np.asarray(source['seed'][test]),lhe_ordinal=np.asarray(source['lhe_ordinal'][test]),table_row=np.asarray(source['table_row'][test]),logits=logits)
 record=dict(task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=card['package'],source_train=len(si),source_validation=len(sv),source_test=len(test),target_train=len(ti),target_validation=len(tv),target_half=None if not direction else direction-1,history=history,best_validation_loss=best,checkpoint_reload='PASS',model_sha256=sha(out/'model.pt'),torch=str(torch.__version__),gpu=torch.cuda.get_device_name(0),training_seconds=time.time()-start_time,parameters=sum(p.numel() for p in net.parameters()),particle_attention_layers=8,scalar_token_substitute=False)
+record['reload_audit']=reload_audit
+record['channel']=c['channel']
 (out/'record.json').write_text(json.dumps(record,indent=2)+'\n');Path('parton-fit.json').write_text(json.dumps(record,indent=2)+'\n')
 with tarfile.open('parton-fit.tgz','w:gz') as t:t.add(out,arcname='parton-fit')
 print('REAL_PARTICLE_FOLD_COMPLETED',task,flush=True)

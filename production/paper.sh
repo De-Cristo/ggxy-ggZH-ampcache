@@ -112,7 +112,7 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
-  parton-zll-1m-v1) E=13600 ;;
+  parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -134,6 +134,8 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    parton-zvv-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m ;;
+    parton-zll-1m-recovery-v2) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m parton-fold0-report-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -716,6 +718,14 @@ def() {
   esac
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
     ENVS+=("RWT_INPUT_MANIFEST=$RWT_AVAILABLE_MANIFEST")
+  fi
+  if [[ $SET = parton-zvv-1m-v1 ]]; then
+    ENVS+=("RWT_PARTON_CHANNEL=zvv")
+    IN=("${IN[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")
+    OUTP=("${OUTP[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")
+  elif [[ $SET = parton-zll-1m-recovery-v2 && $run != parton-fit-1m ]]; then
+    # Recover missing fit products in the original namespace; publish new reports separately.
+    OUTP=("${OUTP[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zll-1m-recovery-v2}")
   fi
   [ -z "$RWT_RETUNED" ] || ENVS+=("RWT_RETUNED=1")
 }

@@ -12,9 +12,19 @@ def sha(path):
     return h.hexdigest()
 
 def configuration():
-    c=json.loads(Path('rwt/parton/config-1m.json').read_text())
-    assert sha('production/parton-zll-1m-v1.json')==c['selection_sha256']
+    channel=os.environ.get('RWT_PARTON_CHANNEL','zll')
+    assert channel in ('zll','zvv')
+    name='config-1m.json' if channel=='zll' else 'config-zvv-1m.json'
+    c=json.loads((Path('rwt/parton')/name).read_text())
+    assert sha(f'production/parton-{channel}-1m-v1.json')==c['selection_sha256']
+    c['channel']=channel
     return c
+
+def accepted_training_package(record, config):
+    current=Path('VERSION').read_text().split()[0]
+    pin=record['package'].split()[0]
+    legacy='4205b4d0af70628c0d7fbd053911ff3c34aa09b9'
+    return pin==current or (config['channel']=='zll' and pin==legacy)
 
 def arrays(order):
     import numpy as np
@@ -41,5 +51,7 @@ def result(src,tgt,weights):
     out['summary']=dict(criterion1=r['pass_1'],criterion2=r['pass_2'],scalar_17C_projections=r['pass_2b'],criterion3=out['A_to_B']['pass'] and out['B_to_A']['pass'])
     out['summary']['all_scalar_tests_pass']=all(out['summary'].values())
     out['diagnostics']=diagnostics(src,weights['full'],tgt)
+    out['channel']=configuration()['channel']
+    out['decay_columns']='Neutrino-pair mass/neutrino kinematics' if out['channel']=='zvv' else 'Dilepton mass/lepton kinematics'
     out['interpretation']='Exploratory 1M per sample; scalar/STXS/half tests do not certify full10M acceptance or the full joint particle-input distribution'
     return out
