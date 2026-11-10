@@ -256,3 +256,23 @@ Outputs have a distinct `-r6` suffix. The pilot uses two replicas of every analy
 Summary, transfer provenance and export cards identify the classifier settings; an export
 must use the settings that passed closure. Default and R6 results are both reported, including
 failures. Production remains pinned to 3161a62; only analysis uses this later commit.
+
+## Real-event uncertainty companions
+
+`uncertainty-{zll,zvv}-1m-v1/scale-inputs-1m` prepares additional weight arrays
+for the unchanged frozen particle-study subsets. It runs on a CPU worker and
+joins every original LHE event to its saved training row by seed/LHE ordinal.
+The LO hard-process scale weights are computed from the Born alpha_s-squared
+and incoming-gluon PDF ratios at the original fixed scale. An embedded check
+against all scale weights and the NNPDF central weight in a real existing
+5000-event LO sample must pass before the companion is published. The original
+LHE, shower and prepared bundles are never rewritten; no shower uncertainty is
+implied by these fixed-shower hard-scale weights.
+
+The companion retains absolute signed weights and explicit PDF labels. The
+existing target grid1001--1009 uses PDF4LHC21; target nominal2000 is NNPDF3.1.
+There is no exact NNPDF target-scale grid in these samples. Consequently these
+companions alone do not certify a reweighted NNPDF scale band. A PDF4LHC target
+comparison needs its own consistent central/variation fits; the original nominal
+results and registered closure band remain unchanged. Numerical NN uncertainties
+also need a real resampling ensemble, not the existing cross-validation folds.

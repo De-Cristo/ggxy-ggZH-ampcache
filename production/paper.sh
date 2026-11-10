@@ -113,6 +113,7 @@ case $SET in
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
   parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
+  uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -138,6 +139,7 @@ runs() {
     parton-zvv-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-recovery-v2) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m parton-fold0-report-1m ;;
+    uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -275,6 +277,14 @@ def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    scale-inputs-1m)
+                  res 1 1 8 12
+                  channel=${SET#uncertainty-}; channel=${channel%-1m-v1}
+                  IN=("parton-prepared.tgz rwt/parton-$channel-1m-v1/prepared.tgz"
+                      "reference.lhe.gz lhe/lo-13600/events-20001.lhe.gz")
+                  STEP=(bash production/run_scale_inputs.sh "$channel")
+                  OUTP=("scale-inputs.tgz rwt/$SET/scale-inputs.tgz"
+                         "scale-audit.json rwt/$SET/audit.json") ;;
     rwt-transformer-fold-10m)
                   res 15 8 18 12; campaign_tables
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
