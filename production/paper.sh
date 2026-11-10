@@ -112,7 +112,7 @@ case $SET in
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB vdecaymode=12"
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
-  parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
+  parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -134,6 +134,7 @@ esac
 runs() {
   case $SET in
     common) echo build shower-build ;;
+    parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
     parton-zvv-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-recovery-v2) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m parton-fold0-report-1m ;;
@@ -348,6 +349,18 @@ def() {
                   STEP=(bash production/run_parton_study.sh fit "$p")
                   OUTP=("parton-fit.tgz rwt/parton-zll-1m-v1/fits/fit-$p.tgz"
                          "parton-fit.json rwt/parton-zll-1m-v1/fits/fit-$p.json") ;;
+    parton-jet-compare-1m)
+                  res 1 4 24 8
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1")
+                  IN=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz")
+                  for k in $(seq 0 4); do
+                    IN+=("baseline/fit-$k.tgz rwt/parton-zll-1m-v1/fits/fit-$k.tgz"
+                         "jets/fit-$k.tgz rwt/$SET/fits/fit-$k.tgz")
+                  done
+                  STEP=(bash production/run_parton_study.sh jet-compare)
+                  OUTP=("parton-jet-report.tgz rwt/$SET/comparison.tgz"
+                         "parton-jet-summary.json rwt/$SET/summary.json"
+                         "parton-jet-report/index.html rwt/$SET/index.html") ;;
     parton-bdt-1m)
                   res 1 8 24 24
                   ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1")
@@ -719,7 +732,17 @@ def() {
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
     ENVS+=("RWT_INPUT_MANIFEST=$RWT_AVAILABLE_MANIFEST")
   fi
-  if [[ $SET = parton-zvv-1m-v1 ]]; then
+  if [[ $SET = parton-zll-jets-1m-v1 || $SET = parton-zvv-jets-1m-v1 ]]; then
+    ENVS+=("RWT_PARTON_CONTEXT=analysis-jets-v1")
+    if [[ $run = parton-fit-1m ]]; then
+      res 5 4 24 36
+      OUTP=("${OUTP[@]/rwt\/parton-zll-1m-v1/rwt\/$SET}")
+    fi
+    if [[ $SET = parton-zvv-jets-1m-v1 ]]; then
+      ENVS+=("RWT_PARTON_CHANNEL=zvv")
+      IN=("${IN[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")
+    fi
+  elif [[ $SET = parton-zvv-1m-v1 ]]; then
     ENVS+=("RWT_PARTON_CHANNEL=zvv")
     IN=("${IN[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")
     OUTP=("${OUTP[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")

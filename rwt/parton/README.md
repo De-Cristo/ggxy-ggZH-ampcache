@@ -27,3 +27,36 @@ joint particle density. The report includes JSON, HTML and individual PNG/PDF
 figures through the paper's exact `tools/prd_style.py` source. A trained checkpoint
 can be reloaded through `model.py`; saved logits/weights preserve event identity.
 No success is claimed before real worker fits and held-out closure finish.
+
+### Analysis-jet context ablation
+
+`paper.sh` sets `parton-zll-jets-1m-v1` and `parton-zvv-jets-1m-v1` reuse the
+corresponding frozen prepared1M/class bundle. Each defines five nominal GPU fits
+and one CPU `parton-jet-compare-1m` job. No new generation or shower is needed.
+The comparison consumes the five original nominal fits and five variant fits;
+it verifies package provenance, selection, reload status and exact OOF identities.
+Original2L fits may have mixed accepted legacy/recovery provenance, recorded in
+full. Every output uses a new variant namespace.
+
+`jet_context.py` appends11 entries to the original24: log1p(analysis jet count),
+and presence/log1p(pT/GeV)/eta/sin(delta phi to Z)/cos(delta phi to Z) for each of
+j1,j2. Absent jets are zero before training-only normalization. These are the
+existing scalar-table pT>30GeV, |eta|<4.7 jets, not reclustered partons. No jet mass
+is available. For application, use `extra_context` on aligned table columns,
+concatenate to the original24 context and load normalization from the checkpoint.
+The model's saved configuration specifies35 globals. Particle inputs, pair
+attention, folds, seeds and all other hyperparameters remain unchanged; the wider
+head has additional parameters. Only nominal fits are registered for this ablation.
+
+The comparison publishes unchanged scalar/STXS tests plus conditional j1/j2
+pT/eta shapes in fixed VpT bins0/75/150/250/400/600/infinity and analysis jet
+counts0/1/2/>=3. Category fractions use full-window normalization; conditional
+shapes use unit area within each category and plotted variable range. Sparse or
+nonpositive cells are flagged. Signed target weights, scale bands and legacy
+fixed-normalization MC errors are retained. Extra conditional p-values are
+descriptive, not new acceptance criteria. The NLO reference includes training
+and validation events; no independent-target or target-half-stability success is
+claimed. Reports include N_eff, region/hard-jet/low-mass diagnostics, JSON, a
+self-contained HTML and PNG/PDF plots using `tools/prd_style.py`. A baseline/variant
+comparison is correlated because both use the same events; it is not two
+independent experiments. Bootstrap/PCA uncertainty production is a separate task.

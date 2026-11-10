@@ -28,6 +28,7 @@ case $TASK in
   prepare) SCRIPT=rwt/parton/prepare.py; ARGS=() ;;
   fit) SCRIPT=rwt/parton/fit.py; ARGS=("$INDEX") ;;
   bdt) SCRIPT=rwt/parton/control.py; ARGS=() ;;
+  jet-compare) SCRIPT=rwt/parton/jet_compare.py; ARGS=() ;;
   report) SCRIPT=rwt/parton/report.py; ARGS=() ;;
   *) exit 2 ;;
 esac

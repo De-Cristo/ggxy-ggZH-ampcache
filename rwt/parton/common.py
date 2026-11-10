@@ -18,6 +18,15 @@ def configuration():
     c=json.loads((Path('rwt/parton')/name).read_text())
     assert sha(f'production/parton-{channel}-1m-v1.json')==c['selection_sha256']
     c['channel']=channel
+    variant=os.environ.get('RWT_PARTON_CONTEXT','baseline24')
+    assert variant in ('baseline24','analysis-jets-v1')
+    if variant=='analysis-jets-v1':
+        from jet_context import SCHEMA
+        c['study']=f'parton-{channel}-jets-1m-v1'
+        c['context_variant']=variant
+        c['jet_context_schema']=SCHEMA
+        c['model']['global_features']=35
+        c['normalization']='training partitions only; masked particles; global35; physical four-vectors unchanged'
     return c
 
 def accepted_training_package(record, config):

@@ -14,6 +14,14 @@ assert torch.cuda.is_available() and torch.cuda.device_count()==1,'Exactly one a
 torch.set_num_threads(int(os.environ.get('RWT_THREADS','4')));torch.manual_seed(seed);torch.cuda.manual_seed_all(seed)
 rng=np.random.default_rng(seed);source,target=arrays('lo-cms'),arrays('nlo')
 assert len(source['weight'])==len(target['weight'])==1000000
+context_audit={}
+if c.get('context_variant')=='analysis-jets-v1':
+    assert task<5,'Only nominal folds registered for analysis-jet ablation'
+    from common import scalar_samples
+    from jet_context import attach
+    scalar_source,scalar_target=scalar_samples()
+    context_audit={'source':attach(source,scalar_source),'target':attach(target,scalar_target)}
+    del scalar_source,scalar_target
 s_pool=np.flatnonzero(source['in_window']&(source['source_fold']!=fold));test=np.flatnonzero(source['in_window']&(source['source_fold']==fold))
 tmask=target['in_window'].copy()
 if direction:tmask &= target['target_half']==direction-1
@@ -26,7 +34,7 @@ assert not np.intersect1d(si,test).size and not np.intersect1d(sv,test).size
 if direction:assert (target['target_half'][ti]==direction-1).all() and (target['target_half'][tv]==direction-1).all()
 
 def moments():
-    ps=np.zeros(7);ps2=np.zeros(7);pn=0;gs=np.zeros(24);gs2=np.zeros(24);gn=0
+    ps=np.zeros(7);ps2=np.zeros(7);pn=0;gs=np.zeros(c['model']['global_features']);gs2=np.zeros(c['model']['global_features']);gn=0
     for data,indices in ((source,si),(target,ti)):
         for start in range(0,len(indices),8192):
             ix=indices[start:start+8192];x=np.asarray(data['pf_features'][ix],dtype=np.float64);mask=data['pf_mask'][ix]
@@ -114,6 +122,11 @@ np.savez_compressed(out/'logits.npz',source_index=test,seed=np.asarray(source['s
 record=dict(task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=card['package'],source_train=len(si),source_validation=len(sv),source_test=len(test),target_train=len(ti),target_validation=len(tv),target_half=None if not direction else direction-1,history=history,best_validation_loss=best,checkpoint_reload='PASS',model_sha256=sha(out/'model.pt'),torch=str(torch.__version__),gpu=torch.cuda.get_device_name(0),training_seconds=time.time()-start_time,parameters=sum(p.numel() for p in net.parameters()),particle_attention_layers=8,scalar_token_substitute=False)
 record['reload_audit']=reload_audit
 record['channel']=c['channel']
+record['context_variant']=c.get('context_variant','baseline24')
+record['global_features']=c['model']['global_features']
+record['jet_context_schema']=c.get('jet_context_schema')
+record['context_audit']=context_audit
+record['initialization_seed']=seed
 (out/'record.json').write_text(json.dumps(record,indent=2)+'\n');Path('parton-fit.json').write_text(json.dumps(record,indent=2)+'\n')
 with tarfile.open('parton-fit.tgz','w:gz') as t:t.add(out,arcname='parton-fit')
 print('REAL_PARTICLE_FOLD_COMPLETED',task,flush=True)
