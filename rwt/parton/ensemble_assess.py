@@ -171,8 +171,8 @@ def main():
     for name in coverage:
         coverage[name]['raw']=histogram(lo_e,lo_e.w0,se,name)[0].tolist()
     out['tables']=tables;out['coverage']=coverage
-    Path('ensemble-assess.json').write_text(json.dumps(out,indent=1)+'\n')
-    Path('ensemble-tables.json').write_text(json.dumps(dict(members=names,tables=tables,vars=dict(rho=VARS['rho'][2])),indent=1)+'\n')
+    Path('ensemble-assess.json').write_text(C.dumps(out)+'\n')   # numpy scalars and NaN from the criteria code
+    Path('ensemble-tables.json').write_text(C.dumps(dict(members=names,tables=tables,vars=dict(rho=VARS['rho'][2])))+'\n')
     print('COVERAGE',json.dumps(out['coverage_test']),flush=True)
 
 if __name__=='__main__':main()
