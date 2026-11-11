@@ -241,6 +241,24 @@ def main():
             ratio=(fr/np.where(ft>0,ft,np.nan)).tolist(),scale_reweighted=np.asarray(scale_rw).tolist(),scale_target=np.asarray(scale_t).tolist(),
             scale_transport_error_over_half_width=[float(x) for x in transport],scale_target_rel_half_width=[float(x) for x in rel_half])
         pulls+=[float(x) for x in pull if np.isfinite(x)]
+    # Histogram cache: fine-binned sums (and sums of squares) of every weight set on the evaluation set, so that
+    # any later rebinning (merging adjacent bins) and its PCA can be redone from this file without the events.
+    cache={}
+    for name in ['stxs']+list(VARS):
+        def sums(s,w,sel):
+            if name=='stxs':
+                a,a2,raw=C.cell_sums(s,w,sel)
+            else:
+                x=rho(s) if name=='rho' else np.asarray(s[name],float);a,a2,_=C.hist(x,w*sel,VARS[name][0]);raw=C.hist(x[sel],np.ones(int(sel.sum())),VARS[name][0])[2]
+            return a.tolist(),a2.tolist(),raw.tolist(),float(w[sel].sum())
+        lo_sets={'nominal':w_nom,'jet_up':w_up,'jet_down':w_dn,**{f'member_{i:02d}':w for i,w in enumerate(w_mem)},**{f'scale_{wid}':w_nom*T[wid][cell_e] for wid in C.SCALE7}}
+        nlo_sets={'nominal':nlo_e.w0,**{f'scale_{wid}':nlo_e.weight(wid) for wid in C.SCALE7}}
+        entry=dict(edges=None if name=='stxs' else [float(x) for x in VARS[name][0]],lo={},nlo={})
+        for k,w in lo_sets.items():a,a2,raw,tot=sums(lo_e,w,se);entry['lo'][k]=dict(sumw=a,sumw2=a2,total=tot);entry['raw_lo']=raw
+        for k,w in nlo_sets.items():a,a2,raw,tot=sums(nlo_e,w,te);entry['nlo'][k]=dict(sumw=a,sumw2=a2,total=tot)
+        cache[name]=entry
+    Path('histogram-cache.json').write_text(C.dumps(dict(set=os.environ.get('RWT_PARTON_SELECTION'),domain=os.environ.get('RWT_DOMAIN','none'),
+        note='evaluation set; fractions = sumw/total; MC error = sqrt(sumw2)/total; NN = PCA over member_XX fractions',histograms=cache)))
     pulls=np.abs(np.asarray(pulls))
     out['coverage_test']=dict(bins=int(len(pulls)),max_abs_pull=float(pulls.max()),beyond_2=int((pulls>2).sum()),beyond_3=int((pulls>3).sum()),
         fraction_beyond_2=float((pulls>2).mean()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),

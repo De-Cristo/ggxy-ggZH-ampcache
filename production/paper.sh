@@ -479,6 +479,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-assess)
                   OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
                          "ensemble-tables.json rwt/$SET/bdt-tables.json")
+                  [ "$run" = bdt-assess ] && [ "$EVER" != v1 ] && OUTP+=("histogram-cache.json rwt/$SET/bdt-histogram-cache.json")
                   if [ "$run" = bdt-assess-tail ]; then
                     # Post-hoc: sparse tail bins merged from the high end to >= 500/1000/2000 raw LO+PS events.
                     ENVS+=("RWT_ASSESS_VARIANTS=1" "RWT_ASSESS_VARIANT_SET=tail")
