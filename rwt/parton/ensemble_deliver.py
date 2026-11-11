@@ -46,6 +46,7 @@ pdf={(f'pdf_{k-1:02d}' if k<=40 else ('alphas_dn' if k==41 else 'alphas_up')):ra
 scale={'scale_{:g}_{:g}'.format(*C.MU_OF_ID[w]):v for w,v in T['scale_transport']['T'].items()}
 member_tables=[dict(name=n,onnx=f'members/{n}.onnx',**{k:T[n][k] for k in ('offset','norm','k','mzh_lookup')}) for n in names]
 calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,window=[15.,150.],domain=os.environ.get('RWT_DOMAIN','none'),
+    outside=T.get('domain',{}).get('outside'),
     fine_mzh_edges=[float(x) for x in MZH_EDGES],fine_rho_edges=[float(x) for x in RHO_EDGES],
     nominal={k:nom[k] for k in ('offset','norm','k','mzh_lookup')},members=member_tables,
     jet=dict(rho_lookup=jet['rho_lookup'],c=jet['c'],rho_group_edges=jet['rho_edges']),

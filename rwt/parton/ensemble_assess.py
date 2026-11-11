@@ -159,6 +159,16 @@ def main():
         out['domain']=dict(name='rho1',definition='no jet, or pT(j1) < m_ZH (jet: |eta| < 4.7, pT > 30 GeV)',
             nlo_fraction_outside_eval=float(nlo_e.w0[te&~dom['eval','nlo']].sum()/nlo_e.w0[te].sum()),
             lo_fraction_outside_eval=float(lo_e.w0[se&~dom['eval','lo-cms']].sum()/lo_e.w0[se].sum()))
+        # Outside the domain the delivered weight is 1 (LO+PS x K).  Its two-sided variation is the ratio of the
+        # NLO+PS and LO+PS shares outside the domain, in pT(Z) bins of the calibration set: up = r, down = 1/r.
+        edges=[0.,150.,250.,400.,np.inf];r=[]
+        for a,b in zip(edges[:-1],edges[1:]):
+            bl=lambda s,sel:sel&(np.asarray(s['ptz'],float)>=a)&(np.asarray(s['ptz'],float)<b)
+            fl=lo_c.w0[bl(lo_c,sc)&~dom['calib','lo-cms']].sum()/lo_c.w0[bl(lo_c,sc)].sum()
+            fn=nlo_c.w0[bl(nlo_c,tc)&~dom['calib','nlo']].sum()/nlo_c.w0[bl(nlo_c,tc)].sum()
+            r.append(float(fn/fl) if fl>0 else 1.)
+        outside=dict(ptz_edges=edges[:-1]+[1e9],share_ratio=r,nominal=1.0,note='weight 1 outside the domain (LO+PS x K); up = share_ratio, down = 1/share_ratio')
+        out['domain']['outside']=outside
         sc=sc&dom['calib','lo-cms'];tc=tc&dom['calib','nlo'];se=se&dom['eval','lo-cms'];te=te&dom['eval','nlo']
     mzh_index=lambda s:mzh_cell(s['mzh'])
 
@@ -191,6 +201,7 @@ def main():
     T={}
     for wid in C.SCALE7:
         v=np.bincount(cell_t[tc],weights=nlo_c.weight(wid)[tc],minlength=ncell);T[wid]=np.where(base!=0,v/np.where(base!=0,base,1),1.)
+    if 'domain' in out:tables['domain']=out['domain']
     tables['scale_transport']=dict(ids=C.SCALE7,cells='mzh group (nominal k groups) x rho group',T={k:v.tolist() for k,v in T.items()},
                                    note='ids 1001-1009 at PDF4LHC21 divided by the stored nominal; target central = NNPDF3.1 id 2000')
     # Evaluation set: the registered coverage test.

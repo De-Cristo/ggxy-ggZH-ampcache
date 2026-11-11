@@ -3,8 +3,9 @@
     python apply.py --model DIR --inputs events.npz --out weights.npz
 
 events.npz holds one array per input named in DIR/calibration.json "features" (generator level, model card),
-in GeV.  Events outside 15 < m_ll < 150 GeV (column lhe_mll), and for domain 'rho1' events with a leading jet
-harder than m_ZH, get NaN: the model is not defined there.
+in GeV.  Events outside 15 < m_ll < 150 GeV (column lhe_mll) get NaN: the model is not defined there.  For domain
+'rho1', events with a leading jet harder than m_ZH get weight 1 (the LO+PS x K prediction) with the hard-jet
+variation jet_up/jet_down = NLO+PS/LO+PS share ratio in pT(Z) bins and its inverse.
 Output columns (multiply the event's own LO weight by them):
   nominal                       NLO+PS shape weight (mean 1 on the training LO+PS sample)
   member_00 .. member_19        ensemble members -> NN uncertainty with pca.py
@@ -56,7 +57,12 @@ class Model:
         for name,T in c['pdf']['T'].items():out[name]=out['nominal']*np.asarray(T)[cell]
         window=(np.asarray(ev['lhe_mll'],float)>c['window'][0])&(np.asarray(ev['lhe_mll'],float)<c['window'][1])
         if c.get('domain')=='rho1':
-            j=np.asarray(ev['ptj1'],float);window&=(j<=0)|(j<np.asarray(ev['mzh'],float))
+            # Outside the training domain (leading jet harder than m_ZH): weight 1, i.e. LO+PS x K; every variation 1
+            # except jet_up/jet_down = NLO+PS/LO+PS share ratio outside the domain in pT(Z) bins, and its inverse.
+            j=np.asarray(ev['ptj1'],float);inside=(j<=0)|(j<np.asarray(ev['mzh'],float))
+            o=c['outside'];r=np.asarray(o['share_ratio'])[np.clip(np.searchsorted(o['ptz_edges'],np.asarray(ev['ptz'],float),side='right')-1,0,len(o['share_ratio'])-1)]
+            for k in out:out[k]=np.where(inside,out[k],1.)
+            out['jet_up']=np.where(inside,out['jet_up'],r);out['jet_down']=np.where(inside,out['jet_down'],1/r)
         return {k:np.where(window,v,np.nan) for k,v in out.items()}
 
 def main():
