@@ -151,6 +151,15 @@ def main():
              calibration_selection_sha256={r['calibration_selection_sha256'] for r in records.values()}.pop(),evaluation_selection_sha256={r['evaluation_selection_sha256'] for r in records.values()}.pop())
     lo_c,nlo_c,lo_e,nlo_e=samples['calib','lo-cms'],samples['calib','nlo'],samples['eval','lo-cms'],samples['eval','nlo']
     sc,tc,se,te=lo_c.in_window,nlo_c.in_window,lo_e.in_window,nlo_e.in_window
+    domain=os.environ.get('RWT_DOMAIN','none');assert domain in ('none','rho1')
+    if domain=='rho1':
+        # Calibration, transport and coverage inside the training domain; the rest is outside the model's validity.
+        from ensemble_assess_bins import in_domain
+        dom={k:in_domain(v['ptj1'],v['mzh']) for k,v in samples.items()}
+        out['domain']=dict(name='rho1',definition='no jet, or pT(j1) < m_ZH (jet: |eta| < 4.7, pT > 30 GeV)',
+            nlo_fraction_outside_eval=float(nlo_e.w0[te&~dom['eval','nlo']].sum()/nlo_e.w0[te].sum()),
+            lo_fraction_outside_eval=float(lo_e.w0[se&~dom['eval','lo-cms']].sum()/lo_e.w0[se].sum()))
+        sc=sc&dom['calib','lo-cms'];tc=tc&dom['calib','nlo'];se=se&dom['eval','lo-cms'];te=te&dom['eval','nlo']
     mzh_index=lambda s:mzh_cell(s['mzh'])
 
     def raw_weights(s,logit,sel,norm=None):

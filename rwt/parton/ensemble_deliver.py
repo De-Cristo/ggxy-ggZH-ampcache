@@ -4,7 +4,7 @@ Inputs: tables.json (bdt-assess), pdf-transport.npz, members/member-XX.tgz (bdt-
 vectors).  The ONNX thresholds are snapped to float32 first (ggzh_rwt_export.snap_thresholds), so scikit-learn
 and ONNX take identical branches for float32 inputs; the test vectors check apply.py against scikit-learn.
 """
-import json,pickle,shutil,sys,tarfile
+import json,os,pickle,shutil,sys,tarfile
 from pathlib import Path
 from common import worker,configuration,sha
 worker()
@@ -45,7 +45,7 @@ for i in range(ncell):
 pdf={(f'pdf_{k-1:02d}' if k<=40 else ('alphas_dn' if k==41 else 'alphas_up')):ratio[k-1].tolist() for k in range(1,43)}
 scale={'scale_{:g}_{:g}'.format(*C.MU_OF_ID[w]):v for w,v in T['scale_transport']['T'].items()}
 member_tables=[dict(name=n,onnx=f'members/{n}.onnx',**{k:T[n][k] for k in ('offset','norm','k','mzh_lookup')}) for n in names]
-calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,window=[15.,150.],
+calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,window=[15.,150.],domain=os.environ.get('RWT_DOMAIN','none'),
     fine_mzh_edges=[float(x) for x in MZH_EDGES],fine_rho_edges=[float(x) for x in RHO_EDGES],
     nominal={k:nom[k] for k in ('offset','norm','k','mzh_lookup')},members=member_tables,
     jet=dict(rho_lookup=jet['rho_lookup'],c=jet['c'],rho_group_edges=jet['rho_edges']),
@@ -55,7 +55,8 @@ calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,wi
 (out/'calibration.json').write_text(json.dumps(calibration,indent=1)+'\n')
 for f in ('apply.py','pca.py'):shutil.copy(Path('rwt/parton/deliver')/f,out/f)
 # Test vectors: 2000 in-window evaluation LO+PS events; expected weights from scikit-learn.
-s=C.Sample('lo-cms',Path('eval/parton-data/lo-cms.npz'));X=BDT.prepare(s).astype(np.float32);ix=np.flatnonzero(s.in_window)[:2000]
+s=C.Sample('lo-cms',Path('eval/parton-data/lo-cms.npz'));X=BDT.prepare(s).astype(np.float32);from ensemble_assess_bins import in_domain
+ix=np.flatnonzero(s.in_window&(in_domain(s['ptj1'],s['mzh']) if os.environ.get('RWT_DOMAIN')=='rho1' else True))[:2000]
 ev={k:np.asarray(X[ix,i],np.float32) for i,k in enumerate(features)}
 sys.path.insert(0,str(out));import apply as A
 model=A.Model(out);got=model.weights(ev)

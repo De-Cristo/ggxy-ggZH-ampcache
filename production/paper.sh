@@ -117,7 +117,9 @@ case $SET in
   nlo-topup-zll-v1) E=13600 ;;
   nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
-  ensemble-zll-v1|ensemble-zvv-v1) E=13600; ECH=${SET#ensemble-}; ECH=${ECH%-v1} ;;
+  ensemble-zll-v1|ensemble-zvv-v1|ensemble-zll-v2|ensemble-zvv-v2)
+    # v2: new evaluation/member selections (<channel>-v2-*.json), training domain pT(j1) < m_ZH (RWT_DOMAIN=rho1)
+    E=13600; ECH=${SET#ensemble-}; EVER=${ECH##*-}; ECH=${ECH%-v*}; ESEL=$ECH; [ "$EVER" = v1 ] || ESEL=$ECH-$EVER ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -151,6 +153,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -410,7 +413,7 @@ def() {
                   res 21 4 8 8
                   if [ "$p" = 0 ]; then n=eval; else n=member-$(printf %02d $((p - 1))); fi
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-$n.json")
                   STEP=(bash production/run_parton_study.sh ensemble-prepare)
                   OUTP=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
                          "parton-prepare.json rwt/$SET/prepared/$n.json") ;;
@@ -418,7 +421,7 @@ def() {
                   res 20 4 24 36
                   n=member-$(printf %02d "$p")
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-$n.json")
                   # Calibration = the original frozen 1M study bundle; evaluation = prepared job 0.
                   IN=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
                       "calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
@@ -436,10 +439,11 @@ def() {
                   res 20 8 16 12
                   n=member-$(printf %02d "$p")
                   ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-$n.json")
                   IN=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
                       "calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
                       "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-member)
                   OUTP=("bdt-member.tgz rwt/$SET/bdt/$n.tgz"
                          "bdt-member.json rwt/$SET/bdt/$n.json") ;;
@@ -456,20 +460,22 @@ def() {
                   # PDF ratios: the Z->ll 13.6 TeV production for both channels (model card).
                   res 1 4 16 4
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
                   IN=("eval-prepared.tgz rwt/$SET/prepared/eval.tgz" "tables.json rwt/$SET/bdt-tables.json"
                       "pdf-transport.npz rwt/ensemble-zll-v1/pdf-transport.npz")
                   for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
+                  [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH.json") ;;
     bdt-assess|bdt-assess-variants|bdt-assess-variants2)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
                   IN=("calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
                       "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
                   for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
+                  [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-assess)
                   OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
                          "ensemble-tables.json rwt/$SET/bdt-tables.json")
@@ -488,7 +494,7 @@ def() {
     ensemble-assess|ensemble-assess-smoke)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
-                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
                   IN=("calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
                       "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
                   d=fits; [ "$run" = ensemble-assess ] || d=smoke

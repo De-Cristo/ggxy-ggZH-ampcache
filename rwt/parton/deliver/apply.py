@@ -3,7 +3,8 @@
     python apply.py --model DIR --inputs events.npz --out weights.npz
 
 events.npz holds one array per input named in DIR/calibration.json "features" (generator level, model card),
-in GeV.  Events outside 15 < m_ll < 150 GeV (column lhe_mll) get NaN: the model is not defined there.
+in GeV.  Events outside 15 < m_ll < 150 GeV (column lhe_mll), and for domain 'rho1' events with a leading jet
+harder than m_ZH, get NaN: the model is not defined there.
 Output columns (multiply the event's own LO weight by them):
   nominal                       NLO+PS shape weight (mean 1 on the training LO+PS sample)
   member_00 .. member_19        ensemble members -> NN uncertainty with pca.py
@@ -54,6 +55,8 @@ class Model:
         for name,T in c['scale']['T'].items():out[name]=out['nominal']*np.asarray(T)[cell]
         for name,T in c['pdf']['T'].items():out[name]=out['nominal']*np.asarray(T)[cell]
         window=(np.asarray(ev['lhe_mll'],float)>c['window'][0])&(np.asarray(ev['lhe_mll'],float)<c['window'][1])
+        if c.get('domain')=='rho1':
+            j=np.asarray(ev['ptj1'],float);window&=(j<=0)|(j<np.asarray(ev['mzh'],float))
         return {k:np.where(window,v,np.nan) for k,v in out.items()}
 
 def main():

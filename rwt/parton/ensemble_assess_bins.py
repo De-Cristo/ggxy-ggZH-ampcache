@@ -13,5 +13,9 @@ def rho_cell(ptj1,mzh):
     j=np.asarray(ptj1,float);r=np.where(j>0,j/np.asarray(mzh,float),-1.)
     return np.where(r<0,0,1+np.clip(np.searchsorted(RHO_EDGES,r,side='right')-1,0,len(RHO_EDGES)-2))
 
+def in_domain(ptj1,mzh):
+    """Training domain 'rho1': no jet, or leading jet softer than m_ZH (where the vetoed LO+PS source has events)."""
+    j=np.asarray(ptj1,float);return (j<=0)|(j<np.asarray(mzh,float))
+
 def fine_cells(mzh,ptj1):
     return mzh_cell(mzh),rho_cell(ptj1,mzh)

@@ -31,7 +31,15 @@ for name in ('calib','eval'):
     held[name,'lo-cms']=scalar(name,'lo-cms');held[name,'nlo']=scalar(name,'nlo-cp5')
 
 start=time.time()
-Xs=BDT.prepare(src)[src.in_window];Xt=BDT.prepare(tgt)[tgt.in_window];wt=tgt.w0[tgt.in_window]
+domain=os.environ.get('RWT_DOMAIN','none');assert domain in ('none','rho1')
+def selected(s):
+    sel=s.in_window.copy()
+    if domain=='rho1':
+        from ensemble_assess_bins import in_domain
+        sel&=in_domain(s['ptj1'],s['mzh'])
+    return sel
+ss,ts=selected(src),selected(tgt)
+Xs=BDT.prepare(src)[ss];Xt=BDT.prepare(tgt)[ts];wt=tgt.w0[ts]
 assert np.isfinite(Xs).all() and np.isfinite(Xt).all()
 clf=BDT.fit(Xs,Xt,wt);training_seconds=time.time()-start
 
@@ -56,7 +64,7 @@ import sklearn
 record=dict(member=c['study'],model='BDT-17 (feature set C), R6 hyperparameters',features=FEATURES,classifier=BDT.CLF,channel=c['channel'],
     selection_sha256=c['selection_sha256'],calibration_selection_sha256=selection_sha('calib'),evaluation_selection_sha256=selection_sha('eval'),
     package=Path('VERSION').read_text().strip(),initialization_seed=seed,source_train=int(len(Xs)),target_train=int(len(Xt)),
-    n_iter=int(clf.n_iter_),capacity_limited=bool(clf.n_iter_>=BDT.CLF['max_iter']),epochs_run=int(clf.n_iter_),
+    domain=domain,n_iter=int(clf.n_iter_),capacity_limited=bool(clf.n_iter_>=BDT.CLF['max_iter']),epochs_run=int(clf.n_iter_),
     best_validation_loss=float(-clf.validation_score_[-1]) if getattr(clf,'validation_score_',None) is not None and len(clf.validation_score_) else None,
     training_seconds=training_seconds,checkpoint_reload='PASS',reload_audit=reload_audit,model_sha256=sha(out/'model.pkl'),
     sklearn=sklearn.__version__,threads=os.environ.get('OMP_NUM_THREADS'))

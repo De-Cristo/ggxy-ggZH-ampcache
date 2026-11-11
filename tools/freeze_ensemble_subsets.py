@@ -46,8 +46,10 @@ def main():
     p.add_argument('--channel', required=True, choices=('zll', 'zvv'))
     p.add_argument('--members', type=int, default=20)
     p.add_argument('--out', required=True, type=Path, help='directory, e.g. production/ensemble')
+    p.add_argument('--version', default='v1', help='v2: new evaluation and members, excluding the v1 evaluation set')
     a = p.parse_args()
-    ch = a.channel; salt = f'ggzh-parton-{ch}-ensemble-20261111-v1'
+    ch = a.channel; salt = f'ggzh-parton-{ch}-ensemble-20261111-{a.version}'
+    tag = '' if a.version == 'v1' else f'-{a.version}'
     calibration_path = Path(f'production/parton-{ch}-1m-v1.json')
     calibration_raw = calibration_path.read_bytes(); calibration = json.loads(calibration_raw)
     parent = calibration['parent_selection_sha256']
@@ -56,8 +58,12 @@ def main():
     raw = a.catalog.read_bytes(); catalog = json.loads(raw)
     a.out.mkdir(parents=True, exist_ok=True)
     names = ['eval']+[f'member-{i:02d}' for i in range(a.members)]
-    for n in names: assert not (a.out/f'{ch}-{n}.json').exists(), n
+    for n in names: assert not (a.out/f'{ch}{tag}-{n}.json').exists(), n
     taken = {o: {x['seed'] for x in calibration['samples'][o]} for o, _, _ in COUNTS}
+    if a.version != 'v1':
+        # The v1 evaluation set has been inspected: never evaluate or train on it again.
+        old = json.loads((a.out/f'{ch}-eval.json').read_text())
+        for o, _, _ in COUNTS: taken[o] |= {x['seed'] for x in old['samples'][o]}
     pools = {}; rejected = []; maximum = {}
     for order, count, rows in COUNTS:
         candidates = [(k, x) for k, x in catalog['delivered'].items()
@@ -89,15 +95,15 @@ def main():
                    pool_shards={o: len(pools[o]) for o, _, _ in COUNTS}, selections={})
     for i, n in enumerate(names):
         samples = {o: sorted((e for e, _ in xs), key=lambda e: e['seed']) for o, xs in selections[n].items()}
-        result = dict(schema='ggzh-parton-ensemble-selection-v1', study=f'ensemble-{ch}-v1-{n}', channel=ch, role=n,
+        result = dict(schema='ggzh-parton-ensemble-selection-v1', study=f'ensemble-{ch}-{a.version}-{n}', channel=ch, role=n,
                       selection_rule=f'SHA256 {salt}|{n}|order|seed; first 200 LO/400 NLO eligible producer shards '
                                      'outside the calibration selection'+('' if n == 'eval' else ' and the evaluation selection'),
                       catalog_checked=catalog['checked'], catalog_sha256=digest(raw), parent_selection_sha256=parent,
                       calibration_selection_sha256=digest(calibration_raw), events_per_sample=1000000,
                       maximum_radiation_tokens={o: max(m for _, m in xs) for o, xs in selections[n].items()},
                       maximum_tensor_length=length,
-                      initialization_seed=None if n == 'eval' else SEED_BASE[ch]+i-1, samples=samples)
-        path = a.out/f'{ch}-{n}.json'; path.write_text(json.dumps(result, indent=2)+'\n')
+                      initialization_seed=None if n == 'eval' else SEED_BASE[ch]+(0 if a.version == 'v1' else 100)+i-1, samples=samples)
+        path = a.out/f'{ch}{tag}-{n}.json'; path.write_text(json.dumps(result, indent=2)+'\n')
         summary['selections'][n] = dict(path=str(path), sha256=digest(path.read_bytes()),
                                          seeds={o: [e['seed'] for e in xs] for o, xs in samples.items()})
     ev = {o: set(summary['selections']['eval']['seeds'][o]) for o, _, _ in COUNTS}
@@ -105,7 +111,7 @@ def main():
         for o, _, _ in COUNTS:
             s = set(summary['selections'][n]['seeds'][o])
             assert len(s) == len(summary['selections'][n]['seeds'][o]) and not s & ev[o] and not s & taken[o]
-    (a.out/f'{ch}-ensemble.json').write_text(json.dumps(summary, indent=2)+'\n')
+    (a.out/f'{ch}{tag}-ensemble.json').write_text(json.dumps(summary, indent=2)+'\n')
     print(json.dumps(dict(channel=ch, maximum_tensor_length=length, pool_shards=summary['pool_shards'],
                           rejected=len(rejected), selections={n: s['sha256'][:12] for n, s in summary['selections'].items()})))
 
