@@ -102,22 +102,35 @@ def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
         return d
     specs=(('wide',1000,None),('mll40',None,mll40),('wide+mll40',1000,mll40))
     if os.environ.get('RWT_ASSESS_VARIANT_SET')=='v2':specs=(('wide2k',2000,None),('domain',None,domain),('domain+wide2k',2000,domain))
+    if os.environ.get('RWT_ASSESS_VARIANT_SET')=='tail':specs=(('tail500',-500,None),('tail1k',-1000,None),('tail2k',-2000,None))
     for label,minraw,cut in specs:
         if cut is mll40 and not zll:continue
-        wide=minraw is not None
+        wide=minraw is not None;tail=wide and minraw<0;minraw=abs(minraw) if wide else None
         s2=se&cut(lo_e) if cut else se;t2=te&cut(nlo_e) if cut else te
         pulls=[];fails=[];hists={}
         for name in ['stxs']+list(VARS):
             edges=None
             if wide and name!='stxs':
-                fine=np.asarray(VARS[name][0],float);raw=histogram(lo_e,lo_e.w0,s2,name)[2];keep=[fine[0]];acc=0
-                for i in range(len(raw)):
-                    acc+=raw[i]
-                    if acc>=minraw:keep.append(fine[i+1]);acc=0
-                if keep[-1]!=fine[-1]:
-                    if len(keep)>1:keep[-1]=fine[-1]
-                    else:keep.append(fine[-1])
-                edges=np.asarray(keep)
+                fine=np.asarray(VARS[name][0],float);raw=histogram(lo_e,lo_e.w0,s2,name)[2]
+                if tail:
+                    # Merge only sparse tail bins, from the high end down; populated bins stay as they are.
+                    keep=[fine[-1]];acc=0
+                    for i in range(len(raw)-1,-1,-1):
+                        acc+=raw[i]
+                        if acc>=minraw:keep.append(fine[i]);acc=0
+                    if keep[-1]!=fine[0]:
+                        if len(keep)>1:keep[-1]=fine[0]
+                        else:keep.append(fine[0])
+                    edges=np.asarray(keep[::-1])
+                else:
+                    keep=[fine[0]];acc=0
+                    for i in range(len(raw)):
+                        acc+=raw[i]
+                        if acc>=minraw:keep.append(fine[i+1]);acc=0
+                    if keep[-1]!=fine[-1]:
+                        if len(keep)>1:keep[-1]=fine[-1]
+                        else:keep.append(fine[-1])
+                    edges=np.asarray(keep)
             fr,er,raw=histogram(lo_e,w_nom,s2,name,edges);ft,et,_=histogram(nlo_e,nlo_e.w0,t2,name,edges)
             fu=histogram(lo_e,w_up,s2,name,edges)[0];fd=histogram(lo_e,w_dn,s2,name,edges)[0]
             snn,_=pca_sigma([histogram(lo_e,w,s2,name,edges)[0] for w in w_mem]);snc=np.maximum(np.abs(fu-fr),np.abs(fd-fr))
