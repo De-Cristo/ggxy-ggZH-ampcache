@@ -91,6 +91,7 @@ def main():
     for path in members:records[path.stem],pred[path.stem]=logits(path)
     names=sorted(records);print('members',names,flush=True)
     samples={(s,o):scalar(s,lab) for s in ('calib','eval') for o,lab in (('lo-cms','lo-cms'),('nlo','nlo-cp5'))}
+    for smp in samples.values():BDT.prepare(smp)   # adds the derived classifier columns njets and ayzh
     for (s,o),smp in samples.items():
         for n in names:
             p=pred[n][s,o];assert np.array_equal(p['seed'],smp['run']) and np.array_equal(p['table_row'],smp['event']) and np.array_equal(p['in_window'],smp.in_window)
