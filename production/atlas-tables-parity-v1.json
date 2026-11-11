@@ -1,0 +1,86 @@
+{
+  "lo-atlas": [
+    {
+      "seed": 500001,
+      "events": 5000,
+      "sha256": "e1add36c1437b5f7a27a6f645dbc5d1657ecc8f2d9416f7cf3c09e25bc0ea5f8",
+      "bytes": 464602,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/lo-atlas/500001.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 500002,
+      "events": 5000,
+      "sha256": "8e80675c0c34736a31540d60433d4e53d6b5924b75e0b57c4c76b21883a19295",
+      "bytes": 464361,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/lo-atlas/500002.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 500003,
+      "events": 5000,
+      "sha256": "98a73fe84d205d4a49c16855c91f44a81835cc6bbca2c7d0b2ae2324a0dceb37",
+      "bytes": 465431,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/lo-atlas/500003.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 500004,
+      "events": 5000,
+      "sha256": "d97925bb7d2912b9f3c50b74c806e3423fab9437b2e3daceefd05c802bcb51d7",
+      "bytes": 465299,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/lo-atlas/500004.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 500005,
+      "events": 5000,
+      "sha256": "24f66ff719e55d65c8e1e10a50aca539cb23950943c90936a049441a0b6383a9",
+      "bytes": 465411,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/lo-atlas/500005.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    }
+  ],
+  "nlo-a14": [
+    {
+      "seed": 100001,
+      "events": 2500,
+      "sha256": "40db9adae246cbb646523dc6222d2a74725edf91ba4b672a29bc379933e12f00",
+      "bytes": 323747,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/nlo-a14/100001.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 100002,
+      "events": 2500,
+      "sha256": "b0c5e670aaec655fe63d628ca9294bef8477197c8a82cf4b3a97093052fa29e0",
+      "bytes": 324120,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/nlo-a14/100002.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 100003,
+      "events": 2500,
+      "sha256": "508e0c8602fc97006ab238dcef11c96f86cfa8275ffb4052288caf2e23543128",
+      "bytes": 324458,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/nlo-a14/100003.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 100004,
+      "events": 2500,
+      "sha256": "6c4a4525fe3406369bba1d72888e43bb8692a03a1179543c9a606fd1eb7573fa",
+      "bytes": 323644,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/nlo-a14/100004.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    },
+    {
+      "seed": 100005,
+      "events": 2500,
+      "sha256": "8272bc9de3f83af3a2e66310232404e1bae4cefbdab2658e895d606a2a1d67f2",
+      "bytes": 323712,
+      "product": "bdt-tables-v1/parity-reference/atlas-zll/nlo-a14/100005.csv.gz",
+      "original_package": "ce96dedc8a4db7de11356755d85ecce966e62df0"
+    }
+  ]
+}

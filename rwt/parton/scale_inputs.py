@@ -74,7 +74,7 @@ def check_card(card,order,pdfid,fixed,channel):
     for k,v in required.items():assert k in card and math.isclose(card[k],v,rel_tol=1e-12),('LHE card mismatch',k,v,card)
     return {k:card[k] for k in required}
 
-def born_ratio(event,base_pdf,pdf,points,fixed):
+def born_ratio(event,base_pdf,pdf,points,fixed,mu0=None):
     incoming=[p for p in event['particles'] if p['status']==-1]
     assert len(incoming)==2 and all(p['id']==21 for p in incoming),'Non-gg Born record'
     outgoing=[p for p in event['particles'] if p['status']==1]
@@ -84,7 +84,10 @@ def born_ratio(event,base_pdf,pdf,points,fixed):
     assert incoming[0]['v'][2]*incoming[1]['v'][2]<0
     x1,x2=[p['v'][3]/6800. for p in incoming]
     assert 0<x1<=1 and 0<x2<=1
-    if fixed:mu=216.1876
+    if mu0 is not None:
+        assert math.isfinite(mu0) and mu0>0
+        mu=mu0
+    elif fixed:mu=216.1876
     else:
         v=np.sum([p['v'] for p in incoming],axis=0)
         mu=math.sqrt(v[3]**2-np.dot(v[:3],v[:3]))/2
