@@ -162,6 +162,14 @@ def main():
         fraction_beyond_2=float((pulls>2).mean()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),
         rule='bins with >=100 raw LO+PS events; pull=(R-T)/sqrt(MC_R^2+MC_T^2+NN^2+nonclosure^2); pass: none >3 and <=5% >2; scale not in the denominator')
     out['effective_fraction_eval']=float(w_nom[se].sum()**2/np.sum(w_nom[se]**2)/se.sum())
+    # The predetermined criteria 1-3 of the paper (reported, not the pass rule) and the region/hard-jet
+    # diagnostics, nominal weight on the evaluation set; 'unweighted' is the raw LO+PS sample.
+    from ggzh_rwt10m import diagnostics
+    out['closure_criteria']=BDT.evaluate(lo_e,w_nom,se,nlo_e,te,'full',print)
+    out['diagnostics']=diagnostics(lo_e,w_nom,nlo_e)
+    out['diagnostics_unweighted']=diagnostics(lo_e,np.ones(lo_e.n),nlo_e)
+    for name in coverage:
+        coverage[name]['raw']=histogram(lo_e,lo_e.w0,se,name)[0].tolist()
     out['tables']=tables;out['coverage']=coverage
     Path('ensemble-assess.json').write_text(json.dumps(out,indent=1)+'\n')
     Path('ensemble-tables.json').write_text(json.dumps(dict(members=names,tables=tables,vars=dict(rho=VARS['rho'][2])),indent=1)+'\n')
