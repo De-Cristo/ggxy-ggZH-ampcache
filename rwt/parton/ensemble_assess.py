@@ -72,6 +72,7 @@ def pca_sigma(replicas):
     r=np.asarray(replicas,float);n=len(r)
     if n<2:return np.zeros(r.shape[1]),dict(members=n,modes=0)
     mean=r.mean(0);std=r.std(0,ddof=1);ok=std>0;z=np.zeros_like(r);z[:,ok]=(r[:,ok]-mean[ok])/std[ok]
+    if r.shape[1]==1:return std,dict(members=n,modes=1,retained_variance=1.,plain_std_max=float(std.max()))
     cov=np.cov(z,rowvar=False,ddof=1);val,vec=np.linalg.eigh(cov);val=np.clip(val[::-1],0,None);vec=vec[:,::-1]
     frac=np.cumsum(val)/val.sum() if val.sum()>0 else np.ones_like(val);keep=int(np.searchsorted(frac,PCA_KEEP)+1)
     shifts=(np.sqrt(val[:keep])[:,None]*vec[:,:keep].T)*std[None,:]
