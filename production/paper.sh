@@ -407,7 +407,7 @@ def() {
                          "parton-prepare.json rwt/parton-zll-1m-v1/prepare-audit.json") ;;
     ensemble-prepare)
                   # Job 0: evaluation set; job k>0: member k-1 (production/ensemble/<channel>-*.json).
-                  res 21 4 24 8
+                  res 21 4 8 8
                   if [ "$p" = 0 ]; then n=eval; else n=member-$(printf %02d $((p - 1))); fi
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
