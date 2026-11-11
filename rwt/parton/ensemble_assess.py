@@ -12,7 +12,7 @@ fraction of the in-window total, as in the registered closure reports.
   jet nuis.   w * c(rho)^-1 (up), w * c(rho) (down), rho = pT(j1)/m_ZH, events without a jet in their own bin
   scale       w * T_k(m_ZH, rho), T_k = sum(w0 sw_k)/sum(w0) of NLO+PS (calibration set)
 """
-import json,sys,tarfile
+import json,os,sys,tarfile
 from pathlib import Path
 from common import worker,configuration,sha
 worker()
@@ -77,13 +77,49 @@ def pca_sigma(replicas):
     shifts=(np.sqrt(val[:keep])[:,None]*vec[:,:keep].T)*std[None,:]
     return np.sqrt((shifts**2).sum(0)),dict(members=n,modes=keep,retained_variance=float(frac[keep-1]),plain_std_max=float(std.max()))
 
-def histogram(s,w,sel,name):
+def histogram(s,w,sel,name,edges=None):
     if name=='stxs':
         a,a2,raw=C.cell_sums(s,w,sel)
     else:
-        x=rho(s) if name=='rho' else np.asarray(s[name],float);a,a2,_=C.hist(x,w*sel,VARS[name][0])
-        raw=C.hist(x[sel],np.ones(int(sel.sum())),VARS[name][0])[2]
+        e=VARS[name][0] if edges is None else edges
+        x=rho(s) if name=='rho' else np.asarray(s[name],float);a,a2,_=C.hist(x,w*sel,e)
+        raw=C.hist(x[sel],np.ones(int(sel.sum())),e)[2]
     total=w[sel].sum();return a/total,np.sqrt(a2)/total,raw
+
+def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
+    """Post-hoc diagnostics on the already inspected evaluation set (not the registered test): wider bins
+    (fine bins merged from below until each has >= 1000 raw LO+PS events; STXS cells unchanged) and/or the
+    analysis domain m_ll > 40 GeV (charged leptons only).  Same pull definition and pass rule."""
+    out={}
+    for label,wide,cut in (('wide',True,False),('mll40',False,True),('wide+mll40',True,True)):
+        if cut and configuration()['channel']!='zll':continue
+        s2=se&(np.asarray(lo_e['lhe_mll'],float)>40) if cut else se;t2=te&(np.asarray(nlo_e['lhe_mll'],float)>40) if cut else te
+        pulls=[];fails=[]
+        for name in ['stxs']+list(VARS):
+            edges=None
+            if wide and name!='stxs':
+                fine=np.asarray(VARS[name][0],float);raw=histogram(lo_e,lo_e.w0,s2,name)[2];keep=[fine[0]];acc=0
+                for i in range(len(raw)):
+                    acc+=raw[i]
+                    if acc>=1000:keep.append(fine[i+1]);acc=0
+                if keep[-1]!=fine[-1]:
+                    if len(keep)>1:keep[-1]=fine[-1]
+                    else:keep.append(fine[-1])
+                edges=np.asarray(keep)
+            fr,er,raw=histogram(lo_e,w_nom,s2,name,edges);ft,et,_=histogram(nlo_e,nlo_e.w0,t2,name,edges)
+            fu=histogram(lo_e,w_up,s2,name,edges)[0];fd=histogram(lo_e,w_dn,s2,name,edges)[0]
+            snn,_=pca_sigma([histogram(lo_e,w,s2,name,edges)[0] for w in w_mem]);snc=np.maximum(np.abs(fu-fr),np.abs(fd-fr))
+            ok=raw>=MIN_RAW;den=np.sqrt(er**2+et**2+snn**2+snc**2);pull=np.where(ok&(den>0),(fr-ft)/np.where(den>0,den,1),np.nan)
+            e=VARS[name][0] if (edges is None and name!='stxs') else edges
+            for i,p in enumerate(pull):
+                if np.isfinite(p):
+                    pulls.append(abs(p))
+                    if abs(p)>2:fails.append(dict(var=name,bin=[float(e[i]),float(e[i+1])] if e is not None else i,pull=float(p),ratio=float(fr[i]/ft[i]) if ft[i]>0 else None,raw_lo=int(raw[i])))
+        pulls=np.asarray(pulls)
+        out[label]=dict(bins=int(len(pulls)),beyond_2=int((pulls>2).sum()),beyond_3=int((pulls>3).sum()),fraction_beyond_2=float((pulls>2).mean()),
+            max_abs_pull=float(pulls.max()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),failing_bins=sorted(fails,key=lambda f:-abs(f['pull'])))
+        print('VARIANT',label,json.dumps({k:v for k,v in out[label].items() if k!='failing_bins'}),flush=True)
+    return out
 
 def main():
     members=sorted(Path('members').glob('*.tgz'));assert members
@@ -162,6 +198,8 @@ def main():
         fraction_beyond_2=float((pulls>2).mean()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),
         rule='bins with >=100 raw LO+PS events; pull=(R-T)/sqrt(MC_R^2+MC_T^2+NN^2+nonclosure^2); pass: none >3 and <=5% >2; scale not in the denominator')
     out['effective_fraction_eval']=float(w_nom[se].sum()**2/np.sum(w_nom[se]**2)/se.sum())
+    if os.environ.get('RWT_ASSESS_VARIANTS')=='1':
+        out['variants']=variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn)
     # The predetermined criteria 1-3 of the paper (reported, not the pass rule) and the region/hard-jet
     # diagnostics, nominal weight on the evaluation set; 'unweighted' is the raw LO+PS sample.
     from ggzh_rwt10m import diagnostics
