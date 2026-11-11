@@ -14,6 +14,10 @@ import nlo_topup as replay
 
 def configure():
     assert os.environ.get('_CONDOR_SCRATCH_DIR') and os.uname().nodename.split('.')[0] != 'cmscon'
+    gate=os.environ.get('NLO_TOPUP_CONTROL_GATE','original-rtol1e-4')
+    assert gate in ('original-rtol1e-4','user-20261111-rtol1e-3')
+    if gate=='user-20261111-rtol1e-3':
+        replay.RTOL=1e-3  # Explicit user decision; ATOL and all controls unchanged.
     replay.SEED = int(os.environ['NLO_TOPUP_SEED'])
     assert 100001 <= replay.SEED <= 104000
     replay.EXPECTED = Path('original.lhe.gz.sha256.ref').read_text().split()[0]
@@ -22,6 +26,9 @@ def configure():
 
 def prepare():
     replay.prepare()
+    audit=json.loads(Path('topup-audit.json').read_text())
+    audit['control_gate_revision']=os.environ.get('NLO_TOPUP_CONTROL_GATE','original-rtol1e-4')
+    Path('topup-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     if os.environ.get('NLO_TOPUP_REUSE') == '1':
         assert replay.SEED == 101654
         a = json.loads(Path('reused-audit.json').read_text())

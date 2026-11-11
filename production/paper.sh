@@ -115,7 +115,7 @@ case $SET in
   parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
   numerical-zll-1m-v1|numerical-zvv-1m-v1|stable-zll-1m-v1|stable-zvv-1m-v1|parton-zvv-stable-1m-v1|parton-zvv-jets-stable-1m-v1) E=13600 ;;
   nlo-topup-zll-v1) E=13600 ;;
-  nlo-topup-zll-10m-v1) E=13600 ;;
+  nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
@@ -147,7 +147,7 @@ runs() {
     parton-zvv-stable-1m-v1) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zvv-jets-stable-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
-    nlo-topup-zll-10m-v1) echo nlo-weight-topup-all ;;
+    nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -291,6 +291,9 @@ def() {
                   s=$((100001+p))
                   IN+=("original.lhe.gz lhe/nlo-rwt10m-13600/events-$s.lhe.gz")
                   ENVS=("NLO_TOPUP_SEED=$s")
+                  if [[ $SET = nlo-topup-zll-10m-v2 ]]; then
+                    ENVS+=("NLO_TOPUP_CONTROL_GATE=user-20261111-rtol1e-3")
+                  fi
                   if [ "$s" = 101654 ]; then
                     IN+=("reused-topup.lhe.gz rwt/nlo-topup-zll-v1/events-101654-topup.lhe.gz"
                          "reused-audit.json rwt/nlo-topup-zll-v1/audit-101654.json")
