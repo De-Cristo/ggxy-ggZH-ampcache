@@ -24,8 +24,7 @@ import ggzh_reweight_bdt as BDT
 c=configuration()
 BDT.configure(C.FEATURE_SETS['C'])
 VARS={**BDT.FEATURE_VARS,**BDT.TEST_VARS}
-MZH_EDGES=np.concatenate([[0.],np.arange(150.,1250.+1e-9,25.),[np.inf]])
-RHO_EDGES=np.array([0.,.1,.2,.3,.4,.5,.6,.7,.8,.9,1.,1.25,1.5,2.,np.inf])
+from ensemble_assess_bins import MZH_EDGES,RHO_EDGES,mzh_cell,rho_cell
 VARS['rho']=(np.concatenate([[-1.5,-.5],RHO_EDGES[:-1],[3.]]),'pT(j1)/m(ZH)','-1 = no jet')
 MIN_RAW=100;K_REL=.02;C_REL=.05;PCA_KEEP=.99
 
@@ -34,7 +33,7 @@ def scalar(name,label):
 def rho(s):
     j=np.asarray(s['ptj1'],float);return np.where(j>0,j/np.asarray(s['mzh'],float),-1.)
 def rho_bin(s):
-    r=rho(s);return np.where(r<0,0,1+np.clip(np.searchsorted(RHO_EDGES,r,side='right')-1,0,len(RHO_EDGES)-2))
+    return rho_cell(s['ptj1'],s['mzh'])
 
 def logits(path):
     with tarfile.open(path) as t:
@@ -100,7 +99,7 @@ def main():
              calibration_selection_sha256={r['calibration_selection_sha256'] for r in records.values()}.pop(),evaluation_selection_sha256={r['evaluation_selection_sha256'] for r in records.values()}.pop())
     lo_c,nlo_c,lo_e,nlo_e=samples['calib','lo-cms'],samples['calib','nlo'],samples['eval','lo-cms'],samples['eval','nlo']
     sc,tc,se,te=lo_c.in_window,nlo_c.in_window,lo_e.in_window,nlo_e.in_window
-    mzh_index=lambda s:np.clip(np.searchsorted(MZH_EDGES,np.asarray(s['mzh'],float),side='right')-1,0,len(MZH_EDGES)-2)
+    mzh_index=lambda s:mzh_cell(s['mzh'])
 
     def raw_weights(s,logit,sel,norm=None):
         # exp of (logit - offset) for stability; normalized to mean 1 over the calibration in-window LO.

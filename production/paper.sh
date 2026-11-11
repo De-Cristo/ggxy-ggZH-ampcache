@@ -150,7 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
-    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -443,6 +443,14 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-member)
                   OUTP=("bdt-member.tgz rwt/$SET/bdt/$n.tgz"
                          "bdt-member.json rwt/$SET/bdt/$n.json") ;;
+    pdf-transport)
+                  # PDF4LHC21 ratios from the paper's 5e5-event 13.6 TeV Z->ll NLO+PS production (bulk inputs
+                  # fetched by the script itself with checksum verification).
+                  res 1 1 4 6
+                  ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH")
+                  STEP=(bash production/run_parton_study.sh pdf-transport)
+                  OUTP=("pdf-transport.npz rwt/$SET/pdf-transport.npz"
+                         "pdf-transport.json rwt/$SET/pdf-transport.json") ;;
     bdt-assess)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
