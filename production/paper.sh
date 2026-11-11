@@ -150,7 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
-    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -431,6 +431,20 @@ def() {
                     res 1 4 24 4; ENVS+=("RWT_ENSEMBLE_SMOKE_ROWS=20000")
                     OUTP=("${OUTP[@]/\/fits\//\/smoke\/}")
                   fi ;;
+    ensemble-assess|ensemble-assess-smoke)
+                  res 1 4 16 8
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                  IN=("calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
+                      "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  d=fits; [ "$run" = ensemble-assess ] || d=smoke
+                  for k in $(seq 0 19); do
+                    [ "$d" = fits ] || [ "$k" = 0 ] || continue
+                    n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/$d/$n.tgz")
+                  done
+                  STEP=(bash production/run_parton_study.sh ensemble-assess)
+                  OUTP=("ensemble-assess.json rwt/$SET/assess-$d.json"
+                         "ensemble-tables.json rwt/$SET/tables-$d.json") ;;
     parton-fit-1m)
                   res 15 4 24 36
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1")
