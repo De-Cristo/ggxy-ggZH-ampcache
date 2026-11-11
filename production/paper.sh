@@ -113,7 +113,7 @@ case $SET in
     RWL=pwg-rwl-rwt.dat; S0NLO=300001; S0CMS=310001; VDM=vdecaymode=12
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
   parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
-  numerical-zll-1m-v1|numerical-zvv-1m-v1) E=13600 ;;
+  numerical-zll-1m-v1|numerical-zvv-1m-v1|stable-zll-1m-v1|stable-zvv-1m-v1|parton-zvv-stable-1m-v1|parton-zvv-jets-stable-1m-v1) E=13600 ;;
   nlo-topup-zll-v1) E=13600 ;;
   nlo-topup-zll-10m-v1) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
@@ -143,6 +143,9 @@ runs() {
     parton-zll-1m-recovery-v2) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zll-1m-v1) echo parton-prepare-1m parton-fit-1m parton-bdt-1m parton-early-report-1m parton-report-1m parton-reload-diagnose-1m parton-fold0-report-1m ;;
     numerical-zll-1m-v1|numerical-zvv-1m-v1) echo numerical-input-audit ;;
+    stable-zll-1m-v1|stable-zvv-1m-v1) echo stable-input-audit ;;
+    parton-zvv-stable-1m-v1) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
+    parton-zvv-jets-stable-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
@@ -304,6 +307,17 @@ def() {
                   STEP=(bash production/run_nlo_topup.sh)
                   OUTP=("topup.lhe.gz rwt/$SET/events-101654-topup.lhe.gz"
                          "topup-audit.json rwt/$SET/audit-101654.json") ;;
+    stable-input-audit)
+                  res 1 1 8 8
+                  channel=${SET#stable-}; channel=${channel%-1m-v1}
+                  IN=("parton-prepared.tgz rwt/parton-$channel-1m-v1/prepared.tgz")
+                  if [[ $channel = zvv ]]; then
+                    IN+=("native.parquet rwt/numerical-recovery-inputs-v1/311108.parquet"
+                         "native-inputs.npz particle-v1/zvv/lo-cms/inputs/partons-v1/311108.npz"
+                         "native-objects.parquet particle-v1/zvv/lo-cms/objects/311108.parquet")
+                  fi
+                  STEP=(bash production/run_stable_audit.sh "$channel")
+                  OUTP=("stable-audit.json rwt/$SET/audit.json") ;;
     numerical-input-audit)
                   res 1 1 8 8
                   channel=${SET#numerical-}; channel=${channel%-1m-v1}
@@ -776,7 +790,17 @@ def() {
   if [ -n "$RWT_AVAILABLE_MANIFEST" ]; then
     ENVS+=("RWT_INPUT_MANIFEST=$RWT_AVAILABLE_MANIFEST")
   fi
-  if [[ $SET = parton-zll-jets-1m-v1 || $SET = parton-zvv-jets-1m-v1 ]]; then
+  if [[ $SET = parton-zvv-stable-1m-v1 || $SET = parton-zvv-jets-stable-1m-v1 ]]; then
+    ENVS+=("RWT_PARTON_CHANNEL=zvv" "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1")
+    # Keep prepared data and BDT original; require corrected fits for every report.
+    IN=("${IN[@]/rwt\/parton-zll-1m-v1/rwt\/parton-zvv-1m-v1}")
+    IN=("${IN[@]/rwt\/parton-zvv-1m-v1\/fits/rwt\/parton-zvv-stable-1m-v1\/fits}")
+    OUTP=("${OUTP[@]/rwt\/parton-zll-1m-v1/rwt\/$SET}")
+    if [[ $SET = parton-zvv-jets-stable-1m-v1 ]]; then
+      ENVS+=("RWT_PARTON_CONTEXT=analysis-jets-v1")
+      if [[ $run = parton-fit-1m ]]; then res 5 4 24 36; fi
+    fi
+  elif [[ $SET = parton-zll-jets-1m-v1 || $SET = parton-zvv-jets-1m-v1 ]]; then
     ENVS+=("RWT_PARTON_CONTEXT=analysis-jets-v1")
     if [[ $run = parton-fit-1m ]]; then
       res 5 4 24 36

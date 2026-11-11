@@ -39,11 +39,16 @@ for variant in ('baseline','jets'):
             assert r['initialization_seed']==c['seed_base']+fold
         else:
             allowed={BASE,LEGACY} if c['channel']=='zll' else {BASE}
+            if c.get('rapidity_convention')=='transverse-mass-rapidity-v1':
+                assert r.get('rapidity_convention')==c['rapidity_convention']
+                allowed={CURRENT}
             # External comparisons may use a baseline from this exact code pin.
             # Other iteration pins require an explicit provenance review.
             if r.get('execution_context')=='external-gpu':allowed.add(CURRENT)
             assert r['package'].split()[0] in allowed
             assert r.get('context_variant','baseline24')=='baseline24'
+        if c.get('rapidity_convention')=='transverse-mass-rapidity-v1':
+            assert r.get('rapidity_convention')==c['rapidity_convention']
         with np.load(p/'logits.npz',allow_pickle=False) as z:
             ix=np.flatnonzero(src.in_window&(data['source_fold']==fold));assert np.array_equal(ix,z['source_index'])
             for key in ('seed','table_row','lhe_ordinal'):assert np.array_equal(z[key],data[key][ix])

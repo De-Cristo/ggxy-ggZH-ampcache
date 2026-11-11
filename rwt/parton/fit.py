@@ -62,6 +62,23 @@ def mixed(ids,y,w):
     return values,torch.as_tensor(y,dtype=torch.float32,device='cuda'),torch.as_tensor(w,dtype=torch.float32,device='cuda')
 
 net=ZHParT(c,norm).cuda();opt=torch.optim.AdamW(net.parameters(),lr=c['learning_rate'],weight_decay=c['weight_decay'])
+# Embedded real-event regression check; restore RNG, parameters and BatchNorm state.
+real_event_check=None
+if c.get('rapidity_convention')=='transverse-mass-rapidity-v1':
+    ix=np.flatnonzero((source['seed']==311108)&(source['lhe_ordinal']==1354))
+    assert len(ix)==1
+    original_state={k:v.detach().clone() for k,v in net.state_dict().items()}
+    cpu_rng=torch.get_rng_state();gpu_rng=torch.cuda.get_rng_state_all()
+    # A real full batch, including the offending event, is a numerical test only.
+    ids=np.concatenate((ix,np.flatnonzero(np.arange(len(source['weight']))!=ix[0])[:255]))
+    net.train();pred=net(*batch(source,ids));assert torch.isfinite(pred).all()
+    pred.square().mean().backward()
+    assert all(torch.isfinite(p.grad).all() for p in net.parameters() if p.grad is not None)
+    real_event_check=dict(seed=311108,lhe_ordinal=1354,rows=len(ids),finite_forward=True,finite_gradients=True,optimizer_updated=False)
+    net.load_state_dict(original_state);net.zero_grad(set_to_none=True)
+    torch.set_rng_state(cpu_rng);torch.cuda.set_rng_state_all(gpu_rng)
+    del original_state,pred
+    print('REAL_EVENT_NUMERICAL_CHECK',json.dumps(real_event_check),flush=True)
 best=float('inf');best_state=None;bad=0;history=[];start_time=time.time();bs=c['batch_size']
 for epoch in range(c['epochs']):
     net.train();order=rng.permutation(len(train_ids));trainloss=0.
@@ -123,6 +140,8 @@ finally:
 np.savez_compressed(out/'logits.npz',source_index=test,seed=np.asarray(source['seed'][test]),lhe_ordinal=np.asarray(source['lhe_ordinal'][test]),table_row=np.asarray(source['table_row'][test]),logits=logits)
 record=dict(task=task,tag=tag,fold=fold,selection_sha256=c['selection_sha256'],package=card['package'],source_train=len(si),source_validation=len(sv),source_test=len(test),target_train=len(ti),target_validation=len(tv),target_half=None if not direction else direction-1,history=history,best_validation_loss=best,checkpoint_reload='PASS',model_sha256=sha(out/'model.pt'),torch=str(torch.__version__),gpu=torch.cuda.get_device_name(0),training_seconds=time.time()-start_time,parameters=sum(p.numel() for p in net.parameters()),particle_attention_layers=8,scalar_token_substitute=False)
 record['reload_audit']=reload_audit
+record['rapidity_convention']=c.get('rapidity_convention','legacy-v1')
+record['real_event_numerical_check']=real_event_check
 record['channel']=c['channel']
 record['execution_context']=card['execution_context']
 record['external_run_id']=card['external_run_id']

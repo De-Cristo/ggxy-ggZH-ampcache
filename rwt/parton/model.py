@@ -9,6 +9,8 @@ from ParticleTransformer import ParticleTransformer
 class ZHParT(nn.Module):
     def __init__(self,config,normalization):
         super().__init__();cfg=config['model']
+        self.rapidity_convention=config.get('rapidity_convention','legacy-v1')
+        assert self.rapidity_convention in ('legacy-v1','transverse-mass-rapidity-v1')
         self.register_buffer('particle_mean',torch.tensor(normalization['particle_mean'],dtype=torch.float32).reshape(1,7,1))
         self.register_buffer('particle_std',torch.tensor(normalization['particle_std'],dtype=torch.float32).reshape(1,7,1))
         self.register_buffer('global_mean',torch.tensor(normalization['global_mean'],dtype=torch.float32).reshape(1,cfg['global_features']))
@@ -16,8 +18,14 @@ class ZHParT(nn.Module):
         self.backbone=ParticleTransformer(input_dim=7,num_classes=None,fc_params=None,pair_input_dim=4,
             embed_dims=cfg['embed_dims'],pair_embed_dims=cfg['pair_embed_dims'],num_heads=cfg['num_heads'],
             num_layers=cfg['num_layers'],num_cls_layers=cfg['num_cls_layers'],trim=False,use_amp=False)
+        if self.rapidity_convention=='transverse-mass-rapidity-v1':
+            from stable_pair import pairwise
+            self.backbone.pair_embed.pairwise_lv_fts=pairwise
         self.head=nn.Sequential(nn.Linear(cfg['embed_dims'][-1]+cfg['global_features'],128),nn.GELU(),nn.Dropout(.1),nn.Linear(128,1))
     def forward(self,x,v,mask,global_features):
+        if self.rapidity_convention=='transverse-mass-rapidity-v1':
+            from stable_pair import rapidity
+            v=torch.cat((v,rapidity(x,v,mask)),dim=1)
         x=((x-self.particle_mean)/self.particle_std).masked_fill(~mask,0)
         embedding=self.backbone(x,v=v,mask=mask)
         context=(global_features-self.global_mean)/self.global_std

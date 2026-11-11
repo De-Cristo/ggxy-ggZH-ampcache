@@ -79,3 +79,23 @@ hashes, dependencies, GPU details, training logs and CPU/allocated GPU wall time
 The receiving agent must check `external-run.json` AND fit/reload products, rather
 than treating exit status as sufficient. Actual real fits validate numerics; no
 synthetic or disposable-pilot test is part of this adapter.
+
+### Versioned forward-particle numerical recovery
+
+The `parton-zvv-stable-1m-v1` and `parton-zvv-jets-stable-1m-v1` sets reuse
+exactly the frozen Zvv prepared data and splits. Saved configuration
+`rapidity_convention=transverse-mass-rapidity-v1` selects `stable_pair.py`:
+rapidity is asinh(pz/sqrt(pt^2+m^2)), using the separately retained log1p(m)
+particle feature before normalization. The auxiliary rapidity is computed in
+double precision and returned to model precision. Stored four-vectors, invariant
+pair mass, the other pair-feature definitions, and legacy model behavior stay
+unchanged. Padding is masked; an active undefined transverse mass is an error.
+This avoids cancellation when a forward token's float32 E equals |pz|.
+
+`stable-input-audit` scans complete frozen Zll/Zvv arrays and verifies the Zvv
+counterexample shard against retained native precision. Corrected fits depend on
+successful audits and include a real-event forward/backward check with state/RNG
+restoration before optimization. Outputs use distinct namespaces and numerical
+conventions are recorded in checkpoints. No event is dropped or regenerated.
+A passed technical gate does not imply physics closure. The full10M samples and
+ATLAS require their own numerical scans before this issue is certified absent.

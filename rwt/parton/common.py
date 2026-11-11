@@ -35,12 +35,17 @@ def configuration():
         c['jet_context_schema']=SCHEMA
         c['model']['global_features']=35
         c['normalization']='training partitions only; masked particles; global35; physical four-vectors unchanged'
+    if os.environ.get('RWT_PARTON_RAPIDITY')=='transverse-mass-rapidity-v1':
+        c['rapidity_convention']='transverse-mass-rapidity-v1'
+        c['study']=f'parton-{channel}-'+('jets-' if variant=='analysis-jets-v1' else '')+'stable-1m-v1'
     return c
 
 def accepted_training_package(record, config):
     current=Path('VERSION').read_text().split()[0]
     pin=record['package'].split()[0]
     legacy='4205b4d0af70628c0d7fbd053911ff3c34aa09b9'
+    if config.get('rapidity_convention')=='transverse-mass-rapidity-v1':
+        return pin==current and record.get('rapidity_convention')==config['rapidity_convention']
     return pin==current or (config['channel']=='zll' and pin==legacy)
 
 def arrays(order):
