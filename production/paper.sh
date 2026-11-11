@@ -150,7 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
-    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -451,6 +451,18 @@ def() {
                   STEP=(bash production/run_parton_study.sh pdf-transport)
                   OUTP=("pdf-transport.npz rwt/$SET/pdf-transport.npz"
                          "pdf-transport.json rwt/$SET/pdf-transport.json") ;;
+    bdt-deliver)
+                  # ONNX members + calibration/scale/PDF tables + apply/PCA scripts + test vectors + model card.
+                  # PDF ratios: the Z->ll 13.6 TeV production for both channels (model card).
+                  res 1 4 16 4
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                  IN=("eval-prepared.tgz rwt/$SET/prepared/eval.tgz" "tables.json rwt/$SET/bdt-tables.json"
+                      "pdf-transport.npz rwt/ensemble-zll-v1/pdf-transport.npz")
+                  for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
+                  STEP=(bash production/run_parton_study.sh bdt-deliver)
+                  OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH.tgz"
+                         "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH.json") ;;
     bdt-assess)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"

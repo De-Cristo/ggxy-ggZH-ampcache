@@ -13,6 +13,9 @@ python -m pip install --no-cache-dir --disable-pip-version-check numpy==1.26.4 s
 if [[ $TASK = fit || $TASK = ensemble-fit ]]; then
   python -m pip install --no-cache-dir --disable-pip-version-check torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121 >parton-logs/pip-torch.log 2>&1
 fi
+if [[ $TASK = bdt-deliver ]]; then
+  python -m pip install --no-cache-dir --disable-pip-version-check skl2onnx==1.16.0 onnxconverter-common==1.14.0 onnx==1.16.2 onnxruntime==1.19.2 protobuf==3.20.2 >parton-logs/pip-onnx.log 2>&1
+fi
 python -m pip freeze >parton-logs/environment.txt
 extract() {
   mkdir -p "$2"
@@ -25,7 +28,8 @@ with tarfile.open(sys.argv[1]) as t:
 PY
   (cd "$2/parton-data" && sha256sum -c --quiet SHA256SUMS)
 }
-if [[ $TASK != prepare && $TASK != ensemble-prepare && $TASK != ensemble-assess && $TASK != bdt-assess && $TASK != pdf-transport ]]; then extract parton-prepared.tgz .; fi
+if [[ $TASK != prepare && $TASK != ensemble-prepare && $TASK != ensemble-assess && $TASK != bdt-assess && $TASK != pdf-transport && $TASK != bdt-deliver ]]; then extract parton-prepared.tgz .; fi
+if [[ $TASK = bdt-deliver ]]; then extract eval-prepared.tgz eval; fi
 if [[ $TASK = ensemble-fit || $TASK = ensemble-assess || $TASK = bdt-member || $TASK = bdt-assess ]]; then
   extract calib-prepared.tgz calib
   extract eval-prepared.tgz eval
@@ -39,6 +43,7 @@ case $TASK in
   bdt-member) SCRIPT=rwt/parton/bdt_member.py; ARGS=() ;;
   bdt-assess) SCRIPT=rwt/parton/ensemble_assess.py; ARGS=() ;;
   pdf-transport) SCRIPT=rwt/parton/pdf_transport.py; ARGS=() ;;
+  bdt-deliver) SCRIPT=rwt/parton/ensemble_deliver.py; ARGS=() ;;
   bdt) SCRIPT=rwt/parton/control.py; ARGS=() ;;
   jet-compare) SCRIPT=rwt/parton/jet_compare.py; ARGS=() ;;
   report) SCRIPT=rwt/parton/report.py; ARGS=() ;;
