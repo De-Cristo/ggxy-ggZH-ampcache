@@ -90,18 +90,29 @@ def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
     """Post-hoc diagnostics on the already inspected evaluation set (not the registered test): wider bins
     (fine bins merged from below until each has >= 1000 raw LO+PS events; STXS cells unchanged) and/or the
     analysis domain m_ll > 40 GeV (charged leptons only).  Same pull definition and pass rule."""
-    out={}
-    for label,wide,cut in (('wide',True,False),('mll40',False,True),('wide+mll40',True,True)):
-        if cut and configuration()['channel']!='zll':continue
-        s2=se&(np.asarray(lo_e['lhe_mll'],float)>40) if cut else se;t2=te&(np.asarray(nlo_e['lhe_mll'],float)>40) if cut else te
-        pulls=[];fails=[]
+    out={};zll=configuration()['channel']=='zll'
+    def mll40(s):return np.asarray(s['lhe_mll'],float)>40
+    def domain(s):
+        # VH(bb)-like kinematic domain at generator level: Z and H back to back and balanced, Z mass window (ll).
+        dphi=np.abs(np.arctan2(np.sin(np.asarray(s['phiz'],float)-np.asarray(s['phih'],float)),np.cos(np.asarray(s['phiz'],float)-np.asarray(s['phih'],float))))
+        r=np.asarray(s['pth'],float)/np.maximum(np.asarray(s['ptz'],float),1e-9)
+        d=(dphi>(2.5 if zll else 2.2))&(r>=.5)&(r<=2.)
+        if zll:m=np.asarray(s['lhe_mll'],float);d&=(m>75)&(m<105)
+        return d
+    specs=(('wide',1000,None),('mll40',None,mll40),('wide+mll40',1000,mll40))
+    if os.environ.get('RWT_ASSESS_VARIANT_SET')=='v2':specs=(('wide2k',2000,None),('domain',None,domain),('domain+wide2k',2000,domain))
+    for label,minraw,cut in specs:
+        if cut is mll40 and not zll:continue
+        wide=minraw is not None
+        s2=se&cut(lo_e) if cut else se;t2=te&cut(nlo_e) if cut else te
+        pulls=[];fails=[];hists={}
         for name in ['stxs']+list(VARS):
             edges=None
             if wide and name!='stxs':
                 fine=np.asarray(VARS[name][0],float);raw=histogram(lo_e,lo_e.w0,s2,name)[2];keep=[fine[0]];acc=0
                 for i in range(len(raw)):
                     acc+=raw[i]
-                    if acc>=1000:keep.append(fine[i+1]);acc=0
+                    if acc>=minraw:keep.append(fine[i+1]);acc=0
                 if keep[-1]!=fine[-1]:
                     if len(keep)>1:keep[-1]=fine[-1]
                     else:keep.append(fine[-1])
@@ -111,14 +122,17 @@ def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
             snn,_=pca_sigma([histogram(lo_e,w,s2,name,edges)[0] for w in w_mem]);snc=np.maximum(np.abs(fu-fr),np.abs(fd-fr))
             ok=raw>=MIN_RAW;den=np.sqrt(er**2+et**2+snn**2+snc**2);pull=np.where(ok&(den>0),(fr-ft)/np.where(den>0,den,1),np.nan)
             e=VARS[name][0] if (edges is None and name!='stxs') else edges
+            hists[name]=dict(edges=None if e is None else [float(x) for x in e],raw_lo=raw.tolist(),reweighted=fr.tolist(),target=ft.tolist(),
+                unc=np.sqrt(er**2+et**2+snn**2+snc**2).tolist(),pull=[None if not np.isfinite(x) else float(x) for x in pull],
+                selected_lo=int(s2.sum()),selected_nlo=int(t2.sum()))
             for i,p in enumerate(pull):
                 if np.isfinite(p):
                     pulls.append(abs(p))
                     if abs(p)>2:fails.append(dict(var=name,bin=[float(e[i]),float(e[i+1])] if e is not None else i,pull=float(p),ratio=float(fr[i]/ft[i]) if ft[i]>0 else None,raw_lo=int(raw[i])))
         pulls=np.asarray(pulls)
         out[label]=dict(bins=int(len(pulls)),beyond_2=int((pulls>2).sum()),beyond_3=int((pulls>3).sum()),fraction_beyond_2=float((pulls>2).mean()),
-            max_abs_pull=float(pulls.max()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),failing_bins=sorted(fails,key=lambda f:-abs(f['pull'])))
-        print('VARIANT',label,json.dumps({k:v for k,v in out[label].items() if k!='failing_bins'}),flush=True)
+            max_abs_pull=float(pulls.max()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),failing_bins=sorted(fails,key=lambda f:-abs(f['pull'])),histograms=hists)
+        print('VARIANT',label,json.dumps({k:v for k,v in out[label].items() if k not in ('failing_bins','histograms')}),flush=True)
     return out
 
 def main():

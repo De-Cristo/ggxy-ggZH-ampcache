@@ -150,7 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
-    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -463,7 +463,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH.json") ;;
-    bdt-assess|bdt-assess-variants)
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
@@ -473,6 +473,12 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-assess)
                   OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
                          "ensemble-tables.json rwt/$SET/bdt-tables.json")
+                  if [ "$run" = bdt-assess-variants2 ]; then
+                    # Post-hoc: bins of >= 2000 raw LO+PS events, VH(bb)-like domain (Delta phi(Z,H), pT(H)/pT(Z), m_ll window).
+                    ENVS+=("RWT_ASSESS_VARIANTS=1" "RWT_ASSESS_VARIANT_SET=v2")
+                    OUTP=("ensemble-assess.json rwt/$SET/bdt-assess-variants2.json"
+                           "ensemble-tables.json rwt/$SET/bdt-tables-variants2.json")
+                  fi
                   if [ "$run" = bdt-assess-variants ]; then
                     # Post-hoc diagnostics (wider bins, m_ll > 40 GeV) on the inspected evaluation set.
                     ENVS+=("RWT_ASSESS_VARIANTS=1")
