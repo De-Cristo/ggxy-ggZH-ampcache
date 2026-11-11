@@ -76,7 +76,7 @@ card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 membe
     uncertainties=dict(nn='fill each member_XX weight; pca.py -> one nuisance per retained mode',jet='jet_up / jet_down, two-sided',
         scale='scale_* weights, 7-point envelope with the nominal', pdf='PDF4LHC21 Hessian: sqrt(sum_k (w_pdf_k - w_nominal)^2); alpha_s: (alphas_up - alphas_dn)/2',
         combination='independent sources; do not multiply the widths'),
-    normalization='weights have mean 1 on the training LO+PS sample inside the window; scale the total to sigma(NLO) of the model card note',
+    normalization='nominal weights have mean 1 on the calibration LO+PS sample inside the window; scale every column by the same factor that brings the nominal total to sigma(NLO); the scale and PDF variations then include the change of the total cross section, the member and jet variations are shape-only',
     checks=check,files={p.name:sha(p) for p in sorted(out.rglob('*')) if p.is_file()})
 (out/'model-card.json').write_text(json.dumps(card,indent=1)+'\n')
 with tarfile.open('bdt-deliver.tgz','w:gz') as t:t.add(out,arcname=f'ggzh-bdt17-{ch}')
