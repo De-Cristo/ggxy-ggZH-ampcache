@@ -114,6 +114,7 @@ case $SET in
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
   parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
   numerical-zll-1m-v1|numerical-zvv-1m-v1|stable-zll-1m-v1|stable-zvv-1m-v1|parton-zvv-stable-1m-v1|parton-zvv-jets-stable-1m-v1) E=13600 ;;
+  scale-cms-zll-eval-v1|scale-cms-zvv-eval-v1|nlo-topup-zvv-1m-v1) E=13600 ;;
   nlo-topup-zll-v1) E=13600 ;;
   nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
@@ -146,6 +147,8 @@ runs() {
     stable-zll-1m-v1|stable-zvv-1m-v1) echo stable-input-audit ;;
     parton-zvv-stable-1m-v1) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zvv-jets-stable-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
+    scale-cms-zll-eval-v1|scale-cms-zvv-eval-v1) echo scale-selection ;;
+    nlo-topup-zvv-1m-v1) echo nlo-weight-topup-all ;;
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
@@ -286,11 +289,25 @@ def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    scale-selection)
+                  res 1 2 8 12
+                  channel=${SET#scale-cms-}; channel=${channel%-eval-v1}
+                  IN=("reference.lhe.gz lhe/lo-13600/events-20001.lhe.gz")
+                  STEP=(bash production/run_scale_selection.sh "production/scale-selections/$channel-eval.json")
+                  OUTP=("scale-inputs.tgz rwt/$SET/scale-inputs.tgz" "scale-audit.json rwt/$SET/audit.json") ;;
     nlo-weight-topup-all)
-                  res 4000 2 8 2; need_install; need_grids grids-nlo-13600
-                  s=$((100001+p))
-                  IN+=("original.lhe.gz lhe/nlo-rwt10m-13600/events-$s.lhe.gz")
-                  ENVS=("NLO_TOPUP_SEED=$s")
+                  res 4000 2 8 2
+                  if [[ $SET = nlo-topup-zvv-1m-v1 ]]; then
+                    s=$((300001+p))
+                    IN=("ggzh-install.tgz @vv/install/ggzh-install-v3.tgz"
+                        "grids.tgz @vv/grids/grids-nlo-vv-13600.tgz"
+                        "original.lhe.gz @vv/lhe/nlo-vv-rwt10m-13600/events-$s.lhe.gz")
+                    ENVS=("NLO_TOPUP_SEED=$s" "NLO_TOPUP_CHANNEL=zvv" "NLO_TOPUP_CONTROL_GATE=user-20261111-rtol1e-3")
+                  else
+                    need_install; need_grids grids-nlo-13600; s=$((100001+p))
+                    IN+=("original.lhe.gz lhe/nlo-rwt10m-13600/events-$s.lhe.gz")
+                    ENVS=("NLO_TOPUP_SEED=$s")
+                  fi
                   if [[ $SET = nlo-topup-zll-10m-v2 ]]; then
                     ENVS+=("NLO_TOPUP_CONTROL_GATE=user-20261111-rtol1e-3")
                   fi

@@ -19,15 +19,28 @@ def configure():
     if gate=='user-20261111-rtol1e-3':
         replay.RTOL=1e-3  # Explicit user decision; ATOL and all controls unchanged.
     replay.SEED = int(os.environ['NLO_TOPUP_SEED'])
-    assert 100001 <= replay.SEED <= 104000
+    channel = os.environ.get('NLO_TOPUP_CHANNEL', 'zll')
+    assert channel in ('zll', 'zvv')
+    first = 100001 if channel == 'zll' else 300001
+    assert first <= replay.SEED < first+4000
     replay.EXPECTED = Path('original.lhe.gz.sha256.ref').read_text().split()[0]
     assert re.fullmatch('[0-9a-f]{64}', replay.EXPECTED)
 
 
 def prepare():
+    channel = os.environ.get('NLO_TOPUP_CHANNEL', 'zll')
+    # Check the original channel before native replay; grids are channel-specific.
+    with gzip.open('original.lhe.gz', 'rt') as f:
+        header = []
+        for line in f:
+            if line.strip() == '<event>': break
+            header.append(line)
+    decay = re.findall(r'^\s*vdecaymode\s+(\d+)', ''.join(header), re.M)
+    assert decay and all(int(x) == (11 if channel == 'zll' else 12) for x in decay)
     replay.prepare()
     audit=json.loads(Path('topup-audit.json').read_text())
     audit['control_gate_revision']=os.environ.get('NLO_TOPUP_CONTROL_GATE','original-rtol1e-4')
+    audit['channel'] = channel
     Path('topup-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     if os.environ.get('NLO_TOPUP_REUSE') == '1':
         assert replay.SEED == 101654
@@ -47,6 +60,9 @@ def validate():
              scale_points=replay.SCALES, source_pdf=93300, added_pdf=325300,
              input_production_package='3161a6224c1c354da81671c6b54fe66a27f303e8',
              join_keys=['seed','lhe_ordinal'])
+    if os.environ.get('NLO_TOPUP_CHANNEL') == 'zvv':
+        # Original LHE checksum is authoritative; do not mislabel it with the Zll pin.
+        a['input_production_package'] = None
     if os.environ.get('NLO_TOPUP_REUSE') == '1':
         old = json.loads(Path('reused-audit.json').read_text())
         a['reused_calculation'] = dict(package=old['package'], seed=replay.SEED,
