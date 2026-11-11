@@ -38,9 +38,10 @@ def rho_bin(s):
 
 def logits(path):
     with tarfile.open(path) as t:
-        assert all(m.name.startswith('parton-fit') and '..' not in m.name and not m.issym() and not m.islnk() for m in t.getmembers())
+        roots={m.name.split('/')[0] for m in t.getmembers()};assert len(roots)==1 and roots<={'parton-fit','member-fit'}
+        assert all('..' not in m.name and not m.issym() and not m.islnk() for m in t.getmembers())
         name=path.stem;t.extractall(Path('members-x')/name)
-    d=Path('members-x')/name/'parton-fit';record=json.loads((d/'record.json').read_text())
+    d=Path('members-x')/name/roots.pop();record=json.loads((d/'record.json').read_text())
     assert record['checkpoint_reload']=='PASS' and record['reload_audit']['same_batch_pass']
     return record,{(s,o):dict(np.load(d/f'logits-{s}-{o}.npz')) for s in ('calib','eval') for o in ('lo-cms','nlo')}
 

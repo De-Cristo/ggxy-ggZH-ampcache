@@ -150,7 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
-    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -431,6 +431,28 @@ def() {
                     res 1 4 24 4; ENVS+=("RWT_ENSEMBLE_SMOKE_ROWS=20000")
                     OUTP=("${OUTP[@]/\/fits\//\/smoke\/}")
                   fi ;;
+    bdt-fit)
+                  # BDT-17 member k on the frozen member-k subset; CPU only, threads = requested CPUs.
+                  res 20 8 16 12
+                  n=member-$(printf %02d "$p")
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                  IN=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
+                      "calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
+                      "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  STEP=(bash production/run_parton_study.sh bdt-member)
+                  OUTP=("bdt-member.tgz rwt/$SET/bdt/$n.tgz"
+                         "bdt-member.json rwt/$SET/bdt/$n.json") ;;
+    bdt-assess)
+                  res 1 4 16 8
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-eval.json")
+                  IN=("calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
+                      "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
+                  STEP=(bash production/run_parton_study.sh bdt-assess)
+                  OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
+                         "ensemble-tables.json rwt/$SET/bdt-tables.json") ;;
     ensemble-assess|ensemble-assess-smoke)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
