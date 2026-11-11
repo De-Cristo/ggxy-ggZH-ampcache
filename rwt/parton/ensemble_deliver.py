@@ -33,8 +33,16 @@ ncell=len(nom['k'])*ngroups_rho
 d=np.load('pdf-transport.npz');sums=d['sums'];assert np.allclose(d['mzh_edges'],MZH_EDGES) and np.allclose(d['rho_edges'],RHO_EDGES)
 mi,ri=np.meshgrid(np.arange(sums.shape[1]),np.arange(sums.shape[2]),indexing='ij');cells=cell_of(mi.ravel(),ri.ravel())
 merged=np.stack([np.bincount(cells,weights=s.ravel(),minlength=ncell) for s in sums])
-central=merged[0];assert (central>0).all(),'empty PDF transport cell'
-pdf={(f'pdf_{k-1:02d}' if k<=40 else ('alphas_dn' if k==41 else 'alphas_up')):(merged[k]/central).tolist() for k in range(1,43)}
+raw=np.bincount(cells,weights=d['raw'].ravel(),minlength=ncell)
+# Cells with fewer than 50 events of the 5e5 sample take the ratio of their m_ZH group summed over rho, then
+# the inclusive ratio; the number of such cells is recorded.
+group=np.arange(ncell)//ngroups_rho;gsum=np.stack([np.bincount(group,weights=m_,minlength=len(nom['k'])) for m_ in merged])
+graw=np.bincount(group,weights=raw,minlength=len(nom['k']));ratio=np.empty((42,ncell));fallback=dict(group=0,inclusive=0)
+for i in range(ncell):
+    if raw[i]>=50 and merged[0,i]>0:ratio[:,i]=merged[1:,i]/merged[0,i]
+    elif graw[group[i]]>=50 and gsum[0,group[i]]>0:ratio[:,i]=gsum[1:,group[i]]/gsum[0,group[i]];fallback['group']+=1
+    else:ratio[:,i]=merged[1:].sum(1)/merged[0].sum();fallback['inclusive']+=1
+pdf={(f'pdf_{k-1:02d}' if k<=40 else ('alphas_dn' if k==41 else 'alphas_up')):ratio[k-1].tolist() for k in range(1,43)}
 scale={'scale_{:g}_{:g}'.format(*C.MU_OF_ID[w]):v for w,v in T['scale_transport']['T'].items()}
 member_tables=[dict(name=n,onnx=f'members/{n}.onnx',**{k:T[n][k] for k in ('offset','norm','k','mzh_lookup')}) for n in names]
 calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,window=[15.,150.],
@@ -42,7 +50,7 @@ calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,wi
     nominal={k:nom[k] for k in ('offset','norm','k','mzh_lookup')},members=member_tables,
     jet=dict(rho_lookup=jet['rho_lookup'],c=jet['c'],rho_group_edges=jet['rho_edges']),
     scale=dict(T=scale,source=T['scale_transport']['note']),
-    pdf=dict(T=pdf,source='PDF4LHC21_40_pdfas members 1-40 (Hessian) and 41/42 (alpha_s), ratios to member 0 from the 5e5-event 13.6 TeV Z->ll NLO+PS production; same cells as scale'),
+    pdf=dict(T=pdf,fallback_cells=fallback,source='PDF4LHC21_40_pdfas members 1-40 (Hessian) and 41/42 (alpha_s), ratios to member 0 from the 5e5-event 13.6 TeV Z->ll NLO+PS production; same cells as scale'),
     cells='nominal m_ZH group (mzh_lookup over fine_mzh_edges) x rho group (jet.rho_lookup over fine rho cells; cell 0 = no jet)')
 (out/'calibration.json').write_text(json.dumps(calibration,indent=1)+'\n')
 for f in ('apply.py','pca.py'):shutil.copy(Path('rwt/parton/deliver')/f,out/f)
@@ -55,7 +63,7 @@ Lsk=[]
 for n in names:
     p=np.clip(models[n].predict_proba(X[ix].astype(np.float64))[:,1],1e-15,1-1e-15);Lsk.append(np.log(p)-np.log1p(-p))
 Lsk=np.asarray(Lsk);Lonnx=model.logits(model.matrix(ev))
-check=dict(events=len(ix),max_abs_logit_difference=float(np.max(np.abs(Lsk-Lonnx))))
+check=dict(events=len(ix),max_abs_logit_difference=float(np.max(np.abs(Lsk-Lonnx))),pdf_fallback_cells=fallback,cells=ncell)
 assert check['max_abs_logit_difference']<1e-4,check
 np.savez_compressed(out/'test-vectors.npz',**ev,**{f'expected_{k}':v for k,v in got.items()})
 card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 members)',channel=ch,
