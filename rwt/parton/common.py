@@ -38,6 +38,12 @@ def configuration():
     if os.environ.get('RWT_PARTON_RAPIDITY')=='transverse-mass-rapidity-v1':
         c['rapidity_convention']='transverse-mass-rapidity-v1'
         c['study']=f'parton-{channel}-'+('jets-' if variant=='analysis-jets-v1' else '')+'stable-1m-v1'
+    selection=os.environ.get('RWT_PARTON_SELECTION')
+    if selection:
+        # Ensemble subsets: a frozen selection other than the original 1M study, same schema.
+        m=json.loads(Path(selection).read_text());assert m['channel']==channel
+        c['selection_path']=selection;c['selection_sha256']=sha(selection);c['study']=m['study']
+        c['initialization_seed']=m.get('initialization_seed')
     return c
 
 def accepted_training_package(record, config):

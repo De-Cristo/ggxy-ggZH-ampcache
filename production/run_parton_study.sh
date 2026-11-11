@@ -10,23 +10,31 @@ mkdir -p parton-logs
 python3 -m venv parton-env
 source parton-env/bin/activate
 python -m pip install --no-cache-dir --disable-pip-version-check numpy==1.26.4 scipy==1.13.1 matplotlib==3.8.4 scikit-learn==1.2.2 >parton-logs/pip-analysis.log 2>&1
-if [[ $TASK = fit ]]; then
+if [[ $TASK = fit || $TASK = ensemble-fit ]]; then
   python -m pip install --no-cache-dir --disable-pip-version-check torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121 >parton-logs/pip-torch.log 2>&1
 fi
 python -m pip freeze >parton-logs/environment.txt
-if [[ $TASK != prepare ]]; then
-  python - <<'PY'
+extract() {
+  mkdir -p "$2"
+  python - "$1" "$2" <<'PY'
 from pathlib import Path
-import tarfile
-with tarfile.open('parton-prepared.tgz') as t:
+import sys,tarfile
+with tarfile.open(sys.argv[1]) as t:
     assert all((m.name=='parton-data' or m.name.startswith('parton-data/')) and '..' not in Path(m.name).parts and not m.issym() and not m.islnk() for m in t.getmembers())
-    t.extractall('.')
+    t.extractall(sys.argv[2])
 PY
-  (cd parton-data && sha256sum -c --quiet SHA256SUMS)
+  (cd "$2/parton-data" && sha256sum -c --quiet SHA256SUMS)
+}
+if [[ $TASK != prepare && $TASK != ensemble-prepare ]]; then extract parton-prepared.tgz .; fi
+if [[ $TASK = ensemble-fit ]]; then
+  extract calib-prepared.tgz calib
+  extract eval-prepared.tgz eval
 fi
 case $TASK in
   prepare) SCRIPT=rwt/parton/prepare.py; ARGS=() ;;
   fit) SCRIPT=rwt/parton/fit.py; ARGS=("$INDEX") ;;
+  ensemble-prepare) SCRIPT=rwt/parton/prepare.py; ARGS=() ;;
+  ensemble-fit) SCRIPT=rwt/parton/ensemble_fit.py; ARGS=() ;;
   bdt) SCRIPT=rwt/parton/control.py; ARGS=() ;;
   jet-compare) SCRIPT=rwt/parton/jet_compare.py; ARGS=() ;;
   report) SCRIPT=rwt/parton/report.py; ARGS=() ;;

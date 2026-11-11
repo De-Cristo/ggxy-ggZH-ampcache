@@ -117,6 +117,7 @@ case $SET in
   nlo-topup-zll-v1) E=13600 ;;
   nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
+  ensemble-zll-v1|ensemble-zvv-v1) E=13600; ECH=${SET#ensemble-}; ECH=${ECH%-v1} ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -149,6 +150,7 @@ runs() {
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
+    ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -403,6 +405,32 @@ def() {
                   STEP=(bash production/run_parton_study.sh prepare)
                   OUTP=("parton-prepared.tgz rwt/parton-zll-1m-v1/prepared.tgz"
                          "parton-prepare.json rwt/parton-zll-1m-v1/prepare-audit.json") ;;
+    ensemble-prepare)
+                  # Job 0: evaluation set; job k>0: member k-1 (production/ensemble/<channel>-*.json).
+                  res 21 4 24 8
+                  if [ "$p" = 0 ]; then n=eval; else n=member-$(printf %02d $((p - 1))); fi
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                  STEP=(bash production/run_parton_study.sh ensemble-prepare)
+                  OUTP=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
+                         "parton-prepare.json rwt/$SET/prepared/$n.json") ;;
+    ensemble-fit|ensemble-smoke)
+                  res 20 4 24 36
+                  n=member-$(printf %02d "$p")
+                  ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1" "RWT_PARTON_CHANNEL=$ECH"
+                        "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ECH-$n.json")
+                  # Calibration = the original frozen 1M study bundle; evaluation = prepared job 0.
+                  IN=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz"
+                      "calib-prepared.tgz rwt/parton-$ECH-1m-v1/prepared.tgz"
+                      "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  STEP=(bash production/run_parton_study.sh ensemble-fit)
+                  OUTP=("ensemble-fit.tgz rwt/$SET/fits/$n.tgz"
+                         "ensemble-fit.json rwt/$SET/fits/$n.json")
+                  if [ "$run" = ensemble-smoke ]; then
+                    # One job on member 00 with 20000 rows per class and one epoch: chain test only.
+                    res 1 4 24 4; ENVS+=("RWT_ENSEMBLE_SMOKE_ROWS=20000")
+                    OUTP=("${OUTP[@]/\/fits\//\/smoke\/}")
+                  fi ;;
     parton-fit-1m)
                   res 15 4 24 36
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_GPUS=1")

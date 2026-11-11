@@ -7,9 +7,13 @@ import numpy as np
 sys.path.insert(0,str(Path('rwt').resolve()))
 import ggzh_table as Table
 from ggzh_reweight_common import Sample
-c=configuration();channel=c['channel'];m=json.loads(Path(f'production/parton-{channel}-1m-v1.json').read_text())
+c=configuration();channel=c['channel'];m=json.loads(Path(c.get('selection_path',f'production/parton-{channel}-1m-v1.json')).read_text())
 correction_path=Path(f'production/parton-{channel}-1m-transport-corrections.json')
-corrections=json.loads(correction_path.read_text())
+if 'selection_path' in c:
+    # Ensemble selections admit only shards whose stored sizes are already correct.
+    correction_path=Path(c['selection_path'])
+    corrections=dict(selection_sha256=c['selection_sha256'],corrections={})
+else:corrections=json.loads(correction_path.read_text())
 assert corrections['selection_sha256']==c['selection_sha256']
 progress_lock=threading.Lock();progress=0
 root=os.environ['PAPER_EOS_ROOT'].rstrip('/')
@@ -31,7 +35,7 @@ def download(item):
     global progress
     with progress_lock:
         progress+=1
-        if progress%100==0:print('ARTIFACTS_VERIFIED',progress,'/3000',flush=True)
+        if progress%100==0:print('ARTIFACTS_VERIFIED',progress,'/',len(items),flush=True)
     return (order,seed,entry['role']),local
 
 items=[(order,x['seed'],f) for order,xs in m['samples'].items() for x in xs for f in x['files']]
