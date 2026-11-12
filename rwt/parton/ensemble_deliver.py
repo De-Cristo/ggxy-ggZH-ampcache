@@ -68,9 +68,13 @@ Lsk=np.asarray(Lsk);Lonnx=model.logits(model.matrix(ev))
 check=dict(events=len(ix),max_abs_logit_difference=float(np.max(np.abs(Lsk-Lonnx))),pdf_fallback_cells=fallback,cells=ncell)
 assert check['max_abs_logit_difference']<1e-4,check
 np.savez_compressed(out/'test-vectors.npz',**ev,**{f'expected_{k}':v for k,v in got.items()})
-card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 members)',channel=ch,
-    source='CMS-style LO+PS 13.6 TeV: POWHEG ggHZ (ggxy_ggZH, bornonly) NNPDF3.1 NNLO, mu_R = mu_F = mZ + mH, SCALUP = m_ZH, Pythia 8 CP5 + POWHEG veto at SCALUP, 15 < m_ll < 150 GeV',
-    target='NLO+PS 13.6 TeV: ggxy_ggZH POWHEG NLO (Born suppression 250 GeV, hdamp 250 GeV), NNPDF3.1 central member as nominal, Pythia 8 CP5 + POWHEG veto',
+style=json.loads(Path(c['selection_path']).read_text()).get('style','cms') if 'selection_path' in c else 'cms'
+SOURCE=dict(cms=('CMS-style LO+PS 13.6 TeV: POWHEG ggHZ (ggxy_ggZH, bornonly) NNPDF3.1 NNLO, mu_R = mu_F = mZ + mH, SCALUP = m_ZH, Pythia 8 CP5 + POWHEG veto at SCALUP, 15 < m_ll < 150 GeV',
+                 'NLO+PS 13.6 TeV: ggxy_ggZH POWHEG NLO (Born suppression 250 GeV, hdamp 250 GeV), NNPDF3.1 central member as nominal, Pythia 8 CP5 + POWHEG veto'),
+            atlas=('ATLAS-style LO+PS 13.6 TeV: POWHEG ggHZ (ggxy_ggZH, bornonly) PDF4LHC21, mu_R = mu_F = H_T (dynscale 3), SCALUP = m_ZH, Pythia 8 A14 + ATLAS POWHEG veto at SCALUP, 15 < m_ll < 150 GeV',
+                   'NLO+PS 13.6 TeV: ggxy_ggZH POWHEG NLO (Born suppression 250 GeV, hdamp 250 GeV), PDF4LHC21 central as nominal, Pythia 8 A14 + ATLAS NLO POWHEG veto'))[style]
+card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 members)',channel=ch,style=style,
+    source=SOURCE[0],target=SOURCE[1],
     training='each member: HistGradientBoostingClassifier (feature set C, R6 hyperparameters) on 1e6 LO+PS and 1e6 NLO+PS events drawn from 1e7 per class; calibration and evaluation on two further disjoint 1e6-event sets',
     inputs={k:BDT.FEATURE_VARS.get(k,BDT.TEST_VARS.get(k,('', '', '')))[1] for k in features},
     input_conventions='generator level after the shower; Z, H = last copies; jets anti-kT 0.4 of all stable particles not from Z or H decays, pT > 30 GeV; ptj1/etaj1/drj1zh refer to the leading jet with |eta| < 4.7 and take the values of the training tables when absent (see test-vectors.npz); njets = min(N_jets(pT>30, any eta), 3); ayzh = |y(ZH)|; lhe_mll = Z mass (last copy); for Z->nunu the lepton variables are the neutrinos',

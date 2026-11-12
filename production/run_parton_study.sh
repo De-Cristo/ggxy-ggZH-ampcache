@@ -28,7 +28,7 @@ with tarfile.open(sys.argv[1]) as t:
 PY
   (cd "$2/parton-data" && sha256sum -c --quiet SHA256SUMS)
 }
-if [[ $TASK != prepare && $TASK != ensemble-prepare && $TASK != ensemble-assess && $TASK != bdt-assess && $TASK != pdf-transport && $TASK != bdt-deliver ]]; then extract parton-prepared.tgz .; fi
+if [[ $TASK != prepare && $TASK != ensemble-prepare && $TASK != ensemble-assess && $TASK != bdt-assess && $TASK != pdf-transport && $TASK != bdt-deliver && $TASK != scalar-prepare ]]; then extract parton-prepared.tgz .; fi
 if [[ $TASK = bdt-deliver ]]; then extract eval-prepared.tgz eval; fi
 if [[ $TASK = ensemble-fit || $TASK = ensemble-assess || $TASK = bdt-member || $TASK = bdt-assess ]]; then
   extract calib-prepared.tgz calib
@@ -44,6 +44,7 @@ case $TASK in
   bdt-assess) SCRIPT=rwt/parton/ensemble_assess.py; ARGS=() ;;
   pdf-transport) SCRIPT=rwt/parton/pdf_transport.py; ARGS=() ;;
   bdt-deliver) SCRIPT=rwt/parton/ensemble_deliver.py; ARGS=() ;;
+  scalar-prepare) SCRIPT=rwt/parton/scalar_prepare.py; ARGS=() ;;
   bdt) SCRIPT=rwt/parton/control.py; ARGS=() ;;
   jet-compare) SCRIPT=rwt/parton/jet_compare.py; ARGS=() ;;
   report) SCRIPT=rwt/parton/report.py; ARGS=() ;;
