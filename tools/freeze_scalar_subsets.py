@@ -17,6 +17,9 @@ SEED_BASE = {'atlas-zll': 770100, 'atlas-zvv': 780100}
 def digest(data):
     return hashlib.sha256(data).hexdigest()
 
+def ch_of(storage):
+    return storage.split('-', 1)[1]
+
 def eligible(key, x, storage, order, rows):
     manifest = Path(x['manifest']); assert manifest.stat().st_size < 100000
     b = manifest.read_bytes(); assert digest(b) == x['manifest_sha256']
@@ -29,9 +32,16 @@ def eligible(key, x, storage, order, rows):
     assert set(files) == {'legacy_table', 'schema', 'validation'}
     v = Path(m['files'][[f['role'] for f in m['files']].index('validation')]['path']).read_bytes()
     assert digest(v) == files['validation']['sha256']; v = json.loads(v)
-    assert v['accepted'] and v['primary_included'] and v['events'] == v['expected'] == rows
-    assert v['channel'] == storage and v['order'] == order and v['seed'] == x['seed']
-    assert v['table_sha256'] == files['legacy_table']['sha256']
+    if v.get('schema') == 'ggzh-particle-v1':
+        # Shard reused from the particle production: its own validation format (table checked there against the
+        # legacy writer; the manifest carries the table checksum).
+        meta = v['metadata']
+        assert v['events'] == v['expected'] == rows and not v['missing_ordinals'] and v['legacy_comparison']['pass_']
+        assert meta['channel'] in (storage, ch_of(storage)) and meta['order'] == order and meta['seed'] == x['seed']
+    else:
+        assert v['accepted'] and v['primary_included'] and v['events'] == v['expected'] == rows
+        assert v['channel'] == storage and v['order'] == order and v['seed'] == x['seed']
+        assert v['table_sha256'] == files['legacy_table']['sha256']
     return dict(key=key, seed=x['seed'], events=rows, producer=m['package'], primary_included=True,
                 manifest_sha256=x['manifest_sha256'], lhe_sha256=m.get('input_lhe_sha256'), sumw=v['sumw'],
                 files=list(files.values()))
