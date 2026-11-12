@@ -491,7 +491,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   DR=; [ "$EVER" = v1 ] || DR=-r3
                   # r4: r3 tables and members, with the 1 % per-bin residual of the recipe (model card, calibration.json).
-                  [ "$run" = bdt-deliver4 ] && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
+                  { [ "$run" = bdt-deliver4 ] || [[ $ECH = atlas-* ]]; } && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
     bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3|bdt-confirm|bdt-cache4)
@@ -502,6 +502,8 @@ def() {
                       "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
                   for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
                   [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
+                  # ATLAS-style sets: the frozen recipe of the CMS-style confirmation (1 % per-bin residual) from the start.
+                  [[ $ECH = atlas-* ]] && ENVS+=("RWT_RESIDUAL=0.01")
                   STEP=(bash production/run_parton_study.sh bdt-assess)
                   OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
                          "ensemble-tables.json rwt/$SET/bdt-tables.json")
