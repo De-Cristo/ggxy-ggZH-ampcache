@@ -153,7 +153,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -468,7 +468,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH.json") ;;
-    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail)
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
@@ -480,6 +480,10 @@ def() {
                   OUTP=("ensemble-assess.json rwt/$SET/bdt-assess.json"
                          "ensemble-tables.json rwt/$SET/bdt-tables.json")
                   [ "$run" = bdt-assess ] && [ "$EVER" != v1 ] && OUTP+=("histogram-cache.json rwt/$SET/bdt-histogram-cache.json")
+                  if [ "$run" = bdt-cache ]; then
+                    # Same computation as bdt-assess; publishes only the fine-binned histogram cache.
+                    OUTP=("histogram-cache.json rwt/$SET/bdt-histogram-cache.json")
+                  fi
                   if [ "$run" = bdt-assess-tail ]; then
                     # Post-hoc: sparse tail bins merged from the high end to >= 500/1000/2000 raw LO+PS events.
                     ENVS+=("RWT_ASSESS_VARIANTS=1" "RWT_ASSESS_VARIANT_SET=tail")
