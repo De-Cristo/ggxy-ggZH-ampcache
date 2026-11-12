@@ -5,7 +5,8 @@
 events.npz holds one array per input named in DIR/calibration.json "features" (generator level, model card),
 in GeV.  Events outside 15 < m_ll < 150 GeV (column lhe_mll) get NaN: the model is not defined there.  For domain
 'rho1', events with a leading jet harder than m_ZH get weight 1 (the LO+PS x K prediction) with the hard-jet
-variation jet_up/jet_down = NLO+PS/LO+PS share ratio in bins of max(pT(Z), pT(H)) and its inverse; the events
+variation jet_up/jet_down = NLO+PS/LO+PS share ratio in bins of max(pT(Z), pT(H)) and its inverse, the scale and
+PDF factors of their (m_ZH, rho) cell (rho > 1 shares the highest rho group), and members equal to 1; the events
 then also need the column pth (generator pT(H)).
 Output columns (multiply the event's own LO weight by them):
   nominal                       NLO+PS shape weight (mean 1 on the training LO+PS sample)
@@ -60,12 +61,14 @@ class Model:
         for name,T in c['pdf']['T'].items():out[name]=out['nominal']*np.asarray(T)[cell]
         window=(np.asarray(ev['lhe_mll'],float)>c['window'][0])&(np.asarray(ev['lhe_mll'],float)<c['window'][1])
         if c.get('domain')=='rho1':
-            # Outside the training domain (leading jet harder than m_ZH): weight 1, i.e. LO+PS x K; every variation 1
-            # except jet_up/jet_down = NLO+PS/LO+PS share ratio outside the domain in pT(Z) bins, and its inverse.
+            # Outside the training domain (leading jet harder than m_ZH): weight 1, i.e. LO+PS x K; members 1, the scale
+            # and PDF factors T(cell) on the unit weight (as in the scale band of the paper), and jet_up/jet_down = the
+            # NLO+PS/LO+PS share ratio outside the domain in max(pT(Z), pT(H)) bins, and its inverse.
             j=np.asarray(ev['ptj1'],float);inside=(j<=0)|(j<np.asarray(ev['mzh'],float))
             o=c['outside'];x=np.maximum(np.asarray(ev['ptz'],float),np.asarray(ev['pth'],float)) if o.get('variable')=='max(ptz,pth)' else np.asarray(ev['ptz'],float)
             r=np.asarray(o['share_ratio'])[np.clip(np.searchsorted(o.get('edges',o.get('ptz_edges')),x,side='right')-1,0,len(o['share_ratio'])-1)]
-            for k in out:out[k]=np.where(inside,out[k],1.)
+            T={**c['scale']['T'],**c['pdf']['T']}
+            for k in out:out[k]=np.where(inside,out[k],np.asarray(T[k])[cell] if k in T else 1.)
             out['jet_up']=np.where(inside,out['jet_up'],r);out['jet_down']=np.where(inside,out['jet_down'],1/r)
         return {k:np.where(window,v,np.nan) for k,v in out.items()}
 

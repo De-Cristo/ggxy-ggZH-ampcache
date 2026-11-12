@@ -156,7 +156,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 bdt-cache4 ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 bdt-cache4 bdt-deliver5 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -477,7 +477,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh pdf-transport)
                   OUTP=("pdf-transport.npz rwt/$SET/pdf-transport.npz"
                          "pdf-transport.json rwt/$SET/pdf-transport.json") ;;
-    bdt-deliver|bdt-deliver4)
+    bdt-deliver|bdt-deliver4|bdt-deliver5)
                   # ONNX members + calibration/scale/PDF tables + apply/PCA scripts + test vectors + model card.
                   # PDF ratios: the Z->ll 13.6 TeV production for both channels (model card).
                   res 1 4 16 4
@@ -491,7 +491,9 @@ def() {
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   DR=; [ "$EVER" = v1 ] || DR=-r3
                   # r4: r3 tables and members, with the 1 % per-bin residual of the recipe (model card, calibration.json).
-                  { [ "$run" = bdt-deliver4 ] || [[ $ECH = atlas-* ]]; } && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
+                  { [ "$run" = bdt-deliver4 ] || [ "$run" = bdt-deliver5 ] || [[ $ECH = atlas-* ]]; } && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
+                  # r5: r4 with the scale and PDF factors also applied to the unit weight outside the domain (apply.py).
+                  { [ "$run" = bdt-deliver5 ] || [[ $ECH = atlas-* ]]; } && DR=-r5
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
     bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3|bdt-confirm|bdt-cache4)
