@@ -156,7 +156,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -477,7 +477,7 @@ def() {
                   STEP=(bash production/run_parton_study.sh pdf-transport)
                   OUTP=("pdf-transport.npz rwt/$SET/pdf-transport.npz"
                          "pdf-transport.json rwt/$SET/pdf-transport.json") ;;
-    bdt-deliver)
+    bdt-deliver|bdt-deliver4)
                   # ONNX members + calibration/scale/PDF tables + apply/PCA scripts + test vectors + model card.
                   # PDF ratios: the Z->ll 13.6 TeV production for both channels (model card).
                   res 1 4 16 4
@@ -490,9 +490,11 @@ def() {
                   [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
                   DR=; [ "$EVER" = v1 ] || DR=-r3
+                  # r4: r3 tables and members, with the 1 % per-bin residual of the recipe (model card, calibration.json).
+                  [ "$run" = bdt-deliver4 ] && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
-    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3)
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3|bdt-confirm)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
@@ -515,6 +517,14 @@ def() {
                     for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN=("${IN[@]/rwt\/$SET\/bdt\/$n.tgz/rwt\/$SET\/bdt3\/$n.tgz}"); done
                     OUTP=("ensemble-assess.json rwt/$SET/bdt3-assess.json" "ensemble-tables.json rwt/$SET/bdt3-tables.json"
                           "histogram-cache.json rwt/$SET/bdt3-histogram-cache.json")
+                  fi
+                  if [ "$run" = bdt-confirm ]; then
+                    # Frozen recipe with a 1 % per-bin residual, tested on the v1 evaluation set: disjoint from the v2
+                    # calibration, evaluation and member selections; member logits recomputed from model.pkl.
+                    ENVS=("${ENVS[@]/production\/ensemble\/$ESEL-eval.json/production/ensemble/$ECH-eval.json}")
+                    ENVS+=("RWT_CONFIRM=1" "RWT_RESIDUAL=0.01"); IN[1]="eval-prepared.tgz rwt/ensemble-$ECH-v1/prepared/eval.tgz"
+                    OUTP=("ensemble-assess.json rwt/$SET/bdt-confirm-assess.json" "ensemble-tables.json rwt/$SET/bdt-confirm-tables.json"
+                          "histogram-cache.json rwt/$SET/bdt-confirm-histogram-cache.json")
                   fi
                   if [ "$run" = bdt-tables2 ]; then
                     # Calibration tables only, revision r2 (outside-domain variation in max(pT(Z), pT(H))).

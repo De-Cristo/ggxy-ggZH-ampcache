@@ -46,7 +46,7 @@ pdf={(f'pdf_{k-1:02d}' if k<=40 else ('alphas_dn' if k==41 else 'alphas_up')):ra
 scale={'scale_{:g}_{:g}'.format(*C.MU_OF_ID[w]):v for w,v in T['scale_transport']['T'].items()}
 member_tables=[dict(name=n,onnx=f'members/{n}.onnx',**{k:T[n][k] for k in ('offset','norm','k','mzh_lookup')}) for n in names]
 calibration=dict(schema='ggzh-bdt17-ensemble-v1',channel=ch,features=features,window=[15.,150.],domain=os.environ.get('RWT_DOMAIN','none'),
-    outside=T.get('domain',{}).get('outside'),
+    outside=T.get('domain',{}).get('outside'),residual=float(os.environ.get('RWT_RESIDUAL','0')),
     fine_mzh_edges=[float(x) for x in MZH_EDGES],fine_rho_edges=[float(x) for x in RHO_EDGES],
     nominal={k:nom[k] for k in ('offset','norm','k','mzh_lookup')},members=member_tables,
     jet=dict(rho_lookup=jet['rho_lookup'],c=jet['c'],rho_group_edges=jet['rho_edges']),
@@ -82,6 +82,7 @@ card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 membe
     validity='15 < m_ll < 150 GeV (NaN outside). Jet-inclusive observables. The LO+PS source has almost no events with a leading jet harder than m_ZH (POWHEG veto at SCALUP = m_ZH); the weights do not create them. The jet_up/jet_down variation covers this region; analyses that select or veto hard jets at high pT should use NLO+PS events.',
     uncertainties=dict(nn='fill each member_XX weight; pca.py -> one nuisance per retained mode',jet='jet_up / jet_down, two-sided',
         scale='scale_* weights, 7-point envelope with the nominal', pdf='PDF4LHC21 Hessian: sqrt(sum_k (w_pdf_k - w_nominal)^2); alpha_s: (alphas_up - alphas_dn)/2',
+        residual=f"{100*float(os.environ.get('RWT_RESIDUAL','0')):g} % of the nominal content of every bin, uncorrelated between bins (like an MC statistical term), for differences that the member spread does not cover; not an event weight",
         combination='independent sources; do not multiply the widths'),
     normalization='nominal weights have mean 1 on the calibration LO+PS sample inside the window; scale every column by the same factor that brings the nominal total to sigma(NLO); the scale and PDF variations then include the change of the total cross section, the member and jet variations are shape-only',
     checks=check,files={p.name:sha(p) for p in sorted(out.rglob('*')) if p.is_file()})

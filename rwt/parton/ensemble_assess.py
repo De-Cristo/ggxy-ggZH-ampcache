@@ -11,6 +11,10 @@ fraction of the in-window total, as in the registered closure reports.
   members     w_i = w0 * exp(logit_i) * k_i(m_ZH)                 -> standardized histogram PCA (99 %)
   jet nuis.   w * c(rho)^-1 (up), w * c(rho) (down), rho = pT(j1)/m_ZH, events without a jet in their own bin
   scale       w * T_k(m_ZH, rho), T_k = sum(w0 sw_k)/sum(w0) of NLO+PS (calibration set)
+  residual    w * (1 +- RWT_RESIDUAL), a flat per-bin term of the recipe (default 0), in the coverage denominator
+
+RWT_CONFIRM=1: the evaluation bundle is a set the members were not evaluated on at fit time; their eval logits
+are recomputed from each member's model.pkl (confirmation of a frozen recipe on an independent set).
 """
 import json,os,sys,tarfile
 from pathlib import Path
@@ -27,6 +31,7 @@ VARS={**BDT.FEATURE_VARS,**BDT.TEST_VARS}
 from ensemble_assess_bins import MZH_EDGES,RHO_EDGES,mzh_cell,rho_cell
 VARS['rho']=(np.concatenate([[-1.5,-.5],RHO_EDGES[:-1],[3.]]),'pT(j1)/m(ZH)','-1 = no jet')
 MIN_RAW=100;K_REL=.02;C_REL=.05;PCA_KEEP=.99
+RESIDUAL=float(os.environ.get('RWT_RESIDUAL','0'));assert 0<=RESIDUAL<.1
 
 def scalar(name,label):
     return C.Sample(label,Path(name)/'parton-data'/f'{label}.npz')
@@ -197,6 +202,14 @@ def main():
     names=sorted(records);print('members',names,flush=True)
     samples={(s,o):scalar(s,lab) for s in ('calib','eval') for o,lab in (('lo-cms','lo-cms'),('nlo','nlo-cp5'))}
     for smp in samples.values():BDT.prepare(smp)   # adds the derived classifier columns njets and ayzh
+    if os.environ.get('RWT_CONFIRM')=='1':
+        import pickle
+        for n in names:
+            with (Path('members-x')/n/'member-fit'/'model.pkl').open('rb') as f:model=pickle.load(f)['model']
+            for o in ('lo-cms','nlo'):
+                s=samples['eval',o];p=np.clip(model.predict_proba(BDT.prepare(s))[:,1],1e-15,1-1e-15)
+                pred[n]['eval',o]=dict(seed=np.asarray(s['run']),table_row=np.asarray(s['event']),in_window=s.in_window,logits=np.log(p)-np.log1p(-p))
+        print('CONFIRM logits recomputed for',len(names),'members',flush=True)
     for (s,o),smp in samples.items():
         for n in names:
             p=pred[n][s,o];assert np.array_equal(p['seed'],smp['run']) and np.array_equal(p['table_row'],smp['event']) and np.array_equal(p['in_window'],smp.in_window)
@@ -282,7 +295,7 @@ def main():
         fu,_,_=histogram(lo_e,w_up,se,name);fd,_,_=histogram(lo_e,w_dn,se,name)
         reps=[histogram(lo_e,w,se,name)[0] for w in w_mem];snn,pinfo=pca_sigma(reps)
         snc=np.maximum(np.abs(fu-fr),np.abs(fd-fr))
-        ok=raw>=MIN_RAW;den=np.sqrt(er**2+et**2+snn**2+snc**2);pull=np.where(ok&(den>0),(fr-ft)/np.where(den>0,den,1),np.nan)
+        ok=raw>=MIN_RAW;den=np.sqrt(er**2+et**2+snn**2+snc**2+(RESIDUAL*fr)**2);pull=np.where(ok&(den>0),(fr-ft)/np.where(den>0,den,1),np.nan)
         scale_rw=[histogram(lo_e,w_nom*T[wid][cell_e],se,name)[0] for wid in C.SCALE7]
         scale_t=[histogram(nlo_e,nlo_e.weight(wid),te,name)[0] for wid in C.SCALE7]
         scale_tt=[histogram(nlo_e,nlo_e.w0*T[wid][cell_te],te,name)[0] for wid in C.SCALE7]
@@ -316,7 +329,10 @@ def main():
     pulls=np.abs(np.asarray(pulls))
     out['coverage_test']=dict(bins=int(len(pulls)),max_abs_pull=float(pulls.max()),beyond_2=int((pulls>2).sum()),beyond_3=int((pulls>3).sum()),
         fraction_beyond_2=float((pulls>2).mean()),pass_=bool((pulls<=3).all() and (pulls>2).mean()<=.05),
-        rule='bins with >=100 raw LO+PS events; pull=(R-T)/sqrt(MC_R^2+MC_T^2+NN^2+nonclosure^2); pass: none >3 and <=5% >2; scale not in the denominator')
+        residual=RESIDUAL,rule='bins with >=100 raw LO+PS events; pull=(R-T)/sqrt(MC_R^2+MC_T^2+NN^2+nonclosure^2+(residual*R)^2); pass: none >3 and <=5% >2; scale not in the denominator')
+    if os.environ.get('RWT_CONFIRM')=='1':
+        sel=Path(os.environ['RWT_PARTON_SELECTION']);out['confirmation']=dict(evaluation_selection=str(sel),evaluation_selection_sha256=sha(sel),
+            note='members fitted with another evaluation set recorded; this set is disjoint from every member and calibration selection')
     out['effective_fraction_eval']=float(w_nom[se].sum()**2/np.sum(w_nom[se]**2)/se.sum())
     if os.environ.get('RWT_ASSESS_VARIANTS')=='1':
         out['variants']=variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn)

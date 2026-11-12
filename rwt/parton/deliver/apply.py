@@ -13,6 +13,8 @@ Output columns (multiply the event's own LO weight by them):
   jet_up, jet_down              leading-jet non-closure (two-sided)
   scale_<muR>_<muF>             NLO+PS 7-point scale variations (6 varied points)
   pdf_00 .. pdf_39, alphas_dn, alphas_up   PDF4LHC21 Hessian members and alpha_s variations
+calibration.json "residual" (e.g. 0.01) is not a column: add that fraction of each bin's nominal content as an
+uncertainty uncorrelated between bins, like an MC statistical term.
 Normalise the nominal total to the NLO+PS cross section of the model card and apply the same factor to every column:
 the scale and PDF variations then also carry the change of the total cross section, the others are shape-only.
 """
