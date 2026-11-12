@@ -31,7 +31,9 @@ for key,label in (('lo-cms','lo-cms'),('nlo','nlo-cp5')):
     Table.main(['--label',label,'--tables',f'staged/{key}/table-*.csv.gz','--nominal','nominal','--out',str(out/f'{label}.npz')])
     s=Sample(label,out/f'{label}.npz');assert s.n==n
     seeds=sorted(x['seed'] for x in xs);assert np.array_equal(np.unique(s['run']),seeds)
-    for x in xs:assert np.isclose(s.w0[s['run']==x['seed']].sum(),x['sumw'],rtol=1e-6) or s.unweighted
+    # rtol 1e-5: legacy CSV weights are rounded, reused particle-v1 shards record a full-precision sumw (signed NLO
+    # weights: up to 1.3e-6 observed); one missing event of a 2500-event shard is 4e-4.
+    for x in xs:assert np.isclose(s.w0[s['run']==x['seed']].sum(),x['sumw'],rtol=1e-5) or s.unweighted
     audit['samples'][key]=dict(rows=n,in_window=int(s.in_window.sum()),sumw=float(s.w0.sum()),shards=len(xs))
     print(key,audit['samples'][key],flush=True)
 (out/'selection.json').write_text(json.dumps(m,indent=2)+'\n');(out/'audit.json').write_text(json.dumps(audit,indent=2)+'\n')
