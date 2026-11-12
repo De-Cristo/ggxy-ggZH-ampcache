@@ -30,6 +30,7 @@ PY
 }
 if [[ $TASK != prepare && $TASK != ensemble-prepare && $TASK != ensemble-assess && $TASK != bdt-assess && $TASK != pdf-transport && $TASK != bdt-deliver && $TASK != scalar-prepare ]]; then extract parton-prepared.tgz .; fi
 if [[ $TASK = bdt-deliver ]]; then extract eval-prepared.tgz eval; fi
+for x in extra*-prepared.tgz; do [ -e "$x" ] && extract "$x" "${x%-prepared.tgz}"; done
 if [[ $TASK = ensemble-fit || $TASK = ensemble-assess || $TASK = bdt-member || $TASK = bdt-assess ]]; then
   extract calib-prepared.tgz calib
   extract eval-prepared.tgz eval

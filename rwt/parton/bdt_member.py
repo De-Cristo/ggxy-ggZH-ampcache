@@ -16,14 +16,24 @@ import ggzh_reweight_common as C
 import ggzh_reweight_bdt as BDT
 
 c=configuration();seed=c['initialization_seed'];assert isinstance(seed,int)
-BDT.configure(C.FEATURE_SETS['C']);BDT.CLF.update(max_iter=1000,max_leaf_nodes=63,min_samples_leaf=500,random_state=seed)
+# v3: several 1M bundles per member (extra1/, extra2/, ...) and a smaller minimum leaf size resolve the sparse tails.
+seed+=int(os.environ.get('RWT_SEED_OFFSET','0'));min_leaf=int(os.environ.get('RWT_BDT_MIN_LEAF','500'))
+BDT.configure(C.FEATURE_SETS['C']);BDT.CLF.update(max_iter=1000,max_leaf_nodes=63,min_samples_leaf=min_leaf,random_state=seed)
 FEATURES=list(BDT.FEATURES);assert len(FEATURES)==17
 
 def scalar(root,label):
     return C.Sample(label,Path(root)/'parton-data'/f'{label}.npz')
-src,tgt=scalar('.','lo-cms'),scalar('.','nlo-cp5')
-assert src.n==tgt.n==1000000
-mine={o:{x['seed'] for x in json.loads(Path('parton-data/selection.json').read_text())['samples'][o]} for o in ('lo-cms','nlo')}
+roots=['.']+sorted(str(p.parent) for p in Path('.').glob('extra*/parton-data'))
+def joined(label):
+    # Concatenate the scalar tables of all member bundles; duplicate shards (overlapping draws) are kept once.
+    parts=[np.load(Path(r)/'parton-data'/f'{label}.npz') for r in roots];seen=set();cols={k:[] for k in parts[0].files}
+    for d in parts:
+        run=d['run'];keep=~np.isin(run,list(seen));seen|=set(np.unique(run).tolist())
+        for k in cols:assert len(d[k])==len(run),k;cols[k].append(d[k][keep])
+    return C.Sample(label,cols={k:np.concatenate(v) for k,v in cols.items()})
+src,tgt=joined('lo-cms'),joined('nlo-cp5')
+assert src.n>=1000000 and tgt.n>=1000000
+mine={o:set().union(*({x['seed'] for x in json.loads((Path(r)/'parton-data/selection.json').read_text())['samples'][o]} for r in roots)) for o in ('lo-cms','nlo')}
 held={}
 for name in ('calib','eval'):
     other=json.loads(Path(name,'parton-data','selection.json').read_text())
@@ -64,7 +74,7 @@ import sklearn
 record=dict(member=c['study'],model='BDT-17 (feature set C), R6 hyperparameters',features=FEATURES,classifier=BDT.CLF,channel=c['channel'],
     selection_sha256=c['selection_sha256'],calibration_selection_sha256=selection_sha('calib'),evaluation_selection_sha256=selection_sha('eval'),
     package=Path('VERSION').read_text().strip(),initialization_seed=seed,source_train=int(len(Xs)),target_train=int(len(Xt)),
-    domain=domain,n_iter=int(clf.n_iter_),capacity_limited=bool(clf.n_iter_>=BDT.CLF['max_iter']),epochs_run=int(clf.n_iter_),
+    domain=domain,bundles=roots,min_samples_leaf=min_leaf,n_iter=int(clf.n_iter_),capacity_limited=bool(clf.n_iter_>=BDT.CLF['max_iter']),epochs_run=int(clf.n_iter_),
     best_validation_loss=float(-clf.validation_score_[-1]) if getattr(clf,'validation_score_',None) is not None and len(clf.validation_score_) else None,
     training_seconds=training_seconds,checkpoint_reload='PASS',reload_audit=reload_audit,model_sha256=sha(out/'model.pkl'),
     sklearn=sklearn.__version__,threads=os.environ.get('OMP_NUM_THREADS'))

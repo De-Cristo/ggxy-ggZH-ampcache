@@ -156,7 +156,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -446,6 +446,16 @@ def() {
                     res 1 4 24 4; ENVS+=("RWT_ENSEMBLE_SMOKE_ROWS=20000")
                     OUTP=("${OUTP[@]/\/fits\//\/smoke\/}")
                   fi ;;
+    bdt-fit3)
+                  # v3 member k: bundles k, k+7, k+14 (mod 20) = 3M/class, minimum leaf size 100.
+                  res 20 8 24 12
+                  n=member-$(printf %02d "$p"); n2=member-$(printf %02d $(( (p + 7) % 20 ))); n3=member-$(printf %02d $(( (p + 14) % 20 )))
+                  ENVS=("RWT_THREADS=8" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-$n.json"
+                        "RWT_DOMAIN=rho1" "RWT_BDT_MIN_LEAF=100" "RWT_SEED_OFFSET=1000")
+                  IN=("parton-prepared.tgz rwt/$SET/prepared/$n.tgz" "extra1-prepared.tgz rwt/$SET/prepared/$n2.tgz" "extra2-prepared.tgz rwt/$SET/prepared/$n3.tgz"
+                      "calib-prepared.tgz $ECALIB" "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
+                  STEP=(bash production/run_parton_study.sh bdt-member)
+                  OUTP=("bdt-member.tgz rwt/$SET/bdt3/$n.tgz" "bdt-member.json rwt/$SET/bdt3/$n.json") ;;
     bdt-fit)
                   # BDT-17 member k on the frozen member-k subset; CPU only, threads = requested CPUs.
                   res 20 8 16 12
@@ -482,7 +492,7 @@ def() {
                   DR=; [ "$EVER" = v1 ] || DR=-r2
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
-    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2)
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
@@ -499,6 +509,12 @@ def() {
                     # Revision r2: outside-domain variation binned in max(pT(Z), pT(H)).
                     ENVS+=("RWT_SCALEBAND=1"); IN+=("scale-inputs.tgz rwt/uncertainty-$ECH-1m-v1/scale-inputs.tgz")
                     OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache-r2.json")
+                  fi
+                  if [ "$run" = bdt-assess3 ]; then
+                    # v3 members; confirmatory test on the (once inspected) v2 evaluation set; cache included.
+                    for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN=("${IN[@]/rwt\/$SET\/bdt\/$n.tgz/rwt\/$SET\/bdt3\/$n.tgz}"); done
+                    OUTP=("ensemble-assess.json rwt/$SET/bdt3-assess.json" "ensemble-tables.json rwt/$SET/bdt3-tables.json"
+                          "histogram-cache.json rwt/$SET/bdt3-histogram-cache.json")
                   fi
                   if [ "$run" = bdt-tables2 ]; then
                     # Calibration tables only, revision r2 (outside-domain variation in max(pT(Z), pT(H))).
