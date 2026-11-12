@@ -166,8 +166,11 @@ def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply):
     w_nom=rw(Lc.mean(0),'nominal');cell=cell_of(lo_c)
     jet=tables.get('jet_nonclosure');cf=np.asarray(jet['c'])[np.asarray(jet['rho_lookup'])[rho_cell(lo_c['ptj1'],lo_c['mzh'])]]
     out={}
+    # Outside the domain: weight 1 with the hard-jet share-ratio variation of the deliverable (up = r, down = 1/r).
+    o=tables.get('domain',{}).get('outside')
+    r=np.asarray(o['share_ratio'])[np.clip(np.searchsorted(o['ptz_edges'],np.asarray(lo_c['ptz'],float),side='right')-1,0,len(o['share_ratio'])-1)] if o else np.ones(lo_c.n)
     sets=dict(lo_raw={'nominal':lo_c.w0,**{f'scale_{i}':lo_c.w0*ratio[:,k] for k,i in enumerate(ids) if i!='1001'}},
-              rw={'nominal':w_nom,'jet_up':np.where(inside,w_nom/cf,w_nom),'jet_down':np.where(inside,w_nom*cf,w_nom),
+              rw={'nominal':w_nom,'jet_up':np.where(inside,w_nom/cf,w_nom*r),'jet_down':np.where(inside,w_nom*cf,w_nom/r),
                   **{f'member_{i:02d}':rw(Lc[i],n) for i,n in enumerate(names)},**{f'scale_{wid}':w_nom*T[wid][cell] for wid in T}},
               nlo={'nominal':nlo_c.w0,**{f'scale_{wid}':nlo_c.weight(wid) for wid in C.SCALE7}})
     for name in ['stxs']+list(VARS):
