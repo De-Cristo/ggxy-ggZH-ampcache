@@ -156,7 +156,7 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 bdt-cache4 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
@@ -494,7 +494,7 @@ def() {
                   [ "$run" = bdt-deliver4 ] && { DR=-r4; ENVS+=("RWT_RESIDUAL=0.01"); }
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
-    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3|bdt-confirm)
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3|bdt-confirm|bdt-cache4)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
@@ -529,6 +529,10 @@ def() {
                   if [ "$run" = bdt-tables2 ]; then
                     # Calibration tables only, revision r2 (outside-domain variation in max(pT(Z), pT(H))).
                     ENVS+=("RWT_TABLES_ONLY=1"); OUTP=("ensemble-tables.json rwt/$SET/bdt-tables-r3.json")
+                  fi
+                  if [ "$run" = bdt-cache4 ]; then
+                    # Histogram cache with the raw LO+PS weights ('raw', the LO+PS x K shape) for the closure figures.
+                    OUTP=("histogram-cache.json rwt/$SET/bdt-histogram-cache-r4.json")
                   fi
                   if [ "$run" = bdt-cache ]; then
                     # Same computation as bdt-assess; publishes only the fine-binned histogram cache.

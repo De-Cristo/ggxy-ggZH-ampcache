@@ -318,7 +318,7 @@ def main():
             else:
                 x=rho(s) if name=='rho' else np.asarray(s[name],float);a,a2,_=C.hist(x,w*sel,VARS[name][0]);raw=C.hist(x[sel],np.ones(int(sel.sum())),VARS[name][0])[2]
             return a.tolist(),a2.tolist(),raw.tolist(),float(w[sel].sum())
-        lo_sets={'nominal':w_nom,'jet_up':w_up,'jet_down':w_dn,**{f'member_{i:02d}':w for i,w in enumerate(w_mem)},**{f'scale_{wid}':w_nom*T[wid][cell_e] for wid in C.SCALE7}}
+        lo_sets={'raw':w0n(lo_e),'nominal':w_nom,'jet_up':w_up,'jet_down':w_dn,**{f'member_{i:02d}':w for i,w in enumerate(w_mem)},**{f'scale_{wid}':w_nom*T[wid][cell_e] for wid in C.SCALE7}}
         nlo_sets={'nominal':nlo_e.w0,**{f'scale_{wid}':nlo_e.weight(wid) for wid in C.SCALE7}}
         entry=dict(edges=None if name=='stxs' else [float(x) for x in VARS[name][0]],lo={},nlo={})
         for k,w in lo_sets.items():a,a2,raw,tot=sums(lo_e,w,se);entry['lo'][k]=dict(sumw=a,sumw2=a2,total=tot);entry['raw_lo']=raw
