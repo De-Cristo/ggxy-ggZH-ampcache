@@ -149,6 +149,43 @@ def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
         print('VARIANT',label,json.dumps({k:v for k,v in out[label].items() if k not in ('failing_bins','histograms')}),flush=True)
     return out
 
+def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply):
+    """Absolute scale bands on the calibration set (window only, domain convention of the deliverable): raw LO+PS
+    with its Born-formula scale points (scale-inputs companion), the reweighted sample with the transported NLO scale
+    points, members and jet variations, and NLO+PS with its scale points.  Sums are in units of the nominal totals."""
+    with tarfile.open('scale-inputs.tgz') as t:
+        assert all('..' not in m.name and not m.issym() and not m.islnk() for m in t.getmembers());t.extractall('.')
+    comp=dict(np.load('scale-inputs/lo-cms.npz'))
+    assert np.array_equal(comp['seed'],lo_c['run']) and np.array_equal(comp['table_row'],lo_c['event']),'companion rows do not align'
+    ratio=comp['scale_nnpdf']/comp['nominal_lhe'][:,None];ids=list(comp['scale_ids']);assert ids[0]=='1001'
+    sel_lo=lo_c.in_window;sel_nlo=nlo_c.in_window
+    from ensemble_assess_bins import in_domain
+    inside=in_domain(lo_c['ptj1'],lo_c['mzh']) if os.environ.get('RWT_DOMAIN')=='rho1' else np.ones(lo_c.n,bool)
+    def rw(logit,tag):
+        w=apply(tag,lo_c,logit);return np.where(inside,w,lo_c.w0)
+    w_nom=rw(Lc.mean(0),'nominal');cell=cell_of(lo_c)
+    jet=tables.get('jet_nonclosure');cf=np.asarray(jet['c'])[np.asarray(jet['rho_lookup'])[rho_cell(lo_c['ptj1'],lo_c['mzh'])]]
+    out={}
+    sets=dict(lo_raw={'nominal':lo_c.w0,**{f'scale_{i}':lo_c.w0*ratio[:,k] for k,i in enumerate(ids) if i!='1001'}},
+              rw={'nominal':w_nom,'jet_up':np.where(inside,w_nom/cf,w_nom),'jet_down':np.where(inside,w_nom*cf,w_nom),
+                  **{f'member_{i:02d}':rw(Lc[i],n) for i,n in enumerate(names)},**{f'scale_{wid}':w_nom*T[wid][cell] for wid in T}},
+              nlo={'nominal':nlo_c.w0,**{f'scale_{wid}':nlo_c.weight(wid) for wid in C.SCALE7}})
+    for name in ['stxs']+list(VARS):
+        entry=dict(edges=None if name=='stxs' else [float(x) for x in VARS[name][0]])
+        for group,ws in sets.items():
+            s,sel=(nlo_c,sel_nlo) if group=='nlo' else (lo_c,sel_lo);entry[group]={}
+            for k,w in ws.items():
+                if name=='stxs':a,a2,raw=C.cell_sums(s,w,sel)
+                else:
+                    x=rho(s) if name=='rho' else np.asarray(s[name],float);a,a2,_=C.hist(x,w*sel,VARS[name][0]);raw=C.hist(x[sel],np.ones(int(sel.sum())),VARS[name][0])[2]
+                entry[group][k]=dict(sumw=a.tolist(),sumw2=a2.tolist(),nominal_total=float(ws['nominal'][sel].sum()))
+                if group=='lo_raw' and k=='nominal':entry['raw_lo']=raw.tolist()
+        out[name]=entry
+    Path('scaleband-cache.json').write_text(C.dumps(dict(set='calibration',domain=os.environ.get('RWT_DOMAIN','none'),
+        note='absolute: sum(weights)/nominal_total of the same group; LO scale points = Born-formula companion (NNPDF3.1, fixed mu0); rw scale = transported NLO points',
+        lo_scale_ids=ids,histograms=out)))
+    print('SCALEBAND_CACHE_WRITTEN',flush=True)
+
 def main():
     members=sorted(Path('members').glob('*.tgz'));assert members
     records={};pred={}
@@ -217,6 +254,9 @@ def main():
     if 'domain' in out:tables['domain']=out['domain']
     tables['scale_transport']=dict(ids=C.SCALE7,cells='mzh group (nominal k groups) x rho group',T={k:v.tolist() for k,v in T.items()},
                                    note='ids 1001-1009 at PDF4LHC21 divided by the stored nominal; target central = NNPDF3.1 id 2000')
+    if os.environ.get('RWT_SCALEBAND')=='1':
+        scaleband(lo_c,nlo_c,L['calib','lo-cms'],names,tables,T,cell_of=lambda s:nom_lookup[mzh_index(s)]*(len(redges)-1)+rlookup[rho_bin(s)],apply=apply)
+        return
     # Evaluation set: the registered coverage test.
     w_nom=apply('nominal',lo_e,L['eval','lo-cms'].mean(0))
     w_mem=[apply(n,lo_e,L['eval','lo-cms'][i]) for i,n in enumerate(names)]
