@@ -162,7 +162,7 @@ def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply,w0n):
         assert all('..' not in m.name and not m.issym() and not m.islnk() for m in t.getmembers());t.extractall('.')
     comp=dict(np.load('scale-inputs/lo-cms.npz'))
     assert np.array_equal(comp['seed'],lo_c['run']) and np.array_equal(comp['table_row'],lo_c['event']),'companion rows do not align'
-    ratio=comp['scale_nnpdf']/comp['nominal_lhe'][:,None];ids=list(comp['scale_ids']);assert ids[0]=='1001'
+    ratio=comp['scale_born' if 'scale_born' in comp else 'scale_nnpdf']/comp['nominal_lhe'][:,None]   # ATLAS: H_T, PDF4LHC21 (scale_born);ids=list(comp['scale_ids']);assert ids[0]=='1001'
     sel_lo=lo_c.in_window;sel_nlo=nlo_c.in_window
     from ensemble_assess_bins import in_domain
     inside=in_domain(lo_c['ptj1'],lo_c['mzh']) if os.environ.get('RWT_DOMAIN')=='rho1' else np.ones(lo_c.n,bool)

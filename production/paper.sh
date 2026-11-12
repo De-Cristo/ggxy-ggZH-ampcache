@@ -512,6 +512,8 @@ def() {
                     # Calibration set: LO+PS scale band (Born-formula companion) against the reweighted bands.
                     # Revision r2: outside-domain variation binned in max(pT(Z), pT(H)).
                     ENVS+=("RWT_SCALEBAND=1"); IN+=("scale-inputs.tgz rwt/uncertainty-$ECH-1m-v1/scale-inputs.tgz")
+                    # ATLAS-style: Born-formula companion at mu0 = H_T with PDF4LHC21 (Codex, calibration selection only).
+                    [[ $ECH = atlas-* ]] && IN[-1]="scale-inputs.tgz rwt/scale-$ECH-calib-v2/scale-inputs.tgz"
                     OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache-r3.json")
                   fi
                   if [ "$run" = bdt-assess3 ]; then
