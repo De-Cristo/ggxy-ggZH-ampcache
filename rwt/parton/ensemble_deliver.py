@@ -59,6 +59,7 @@ for f in ('apply.py','pca.py'):shutil.copy(Path('rwt/parton/deliver')/f,out/f)
 s=C.Sample('lo-cms',Path('eval/parton-data/lo-cms.npz'));X=BDT.prepare(s).astype(np.float32);from ensemble_assess_bins import in_domain
 ix=np.flatnonzero(s.in_window&(in_domain(s['ptj1'],s['mzh']) if os.environ.get('RWT_DOMAIN')=='rho1' else True))[:2000]
 ev={k:np.asarray(X[ix,i],np.float32) for i,k in enumerate(features)}
+ev['pth']=np.asarray(s['pth'],np.float32)[ix]   # needed for the outside-domain variation (not a classifier input)
 sys.path.insert(0,str(out));import apply as A
 model=A.Model(out);got=model.weights(ev)
 Lsk=[]

@@ -156,8 +156,8 @@ runs() {
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
-    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband ;;
-    ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache ;;
+    ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 ;;
+    ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -473,14 +473,16 @@ def() {
                   res 1 4 16 4
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
-                  IN=("eval-prepared.tgz rwt/$SET/prepared/eval.tgz" "tables.json rwt/$SET/bdt-tables.json"
+                  T2=bdt-tables.json; [ "$EVER" = v1 ] || T2=bdt-tables-r2.json
+                  IN=("eval-prepared.tgz rwt/$SET/prepared/eval.tgz" "tables.json rwt/$SET/$T2"
                       "pdf-transport.npz rwt/ensemble-zll-v1/pdf-transport.npz")
                   for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
                   [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
-                  OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH.tgz"
-                         "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH.json") ;;
-    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband)
+                  DR=; [ "$EVER" = v1 ] || DR=-r2
+                  OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
+                         "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
+    bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2)
                   res 1 4 16 8
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
@@ -494,8 +496,13 @@ def() {
                   [ "$run" = bdt-assess ] && [ "$EVER" != v1 ] && OUTP+=("histogram-cache.json rwt/$SET/bdt-histogram-cache.json")
                   if [ "$run" = bdt-scaleband ]; then
                     # Calibration set: LO+PS scale band (Born-formula companion) against the reweighted bands.
+                    # Revision r2: outside-domain variation binned in max(pT(Z), pT(H)).
                     ENVS+=("RWT_SCALEBAND=1"); IN+=("scale-inputs.tgz rwt/uncertainty-$ECH-1m-v1/scale-inputs.tgz")
-                    OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache.json")
+                    OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache-r2.json")
+                  fi
+                  if [ "$run" = bdt-tables2 ]; then
+                    # Calibration tables only, revision r2 (outside-domain variation in max(pT(Z), pT(H))).
+                    ENVS+=("RWT_TABLES_ONLY=1"); OUTP=("ensemble-tables.json rwt/$SET/bdt-tables-r2.json")
                   fi
                   if [ "$run" = bdt-cache ]; then
                     # Same computation as bdt-assess; publishes only the fine-binned histogram cache.

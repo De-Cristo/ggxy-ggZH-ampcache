@@ -168,7 +168,8 @@ def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply):
     out={}
     # Outside the domain: weight 1 with the hard-jet share-ratio variation of the deliverable (up = r, down = 1/r).
     o=tables.get('domain',{}).get('outside')
-    r=np.asarray(o['share_ratio'])[np.clip(np.searchsorted(o['ptz_edges'],np.asarray(lo_c['ptz'],float),side='right')-1,0,len(o['share_ratio'])-1)] if o else np.ones(lo_c.n)
+    x=np.maximum(np.asarray(lo_c['ptz'],float),np.asarray(lo_c['pth'],float))
+    r=np.asarray(o['share_ratio'])[np.clip(np.searchsorted(o['edges'],x,side='right')-1,0,len(o['share_ratio'])-1)] if o else np.ones(lo_c.n)
     sets=dict(lo_raw={'nominal':lo_c.w0,**{f'scale_{i}':lo_c.w0*ratio[:,k] for k,i in enumerate(ids) if i!='1001'}},
               rw={'nominal':w_nom,'jet_up':np.where(inside,w_nom/cf,w_nom*r),'jet_down':np.where(inside,w_nom*cf,w_nom/r),
                   **{f'member_{i:02d}':rw(Lc[i],n) for i,n in enumerate(names)},**{f'scale_{wid}':w_nom*T[wid][cell] for wid in T}},
@@ -214,13 +215,15 @@ def main():
             lo_fraction_outside_eval=float(lo_e.w0[se&~dom['eval','lo-cms']].sum()/lo_e.w0[se].sum()))
         # Outside the domain the delivered weight is 1 (LO+PS x K).  Its two-sided variation is the ratio of the
         # NLO+PS and LO+PS shares outside the domain, in pT(Z) bins of the calibration set: up = r, down = 1/r.
-        edges=[0.,150.,250.,400.,np.inf];r=[]
+        # Binned in max(pT(Z), pT(H)): events with a hard Higgs boson and a moderate Z need the larger ratio.
+        edges=[0.,150.,250.,400.,600.,np.inf];r=[]
+        ptmax=lambda s:np.maximum(np.asarray(s['ptz'],float),np.asarray(s['pth'],float))
         for a,b in zip(edges[:-1],edges[1:]):
-            bl=lambda s,sel:sel&(np.asarray(s['ptz'],float)>=a)&(np.asarray(s['ptz'],float)<b)
+            bl=lambda s,sel:sel&(ptmax(s)>=a)&(ptmax(s)<b)
             fl=lo_c.w0[bl(lo_c,sc)&~dom['calib','lo-cms']].sum()/lo_c.w0[bl(lo_c,sc)].sum()
             fn=nlo_c.w0[bl(nlo_c,tc)&~dom['calib','nlo']].sum()/nlo_c.w0[bl(nlo_c,tc)].sum()
             r.append(float(fn/fl) if fl>0 else 1.)
-        outside=dict(ptz_edges=edges[:-1]+[1e9],share_ratio=r,nominal=1.0,note='weight 1 outside the domain (LO+PS x K); up = share_ratio, down = 1/share_ratio')
+        outside=dict(variable='max(ptz,pth)',edges=edges[:-1]+[1e9],share_ratio=r,nominal=1.0,note='weight 1 outside the domain (LO+PS x K); up = share_ratio, down = 1/share_ratio, binned in max(pT(Z), pT(H))')
         out['domain']['outside']=outside
         sc=sc&dom['calib','lo-cms'];tc=tc&dom['calib','nlo'];se=se&dom['eval','lo-cms'];te=te&dom['eval','nlo']
     mzh_index=lambda s:mzh_cell(s['mzh'])
@@ -257,6 +260,9 @@ def main():
     if 'domain' in out:tables['domain']=out['domain']
     tables['scale_transport']=dict(ids=C.SCALE7,cells='mzh group (nominal k groups) x rho group',T={k:v.tolist() for k,v in T.items()},
                                    note='ids 1001-1009 at PDF4LHC21 divided by the stored nominal; target central = NNPDF3.1 id 2000')
+    if os.environ.get('RWT_TABLES_ONLY')=='1':
+        Path('ensemble-tables.json').write_text(C.dumps(dict(members=names,tables=tables,vars=dict(rho=VARS['rho'][2]))))
+        print('TABLES_WRITTEN',json.dumps(tables.get('domain',{}).get('outside')),flush=True);return
     if os.environ.get('RWT_SCALEBAND')=='1':
         scaleband(lo_c,nlo_c,L['calib','lo-cms'],names,tables,T,cell_of=lambda s:nom_lookup[mzh_index(s)]*(len(redges)-1)+rlookup[rho_bin(s)],apply=apply)
         return
