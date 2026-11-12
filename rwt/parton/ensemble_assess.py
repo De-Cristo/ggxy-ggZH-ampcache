@@ -149,7 +149,7 @@ def variants(lo_e,nlo_e,se,te,w_nom,w_mem,w_up,w_dn):
         print('VARIANT',label,json.dumps({k:v for k,v in out[label].items() if k not in ('failing_bins','histograms')}),flush=True)
     return out
 
-def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply):
+def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply,w0n):
     """Absolute scale bands on the calibration set (window only, domain convention of the deliverable): raw LO+PS
     with its Born-formula scale points (scale-inputs companion), the reweighted sample with the transported NLO scale
     points, members and jet variations, and NLO+PS with its scale points.  Sums are in units of the nominal totals."""
@@ -162,7 +162,7 @@ def scaleband(lo_c,nlo_c,Lc,names,tables,T,cell_of,apply):
     from ensemble_assess_bins import in_domain
     inside=in_domain(lo_c['ptj1'],lo_c['mzh']) if os.environ.get('RWT_DOMAIN')=='rho1' else np.ones(lo_c.n,bool)
     def rw(logit,tag):
-        w=apply(tag,lo_c,logit);return np.where(inside,w,lo_c.w0)
+        w=apply(tag,lo_c,logit);return np.where(inside,w,w0n(lo_c))
     w_nom=rw(Lc.mean(0),'nominal');cell=cell_of(lo_c)
     jet=tables.get('jet_nonclosure');cf=np.asarray(jet['c'])[np.asarray(jet['rho_lookup'])[rho_cell(lo_c['ptj1'],lo_c['mzh'])]]
     out={}
@@ -228,9 +228,13 @@ def main():
         sc=sc&dom['calib','lo-cms'];tc=tc&dom['calib','nlo'];se=se&dom['eval','lo-cms'];te=te&dom['eval','nlo']
     mzh_index=lambda s:mzh_cell(s['mzh'])
 
+    # LO+PS event weights in units of their mean over the calibration window, so that a delivered column multiplies
+    # an event weight of about 1 and the 'weight 1 outside the domain' convention has the same scale as inside.
+    W=float(lo_c.w0[lo_c.in_window].mean())
+    def w0n(s):return s.w0/W
     def raw_weights(s,logit,sel,norm=None):
         # exp of (logit - offset) for stability; normalized to mean 1 over the calibration in-window LO.
-        w=s.w0*np.exp(logit-np.max(logit[sel]));return w,(norm if norm is not None else sel.sum()/w[sel].sum())
+        w=w0n(s)*np.exp(logit-np.max(logit[sel]));return w,(norm if norm is not None else sel.sum()/w[sel].sum())
     tables={}
     def calibrate(tag,logit_c):
         w,n=raw_weights(lo_c,logit_c,sc);w=w*n
@@ -241,7 +245,7 @@ def main():
         return tables[tag]
     def apply(tag,s,logit):
         t=tables[tag];lookup=np.asarray(t['mzh_lookup']);k=np.asarray(t['k'])
-        return s.w0*np.exp(logit-t['offset'])*t['norm']*k[lookup[mzh_index(s)]]
+        return w0n(s)*np.exp(logit-t['offset'])*t['norm']*k[lookup[mzh_index(s)]]
     nominal_c=L['calib','lo-cms'].mean(0);calibrate('nominal',nominal_c)
     for i,n in enumerate(names):calibrate(n,L['calib','lo-cms'][i])
     w_nom_c=apply('nominal',lo_c,nominal_c)
@@ -258,13 +262,14 @@ def main():
     for wid in C.SCALE7:
         v=np.bincount(cell_t[tc],weights=nlo_c.weight(wid)[tc],minlength=ncell);T[wid]=np.where(base!=0,v/np.where(base!=0,base,1),1.)
     if 'domain' in out:tables['domain']=out['domain']
+    tables['lo_weight_scale']=dict(mean_w0_calibration_window=W,note='columns multiply LO weights expressed in units of this mean (about 1 per event)')
     tables['scale_transport']=dict(ids=C.SCALE7,cells='mzh group (nominal k groups) x rho group',T={k:v.tolist() for k,v in T.items()},
                                    note='ids 1001-1009 at PDF4LHC21 divided by the stored nominal; target central = NNPDF3.1 id 2000')
     if os.environ.get('RWT_TABLES_ONLY')=='1':
         Path('ensemble-tables.json').write_text(C.dumps(dict(members=names,tables=tables,vars=dict(rho=VARS['rho'][2]))))
         print('TABLES_WRITTEN',json.dumps(tables.get('domain',{}).get('outside')),flush=True);return
     if os.environ.get('RWT_SCALEBAND')=='1':
-        scaleband(lo_c,nlo_c,L['calib','lo-cms'],names,tables,T,cell_of=lambda s:nom_lookup[mzh_index(s)]*(len(redges)-1)+rlookup[rho_bin(s)],apply=apply)
+        scaleband(lo_c,nlo_c,L['calib','lo-cms'],names,tables,T,cell_of=lambda s:nom_lookup[mzh_index(s)]*(len(redges)-1)+rlookup[rho_bin(s)],apply=apply,w0n=w0n)
         return
     # Evaluation set: the registered coverage test.
     w_nom=apply('nominal',lo_e,L['eval','lo-cms'].mean(0))

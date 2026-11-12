@@ -483,13 +483,13 @@ def() {
                   res 1 4 16 4
                   ENVS=("RWT_THREADS=4" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECHAN"
                         "RWT_PARTON_RAPIDITY=transverse-mass-rapidity-v1" "RWT_PARTON_SELECTION=production/ensemble/$ESEL-eval.json")
-                  T2=bdt-tables.json; [ "$EVER" = v1 ] || T2=bdt-tables-r2.json
+                  T2=bdt-tables.json; [ "$EVER" = v1 ] || T2=bdt-tables-r3.json
                   IN=("eval-prepared.tgz rwt/$SET/prepared/eval.tgz" "tables.json rwt/$SET/$T2"
                       "pdf-transport.npz rwt/ensemble-zll-v1/pdf-transport.npz")
                   for k in $(seq 0 19); do n=member-$(printf %02d "$k"); IN+=("members/$n.tgz rwt/$SET/bdt/$n.tgz"); done
                   [ "$EVER" = v1 ] || ENVS+=("RWT_DOMAIN=rho1")
                   STEP=(bash production/run_parton_study.sh bdt-deliver)
-                  DR=; [ "$EVER" = v1 ] || DR=-r2
+                  DR=; [ "$EVER" = v1 ] || DR=-r3
                   OUTP=("bdt-deliver.tgz rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.tgz"
                          "bdt-deliver.json rwt/$SET/deliver/ggzh-bdt17-$ECH$DR.json") ;;
     bdt-assess|bdt-assess-variants|bdt-assess-variants2|bdt-assess-tail|bdt-cache|bdt-scaleband|bdt-tables2|bdt-assess3)
@@ -508,7 +508,7 @@ def() {
                     # Calibration set: LO+PS scale band (Born-formula companion) against the reweighted bands.
                     # Revision r2: outside-domain variation binned in max(pT(Z), pT(H)).
                     ENVS+=("RWT_SCALEBAND=1"); IN+=("scale-inputs.tgz rwt/uncertainty-$ECH-1m-v1/scale-inputs.tgz")
-                    OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache-r2.json")
+                    OUTP=("scaleband-cache.json rwt/$SET/bdt-scaleband-cache-r3.json")
                   fi
                   if [ "$run" = bdt-assess3 ]; then
                     # v3 members; confirmatory test on the (once inspected) v2 evaluation set; cache included.
@@ -518,7 +518,7 @@ def() {
                   fi
                   if [ "$run" = bdt-tables2 ]; then
                     # Calibration tables only, revision r2 (outside-domain variation in max(pT(Z), pT(H))).
-                    ENVS+=("RWT_TABLES_ONLY=1"); OUTP=("ensemble-tables.json rwt/$SET/bdt-tables-r2.json")
+                    ENVS+=("RWT_TABLES_ONLY=1"); OUTP=("ensemble-tables.json rwt/$SET/bdt-tables-r3.json")
                   fi
                   if [ "$run" = bdt-cache ]; then
                     # Same computation as bdt-assess; publishes only the fine-binned histogram cache.
