@@ -18,9 +18,17 @@
 # Archives: lhe-<sample>.tar (LHE events), grids.tar (POWHEG grids and the LO grid cross section of the CMS-style
 # sample), tables-<sample>.tar (per-event tables of the reweighting study), rwt-weights.tar (per-event classifier
 # weights and the classifier outputs), rwt-model.tgz (the reusable models and their card), analysis-<set>.tar.
+# BDT-17 reweighting (sets BDT17_SETS, no analysis outputs): rwt-bdt17-models.tar (the four delivered packages),
+# rwt-bdt17-members.tar (the fitted classifiers), rwt-bdt17-results.tar (tests, calibration tables, histogram caches,
+# scale bands, PDF ratios), rwt-bdt17-scale.tar (LO scale companions), rwt-bdt17-inputs-<channel>.tar (the per-event
+# input tables: table-only copies for the CMS-style channels, the scalar bundles for the ATLAS-style ones).
 set -o pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SETS="common 13600 13000 verify vv13600 vv13000 atlas13600"
+BDT17_SETS="ensemble-zll-v2 ensemble-zvv-v2 ensemble-atlas-zll-v2 ensemble-atlas-zvv-v2 ensemble-zll-v1 bdt17-tables-zll
+  bdt17-tables-zvv uncertainty-zll-1m-v1 uncertainty-zvv-1m-v1 scale-atlas-control-v2 scale-atlas-zll-calib-v2 scale-atlas-zvv-calib-v2"
+BDT17_RESULTS="bdt-assess.json bdt-tables.json bdt-tables-r3.json bdt-histogram-cache.json bdt-histogram-cache-r4.json
+  bdt-scaleband-cache-r3.json bdt-confirm-assess.json bdt-confirm-tables.json bdt-confirm-histogram-cache.json"
 archive() {  # archive <product>: the archive a product goes to (empty: not released)
   case $1 in
     install/*)              echo "" ;;
@@ -28,6 +36,16 @@ archive() {  # archive <product>: the archive a product goes to (empty: not rele
     grids/*)                echo "grids.tar" ;;
     tables/*)               p=${1#tables/}; echo "tables-${p%%/*}.tar" ;;
     rwt/model-*)            echo "rwt-model.tgz" ;;
+    # BDT-17: CMS-style inputs as table-only copies (the original bundles also hold particle tensors)
+    rwt/bdt17-tables-*)     p=${1#rwt/bdt17-tables-}; echo "rwt-bdt17-inputs-${p%%/*}.tar" ;;
+    rwt/ensemble-atlas-*-v2/prepared/*) p=${1#rwt/ensemble-}; echo "rwt-bdt17-inputs-${p%%-v2/*}.tar" ;;
+    rwt/ensemble-*/prepared/*) echo "" ;;
+    rwt/ensemble-*/deliver/ggzh-bdt17-*-r5.*) echo "rwt-bdt17-models.tar" ;;
+    rwt/ensemble-*-v2/bdt/*) echo "rwt-bdt17-members.tar" ;;
+    rwt/ensemble-zll-v1/pdf-transport.*) echo "rwt-bdt17-results.tar" ;;
+    rwt/ensemble-*-v2/*)    f=${1##*/}; [[ " $(echo $BDT17_RESULTS) " = *" $f "* ]] && echo "rwt-bdt17-results.tar" || echo "" ;;
+    rwt/ensemble-*)         echo "" ;;
+    rwt/uncertainty-*|rwt/scale-atlas-*) echo "rwt-bdt17-scale.tar" ;;
     rwt/*)                  echo "rwt-weights.tar" ;;
     *)                      echo "other.tar" ;;
   esac
@@ -42,10 +60,17 @@ list() {
     done < <("$HERE/paper.sh" list "$s")
     [ "$s" = common ] || echo "analysis-$s.tar analysis:$s"
   done
+  for s in $BDT17_SETS; do   # no analysis outputs; superseded revisions and diagnostics map to no archive
+    while read -r r n _; do
+      for p in $(seq 0 $((n - 1))); do
+        while read -r f prod; do a=$(archive "$prod"); [ -n "$a" ] && echo "$a $prod"; done < <("$HERE/paper.sh" outputs "$s" "$r" "$p")
+      done
+    done < <("$HERE/paper.sh" list "$s")
+  done
 }
 CMD=${1:?list|stage}; shift
 case $CMD in
-  list) list ;;
+  list) list | awk '!seen[$0]++' ;;
   stage)
     OUTD=${1:?outdir}; shift; STAGE=""; declare -A AN; FORG=(); FORU=()
     while [ $# -gt 0 ]; do
@@ -62,7 +87,7 @@ case $CMD in
     [ -n "$STAGE" ] || { echo "--stage <xrootd url of the products> needed" >&2; exit 2; }
     command -v xrdcp > /dev/null || { echo "xrdcp not found" >&2; exit 2; }
     mkdir -p "$OUTD/files" "$OUTD/record"; OUTD=$(cd "$OUTD" && pwd)
-    list > "$OUTD/record.list"
+    list | awk '!seen[$0]++' > "$OUTD/record.list"   # a product written by two runs (e.g. the histogram cache) once
     bad=0
     while read -r a prod; do
       case $prod in analysis:*) continue ;; esac

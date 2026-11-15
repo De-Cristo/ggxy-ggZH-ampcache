@@ -27,6 +27,12 @@ m_t = 172.5 GeV (on-shell), scale m_ZH/2 unless stated.
 | `tables-lo-cms-vv-13600.tar`, `tables-lo-cms-default-vv-13600.tar`, `tables-nlo-cp5-vv-13600.tar` | the reweighting tables for Z → νν̄; their rows carry 18 columns more than this package's `GGZH_EVENTTABLE` writes (the four-vectors of the Z-decay fermion and antifermion, from the production build), the other columns as written here | `table-*` (set `vv13600`) |
 | `lhe-lo-atlas-13600.tar` | ATLAS-style LO events of the reweighting study: PDF4LHC21, dynamic scale H_T = m_T(H) + p_T(ℓ₁) + p_T(ℓ₂) (`dynscale 3`), 100 × 5 000, seeds 70001–70100, the PDF4LHC21 weight list | `events-lo` (set `atlas13600`) |
 | `tables-lo-atlas-13600.tar`, `tables-nlo-a14-13600.tar` | reweighting tables of the ATLAS-style source (A14 as the ATLAS job options set it, the ATLAS base settings and the ATLAS POWHEG veto) and of its target (the production NLO events, seeds 10001–10200, with the same A14 settings; PDF4LHC21 nominal) | `table-lo-atlas`, `table-nlo-a14` |
+| `rwt-bdt17-models.tar` | the BDT-17 reweighting of the paper: `ggzh-bdt17-zll-r5.tgz`, `ggzh-bdt17-zvv-r5.tgz` (CMS-style), `ggzh-bdt17-atlas-zll-r5.tgz`, `ggzh-bdt17-atlas-zvv-r5.tgz` (ATLAS-style), each with 20 ONNX classifiers, `calibration.json` (calibration, leading-jet, scale and PDF transfer tables, outside-domain variation, 1 % residual), `apply.py`, `pca.py`, `test-vectors.npz` and `model-card.json` | `bdt-deliver5` (CMS-style), `bdt-deliver` (ATLAS-style), sets `ensemble-*-v2` |
+| `rwt-bdt17-members.tar` | the fitted classifiers (scikit-learn `model.pkl`, calibration and evaluation logits, fit records) | `bdt-fit` |
+| `rwt-bdt17-results.tar` | the tests on the evaluation sets (`bdt-assess.json`), the confirmation of the residual (`bdt-confirm-*.json`), calibration tables (`bdt-tables-r3.json`), the histogram caches behind the figures, the scale bands (`bdt-scaleband-cache-r3.json`) and the PDF ratios (`pdf-transport.npz`) | `bdt-assess`, `bdt-confirm`, `bdt-tables2`, `bdt-cache4`, `bdt-scaleband`, `pdf-transport` |
+| `rwt-bdt17-scale.tar` | LO scale variations of the calibration sets from the Born weight (CMS-style: NNPDF3.1, fixed scale; ATLAS-style: PDF4LHC21, H_T) and the ATLAS-style control against stored weights | sets `uncertainty-*-1m-v1`, `scale-atlas-*` |
+| `rwt-bdt17-inputs-zll.tar`, `rwt-bdt17-inputs-zvv.tar` | CMS-style per-event inputs: calibration set, both evaluation sets (`eval-v2`: tests; `eval-v1`: confirmation of the residual) and the 20 member subsets, each as `parton-data/` with `lo-cms.npz`, `nlo-cp5.npz`, `selection.json`, `audit.json`, byte-identical to the files the jobs read (the original bundles also hold particle tensors of an earlier study, not used here) | `table-only` (sets `bdt17-tables-*`) |
+| `rwt-bdt17-inputs-atlas-zll.tar`, `rwt-bdt17-inputs-atlas-zvv.tar` | ATLAS-style per-event inputs: calibration set, evaluation set and the 20 member subsets | `scalar-prepare` |
 | `analysis-13600.tar`, `analysis-13000.tar`, `analysis-verify.tar`, `analysis-vv13600.tar`, `analysis-vv13000.tar`, `analysis-atlas13600.tar` | outputs of `production/analyze.sh <set>`: fixed-order, event and shower summaries (Rivet histograms with every weight variation, `shower-*.json`, `parton-*.json`), the comparisons and checks behind every number of the paper, `STATUS.txt` (package commit of every run), `SHA256SUMS` | analysis of each set |
 
 `README.md` is this file; `FILES.sha256` has the checksum of every file inside the archives and `MANIFEST.sha256` that
@@ -76,8 +82,22 @@ For samples defined like the ATLAS-style source (μ = H_T, PDF4LHC21, A14 and th
 sample has severely depleted support for jets harder than m_ZH. The ATLAS model card records
 the emulation scope, unit-event LO convention and classifier closure-test outcomes; a successful
 ONNX/correctionlib conversion does not imply that the physics closure criteria passed.
-CMS-style reweighting covers both decay channels in the paper and package; ATLAS-style
-reweighting covers ℓℓ only. No ATLAS-style neutrino sample or correction is included.
+These earlier models cover both decay channels for the CMS-style source and ℓℓ only for the
+ATLAS-style source; the BDT-17 models below cover both decay channels for both sources.
+
+## Using the BDT-17 models
+
+Unpack a package of `rwt-bdt17-models.tar` and run `python apply.py --model <dir> --inputs events.npz --out weights.npz`
+(numpy, onnxruntime) with the generator-level inputs listed in `model-card.json`.  Multiply each event's own weight by
+the `nominal` column and by every variation column; scale all columns by the one factor that brings the nominal total
+to σ_NLO.  Per histogram: the 20 member columns give the ensemble uncertainty through `pca.py`; add the `residual` of
+`calibration.json` (1 % of each bin, uncorrelated between bins).  Events with a leading jet harder than m_ZH keep the
+weight 1 (LO+PS × K) with the hard-jet variation; the weights do not create events that the source lacks.
+To rerun a BDT-17 job from these files, use the bundle of `rwt-bdt17-inputs-<channel>.tar` in place of the prepared
+bundle named in `production/paper.sh` (CMS-style: `bdt17-tables-<channel>/member-00.tgz` for
+`ensemble-<channel>-v2/prepared/member-00.tgz`, `calib.tgz` for `parton-<channel>-1m-v1/prepared.tgz`, `eval-v1.tgz` and
+`eval-v2.tgz` for the evaluation sets); the BDT tasks read only the four files these contain.  The frozen selections
+are in `production/ensemble/` of the package.
 
 ## Citation
 
