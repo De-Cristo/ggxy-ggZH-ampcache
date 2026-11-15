@@ -4,7 +4,7 @@
   "channel": "zll",
   "style": "atlas",
   "salt": "ggzh-scalar-atlas-zll-ensemble-20261112-v2",
-  "catalog": "/home/lzhang/lxplus/VHbb/VH-TnP/outputs/ggzh-repro/bdt-inputs-20261111/atlas-zll-material.json",
+  "catalog": "atlas-zll-material.json",
   "catalog_checked": "2026-11-12T20:57:51Z",
   "catalog_sha256": "2a6e508c5d20447ebbfdda04b7997c98d1132cafda6e6d19b108944e501017c2",
   "source_order": "lo-atlas",

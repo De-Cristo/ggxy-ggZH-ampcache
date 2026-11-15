@@ -6,14 +6,14 @@ its CP5 shower tables (tables/nlo-cp5-13600) give m_ZH and the leading jet of th
 joined by event order and checked on the stored scale weight 1001.  Output: per fine cell the sums of the
 central weight (id 3000) and of each member, for ensemble_deliver.py to merge into the calibration groups.
 """
-import gzip,json,re,subprocess,sys
+import gzip,json,os,re,subprocess,sys
 from pathlib import Path
 from common import worker,sha
 worker()
 import numpy as np
 from ensemble_assess_bins import MZH_EDGES,RHO_EDGES,fine_cells
 
-ROOT='root://eosuser.cern.ch//eos/user/l/lichengz/vhtnp-staging/ggzh-repro/paper'
+ROOT=os.environ['PAPER_EOS_ROOT'].rstrip('/')   # product storage, set by the job environment as for the other parton tasks
 SEEDS=range(10001,10201);IDS=[str(3000+k) for k in range(43)]   # LHE ids 3000-3042 = LHAPDF 93300-93342
 WGT=re.compile(r"<wgt id='(\d+)'>\s*([-+0-9.eEdD]+)\s*</wgt>")
 

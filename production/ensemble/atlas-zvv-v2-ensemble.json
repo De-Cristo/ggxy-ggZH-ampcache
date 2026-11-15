@@ -4,7 +4,7 @@
   "channel": "zvv",
   "style": "atlas",
   "salt": "ggzh-scalar-atlas-zvv-ensemble-20261112-v2",
-  "catalog": "/home/lzhang/lxplus/VHbb/VH-TnP/outputs/ggzh-repro/bdt-inputs-20261111/atlas-zvv-material.json",
+  "catalog": "atlas-zvv-material.json",
   "catalog_checked": "2026-11-13T00:46:08Z",
   "catalog_sha256": "660f408e91768df6687d7c8b53b44b2e2a71e9dbc02cd7bd316c7a3dd93feb4e",
   "source_order": "lo-atlas",

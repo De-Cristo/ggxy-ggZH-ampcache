@@ -1,6 +1,6 @@
 """Freeze calibration, evaluation and ensemble-member selections of scalar-table shards (ATLAS-style inputs).
 
-Reads the delivered-shard catalog of the scalar production (outputs/ggzh-repro/bdt-inputs-*/atlas-<ch>-material.json)
+Reads the delivered-shard catalog of the scalar production (atlas-<ch>-material.json)
 and the small per-shard manifests and validation reports only.  In a salted SHA256 order of the file seeds, the
 first 200 LO / 400 NLO eligible shards form the calibration set, the next 200 / 400 the evaluation set, and every
 member draws 200 / 400 from the remaining pool in its own salted order.  The selections use the sample keys of the
@@ -79,7 +79,7 @@ def main():
         pools[key] = rest
     a.out.mkdir(parents=True, exist_ok=True)
     summary = dict(schema='ggzh-scalar-ensemble-index-v1', storage=st, channel=ch, style='atlas', salt=salt,
-                   catalog=str(a.catalog), catalog_checked=catalog.get('checked'), catalog_sha256=digest(raw),
+                   catalog=a.catalog.name, catalog_checked=catalog.get('checked'), catalog_sha256=digest(raw),
                    source_order='lo-atlas', target_order='nlo-a14', nominal_target_weight='w:nominal (PDF4LHC21 central = id 1001)',
                    eligibility_rejections=rejected, pool_shards={k: len(v) for k, v in pools.items()}, selections={})
     for i, n in enumerate(names):

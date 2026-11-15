@@ -1,7 +1,7 @@
 """Ensemble calibration (calibration set) and the registered coverage test (evaluation set), CPU only.
 
 Inputs: calib/parton-data/, eval/parton-data/ (prepared bundles with their scalar tables) and
-members/<name>.tgz (ensemble_fit.py products).  Plan: VH-TnP docs/handoff 2026-11-11 plan A.
+members/<name>.tgz (ensemble_fit.py products).
 
 Weights are shape weights on LO+PS: mean 1 over the in-window LO+PS events of the calibration set;
 the inclusive normalization to the NLO+PS cross section is separate.  Every histogram below is a
