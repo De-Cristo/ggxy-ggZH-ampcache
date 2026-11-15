@@ -125,6 +125,9 @@ case $SET in
     ECHAN=${ECH#atlas-}; ECALIB=rwt/parton-$ECH-1m-v1/prepared.tgz
     [[ $ECH = atlas-* ]] && ECALIB=rwt/$SET/prepared/calib.tgz ;;
   tables-atlas-zll-v1|tables-atlas-zvv-v1) E=13600 ;;
+  bdt17-tables-zll|bdt17-tables-zvv)
+    # Table-only copies of the CMS-style BDT-17 inputs for the data record (the prepared bundles also hold particle tensors).
+    E=13600; ECH=${SET#bdt17-tables-} ;;
   scale-atlas-control-v2|scale-atlas-zll-calib-v2|scale-atlas-zvv-calib-v2) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
@@ -165,6 +168,7 @@ runs() {
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
     ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 bdt-cache4 bdt-deliver5 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
+    bdt17-tables-zll|bdt17-tables-zvv) echo table-only ;;
     tables-atlas-zll-v1) echo scalar-lo-atlas scalar-nlo-a14 parity-lo-atlas parity-nlo-a14 atlas-born-scale-control ;;
     tables-atlas-zvv-v1) echo grids-lo-atlas-vv events-lo-atlas-vv scalar-lo-atlas scalar-nlo-a14 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
@@ -479,6 +483,19 @@ def() {
                       "calib-prepared.tgz $ECALIB" "eval-prepared.tgz rwt/$SET/prepared/eval.tgz")
                   STEP=(bash production/run_parton_study.sh bdt-member)
                   OUTP=("bdt-member.tgz rwt/$SET/bdt3/$n.tgz" "bdt-member.json rwt/$SET/bdt3/$n.json") ;;
+    table-only)
+                  # Job 0: calibration bundle; 1: v1 evaluation set (confirmation); 2: v2 evaluation set; 3-22: v2 members.
+                  res 23 1 4 2
+                  case $p in
+                    0) n=calib; src=rwt/parton-$ECH-1m-v1/prepared.tgz ;;
+                    1) n=eval-v1; src=rwt/ensemble-$ECH-v1/prepared/eval.tgz ;;
+                    2) n=eval-v2; src=rwt/ensemble-$ECH-v2/prepared/eval.tgz ;;
+                    *) n=member-$(printf %02d $((p - 3))); src=rwt/ensemble-$ECH-v2/prepared/$n.tgz ;;
+                  esac
+                  ENVS=("RWT_THREADS=1" "PYTHONDONTWRITEBYTECODE=1" "RWT_PARTON_CHANNEL=$ECH")
+                  IN=("parton-prepared.tgz $src")
+                  STEP=(bash production/run_parton_study.sh table-only)
+                  OUTP=("parton-tables.tgz rwt/$SET/$n.tgz" "table-only.json rwt/$SET/$n.json") ;;
     bdt-fit)
                   # BDT-17 member k on the frozen member-k subset; CPU only, threads = requested CPUs.
                   res 20 8 16 12

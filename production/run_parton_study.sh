@@ -46,6 +46,7 @@ case $TASK in
   pdf-transport) SCRIPT=rwt/parton/pdf_transport.py; ARGS=() ;;
   bdt-deliver) SCRIPT=rwt/parton/ensemble_deliver.py; ARGS=() ;;
   scalar-prepare) SCRIPT=rwt/parton/scalar_prepare.py; ARGS=() ;;
+  table-only) SCRIPT=rwt/parton/table_only.py; ARGS=() ;;
   bdt) SCRIPT=rwt/parton/control.py; ARGS=() ;;
   jet-compare) SCRIPT=rwt/parton/jet_compare.py; ARGS=() ;;
   report) SCRIPT=rwt/parton/report.py; ARGS=() ;;
