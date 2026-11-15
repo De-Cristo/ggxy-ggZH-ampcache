@@ -87,6 +87,8 @@ card=dict(model='gg->ZH LO+PS -> NLO+PS shape weights, BDT-17 ensemble (20 membe
     normalization='nominal weights have mean 1 on the calibration LO+PS sample inside the window; scale every column by the same factor that brings the nominal total to sigma(NLO); the scale and PDF variations then include the change of the total cross section, the member and jet variations are shape-only',
     checks=check,files={p.name:sha(p) for p in sorted(out.rglob('*')) if p.is_file()})
 (out/'model-card.json').write_text(json.dumps(card,indent=1)+'\n')
-with tarfile.open('bdt-deliver.tgz','w:gz') as t:t.add(out,arcname=f'ggzh-bdt17-{ch}')
-Path('bdt-deliver.json').write_text(json.dumps(dict(channel=ch,members=names,checks=check,deliver_sha256=sha('bdt-deliver.tgz')),indent=1)+'\n')
+# Top-level folder carries the style for non-CMS sources, so CMS- and ATLAS-style packages of one channel unpack side by side.
+folder=f'ggzh-bdt17-{ch}' if style=='cms' else f'ggzh-bdt17-{style}-{ch}'
+with tarfile.open('bdt-deliver.tgz','w:gz') as t:t.add(out,arcname=folder)
+Path('bdt-deliver.json').write_text(json.dumps(dict(channel=ch,style=style,folder=folder,members=names,checks=check,deliver_sha256=sha('bdt-deliver.tgz')),indent=1)+'\n')
 print('DELIVERED',json.dumps(check),flush=True)
