@@ -114,6 +114,7 @@ case $SET in
     NNLO=4000; NCMS=2000; NREP=1; PILOT="" ;;
   parton-zll-jets-1m-v1|parton-zvv-jets-1m-v1|parton-zll-1m-v1|parton-zvv-1m-v1|parton-zll-1m-recovery-v2) E=13600 ;;
   numerical-zll-1m-v1|numerical-zvv-1m-v1|stable-zll-1m-v1|stable-zvv-1m-v1|parton-zvv-stable-1m-v1|parton-zvv-jets-stable-1m-v1) E=13600 ;;
+  scale-cms-zll-eval-v1|scale-cms-zvv-eval-v1|nlo-topup-zvv-1m-v1) E=13600 ;;
   nlo-topup-zll-v1) E=13600 ;;
   nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
@@ -123,6 +124,8 @@ case $SET in
     E=13600; ECH=${SET#ensemble-}; EVER=${ECH##*-}; ECH=${ECH%-v*}; ESEL=$ECH; [ "$EVER" = v1 ] || ESEL=$ECH-$EVER
     ECHAN=${ECH#atlas-}; ECALIB=rwt/parton-$ECH-1m-v1/prepared.tgz
     [[ $ECH = atlas-* ]] && ECALIB=rwt/$SET/prepared/calib.tgz ;;
+  tables-atlas-zll-v1|tables-atlas-zvv-v1) E=13600 ;;
+  scale-atlas-control-v2|scale-atlas-zll-calib-v2|scale-atlas-zvv-calib-v2) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -152,12 +155,18 @@ runs() {
     stable-zll-1m-v1|stable-zvv-1m-v1) echo stable-input-audit ;;
     parton-zvv-stable-1m-v1) echo parton-fit-1m parton-early-report-1m parton-report-1m ;;
     parton-zvv-jets-stable-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
+    scale-cms-zll-eval-v1|scale-cms-zvv-eval-v1) echo scale-selection ;;
+    scale-atlas-control-v2) echo atlas-scale-validate ;;
+    scale-atlas-zll-calib-v2|scale-atlas-zvv-calib-v2) echo atlas-scale-calibration ;;
+    nlo-topup-zvv-1m-v1) echo nlo-weight-topup-all ;;
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
     uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) echo scale-inputs-1m ;;
     ensemble-zll-v1|ensemble-zvv-v1) echo ensemble-prepare ensemble-smoke ensemble-fit ensemble-assess-smoke ensemble-assess bdt-fit bdt-assess pdf-transport bdt-deliver bdt-assess-variants bdt-assess-variants2 ;;
     ensemble-zll-v2|ensemble-zvv-v2) echo ensemble-prepare bdt-fit bdt-assess bdt-deliver bdt-assess-variants2 bdt-assess-tail bdt-cache bdt-scaleband bdt-tables2 bdt-fit3 bdt-assess3 bdt-confirm bdt-deliver4 bdt-cache4 bdt-deliver5 ;;
     ensemble-atlas-zll-v2|ensemble-atlas-zvv-v2) echo scalar-prepare bdt-fit bdt-assess bdt-deliver bdt-cache bdt-scaleband bdt-tables2 ;;
+    tables-atlas-zll-v1) echo scalar-lo-atlas scalar-nlo-a14 parity-lo-atlas parity-nlo-a14 atlas-born-scale-control ;;
+    tables-atlas-zvv-v1) echo grids-lo-atlas-vv events-lo-atlas-vv scalar-lo-atlas scalar-nlo-a14 ;;
     particle-atlas-zll) echo events-lo-atlas-10m particle-nlo-a14-10m particle-lo-atlas-10m ;;
     particle-zll|particle-zvv) echo particle-build particle-python particle-splits particle-nlo particle-lo-cms ;;
     vv-rwt10m) echo events-nlo-10m events-lo-cms-10m ;;
@@ -295,11 +304,25 @@ def() {
   local run=$1 p=$2 m t
   ENVS=(); STEP=(); IN=(); OUTP=()
   case $run in
+    scale-selection)
+                  res 1 2 8 12
+                  channel=${SET#scale-cms-}; channel=${channel%-eval-v1}
+                  IN=("reference.lhe.gz lhe/lo-13600/events-20001.lhe.gz")
+                  STEP=(bash production/run_scale_selection.sh "production/scale-selections/$channel-eval.json")
+                  OUTP=("scale-inputs.tgz rwt/$SET/scale-inputs.tgz" "scale-audit.json rwt/$SET/audit.json") ;;
     nlo-weight-topup-all)
-                  res 4000 2 8 2; need_install; need_grids grids-nlo-13600
-                  s=$((100001+p))
-                  IN+=("original.lhe.gz lhe/nlo-rwt10m-13600/events-$s.lhe.gz")
-                  ENVS=("NLO_TOPUP_SEED=$s")
+                  res 4000 2 8 2
+                  if [[ $SET = nlo-topup-zvv-1m-v1 ]]; then
+                    s=$((300001+p))
+                    IN=("ggzh-install.tgz @vv/install/ggzh-install-v3.tgz"
+                        "grids.tgz @vv/grids/grids-nlo-vv-13600.tgz"
+                        "original.lhe.gz @vv/lhe/nlo-vv-rwt10m-13600/events-$s.lhe.gz")
+                    ENVS=("NLO_TOPUP_SEED=$s" "NLO_TOPUP_CHANNEL=zvv" "NLO_TOPUP_CONTROL_GATE=user-20261111-rtol1e-3")
+                  else
+                    need_install; need_grids grids-nlo-13600; s=$((100001+p))
+                    IN+=("original.lhe.gz lhe/nlo-rwt10m-13600/events-$s.lhe.gz")
+                    ENVS=("NLO_TOPUP_SEED=$s")
+                  fi
                   if [[ $SET = nlo-topup-zll-10m-v2 ]]; then
                     ENVS+=("NLO_TOPUP_CONTROL_GATE=user-20261111-rtol1e-3")
                   fi
@@ -645,6 +668,56 @@ def() {
                   OUTP=("parton-report.tgz rwt/parton-zll-1m-v1/report.tgz"
                          "parton-models.tgz rwt/parton-zll-1m-v1/models.tgz"
                          "parton-summary.json rwt/parton-zll-1m-v1/summary.json") ;;
+    atlas-scale-validate)
+                  res 1 2 4 2
+                  IN=("atlas-scale-reference.lhe.gz @atlas/lhe/lo-atlas-13600/events-70001.lhe.gz"
+                      "previous-control.json bdt-tables-v1/atlas-zll/scale-control/audit.json")
+                  STEP=(bash production/run_atlas_scale_calibration.sh validate)
+                  OUTP=("scale-audit.json rwt/$SET/control.json") ;;
+    atlas-scale-calibration)
+                  res 1 2 8 12
+                  channel=${SET#scale-atlas-}; channel=${channel%-calib-v2}
+                  IN=("control.json rwt/scale-atlas-control-v2/control.json"
+                      "calib-prepared.tgz rwt/ensemble-atlas-$channel-v2/prepared/calib.tgz")
+                  STEP=(bash production/run_atlas_scale_calibration.sh calibration "$channel")
+                  OUTP=("scale-inputs.tgz rwt/$SET/scale-inputs.tgz" "scale-audit.json rwt/$SET/audit.json") ;;
+    atlas-born-scale-control)
+                  res 1 2 4 4
+                  IN=("atlas-scale-reference.lhe.gz @atlas/lhe/lo-atlas-13600/events-70001.lhe.gz")
+                  STEP=(bash production/run_atlas_scale_control.sh)
+                  OUTP=("scale-audit.json bdt-tables-v1/atlas-zll/scale-control/audit.json") ;;
+    grids-lo-atlas-vv)
+                  res 1 8 16 12
+                  IN=("ggzh-install.tgz @atlas/install/ggzh-install-v4.tgz")
+                  ENVS=("GRID_SETTINGS=lhans1=93300 lhans2=93300 ebeam1=6800d0 ebeam2=6800d0 dynscale=3 bornonly=1 LOevents=1 vdecaymode=12")
+                  STEP=(bash production/run_atlas_vv_grid.sh)
+                  OUTP=("grids.tgz grids/lo-atlas-zvv-bdt-v1.tgz" "grid-check.json grids/lo-atlas-zvv-bdt-v1.json") ;;
+    events-lo-atlas-vv)
+                  res 2000 2 4 12; s=$((800001+p))
+                  IN=("ggzh-install.tgz @atlas/install/ggzh-install-v4.tgz" "grids.tgz grids/lo-atlas-zvv-bdt-v1.tgz")
+                  STEP=(bash production/run_atlas_vv_events.sh "$s")
+                  OUTP=("events-$s.lhe.gz lhe/lo-atlas-zvv-bdt-v1/events-$s.lhe.gz") ;;
+    scalar-lo-atlas|scalar-nlo-a14|parity-lo-atlas|parity-nlo-a14)
+                  channel=zll; [[ $SET != tables-atlas-zvv-v1 ]] || channel=zvv
+                  order=${run#*-}; scope=production
+                  if [[ $order = lo-atlas ]]; then
+                    res 2000 2 4 6; s=$((500001+p)); ss=$((600001+p)); expected=5000
+                    lheprod="lhe/lo-atlas-parton10m-13600/events-$s.lhe.gz"
+                    if [[ $channel = zvv ]]; then s=$((800001+p)); ss=$((900001+p)); lheprod="lhe/lo-atlas-zvv-bdt-v1/events-$s.lhe.gz"; fi
+                  else
+                    res 4000 2 4 6; s=$((100001+p)); ss=$((700001+p)); expected=2500
+                    lheprod="lhe/nlo-rwt10m-13600/events-$s.lhe.gz"
+                    if [[ $channel = zvv ]]; then s=$((300001+p)); ss=$((1000001+p)); lheprod="@vv/lhe/nlo-vv-rwt10m-13600/events-$s.lhe.gz"; fi
+                  fi
+                  IN=("input.lhe.gz $lheprod" "reference-install.tgz install/shower-install-rwt10m-0.tgz")
+                  if [[ $run = parity-* ]]; then
+                    res 5 2 4 6; scope=parity
+                    IN+=("parity-reference.csv.gz bdt-tables-v1/parity-reference/atlas-zll/$order/$s.csv.gz")
+                  fi
+                  STEP=(bash production/run_atlas_scalar.sh "$channel" "$order" "$s" "$expected" "$ss")
+                  OUTP=("table.csv.gz bdt-tables-v1/atlas-$channel/$scope/$order/closure/$s.csv.gz"
+                         "table-schema.json bdt-tables-v1/atlas-$channel/$scope/$order/validation/$s.schema.json"
+                         "table-validation.json bdt-tables-v1/atlas-$channel/$scope/$order/validation/$s.json") ;;
     events-lo-atlas-10m)
                   res "$NATLAS" 2 4 12; s=$((S0ATLAS+p))
                   IN=("ggzh-install.tgz @atlas/install/ggzh-install-v4.tgz"
