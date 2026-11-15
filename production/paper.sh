@@ -119,7 +119,7 @@ case $SET in
   nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) E=13600 ;;
   uncertainty-zll-1m-v1|uncertainty-zvv-1m-v1) E=13600 ;;
   tables-atlas-zll-v1|tables-atlas-zvv-v1) E=13600 ;;
-  scale-atlas-control-v2|scale-atlas-zll-calib-v2) E=13600 ;;
+  scale-atlas-control-v2|scale-atlas-zll-calib-v2|scale-atlas-zvv-calib-v2) E=13600 ;;
   particle-atlas-zll)
     E=13600; EB=6800d0; PDF=PDF4LHC21_40_pdfas
     CARD="lhans1=93300 lhans2=93300 ebeam1=$EB ebeam2=$EB dynscale=3"
@@ -151,7 +151,7 @@ runs() {
     parton-zvv-jets-stable-1m-v1) echo parton-fit-1m parton-jet-compare-1m ;;
     scale-cms-zll-eval-v1|scale-cms-zvv-eval-v1) echo scale-selection ;;
     scale-atlas-control-v2) echo atlas-scale-validate ;;
-    scale-atlas-zll-calib-v2) echo atlas-scale-calibration ;;
+    scale-atlas-zll-calib-v2|scale-atlas-zvv-calib-v2) echo atlas-scale-calibration ;;
     nlo-topup-zvv-1m-v1) echo nlo-weight-topup-all ;;
     nlo-topup-zll-v1) echo nlo-weight-topup ;;
     nlo-topup-zll-10m-v1|nlo-topup-zll-10m-v2) echo nlo-weight-topup-all ;;
@@ -503,9 +503,10 @@ def() {
                   OUTP=("scale-audit.json rwt/$SET/control.json") ;;
     atlas-scale-calibration)
                   res 1 2 8 12
+                  channel=${SET#scale-atlas-}; channel=${channel%-calib-v2}
                   IN=("control.json rwt/scale-atlas-control-v2/control.json"
-                      "calib-prepared.tgz rwt/ensemble-atlas-zll-v2/prepared/calib.tgz")
-                  STEP=(bash production/run_atlas_scale_calibration.sh calibration zll)
+                      "calib-prepared.tgz rwt/ensemble-atlas-$channel-v2/prepared/calib.tgz")
+                  STEP=(bash production/run_atlas_scale_calibration.sh calibration "$channel")
                   OUTP=("scale-inputs.tgz rwt/$SET/scale-inputs.tgz" "scale-audit.json rwt/$SET/audit.json") ;;
     atlas-born-scale-control)
                   res 1 2 4 4

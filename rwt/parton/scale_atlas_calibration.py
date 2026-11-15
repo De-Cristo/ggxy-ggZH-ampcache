@@ -12,7 +12,13 @@ from scale_atlas_control import ht
 
 np = base.np
 REFERENCE_SHA = '0d1f704d6ac72a7c534832d284e2707e026c6bb5b2fa74f8ef7fb4300c2b4ad1'
-SELECTION_SHA = {'zll': 'c84a4ed1df7d3f822b9230261e0db9b6282a8c1eb90ffc8775949a131f033f4f'}
+SELECTION_SHA = {
+    'zll': 'c84a4ed1df7d3f822b9230261e0db9b6282a8c1eb90ffc8775949a131f033f4f',
+    'zvv': '0730348768f677516fab0b8919324e07b419bd0f1b9f083f1844f765fa6d73ef',
+}
+# Reuse the passed control at its immutable package and product fingerprint.
+CONTROL_PACKAGE = 'bf4a9f53f8fec05141e6784c2c643f052dd730d5'
+CONTROL_SHA = '7a03ee81f93478f53b96d7207183a27007b5faa8a874496bea41483aae88ddf4'
 RTOL, ATOL = 1e-3, 1e-8
 
 
@@ -88,7 +94,8 @@ def calibration(channel):
     control = json.loads(Path('control.json').read_text())
     assert control['accepted'] and control['failed_comparisons'] == 0 and control['events'] == 5000
     assert control['rtol'] == RTOL and control['atol'] == ATOL and control['lhe_sha256'] == REFERENCE_SHA
-    assert control['package'] == Path('VERSION').read_text().strip()
+    assert control['package'].split()[0] == CONTROL_PACKAGE
+    assert base.sha('control.json') == CONTROL_SHA
     assert base.sha('calib-prepared.tgz') == Path('calib-prepared.tgz.sha256.ref').read_text().split()[0]
     # Read only the LO calibration array and its small audit from the prepared bundle.
     with tarfile.open('calib-prepared.tgz') as archive:
