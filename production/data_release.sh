@@ -9,7 +9,7 @@
 #                                  --analysis <set>=<dir> [...]
 #        fetch every product (checked against its <product>.sha256 when that exists), pack the archives, add the
 #        analysis outputs (each <dir> = the analysis/ directory of analyze.sh <set>), README.md and MANIFEST.sha256
-#        (sha256 of every archive, and of every file inside them).  Needs xrdcp and about 4 GB in <outdir>; run on a
+#        (sha256 of every archive, and of every file inside them).  Needs xrdcp and about 60 GB in <outdir> (fetched files + archives; the record is about 26 GB); run on a
 #        machine with access to the products, not on a shared login node.  --stage-for: products whose path
 #        matches the shell glob are fetched from <url> instead (first match wins), e.g. the Z -> nu nubar products
 #        of the vv sets from their own staging area: --stage-for '*-vv-*'=<url>, the ATLAS-style ones of set

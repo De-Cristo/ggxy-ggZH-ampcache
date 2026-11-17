@@ -1,11 +1,12 @@
 {
-  "title": "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS with charged-lepton and neutrino decays",
+  "title": "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS and LO+PS reweighting to NLO+PS",
   "upload_type": "software",
-  "description": "Reproduction package for loop-induced gg → ZH at 13 and 13.6 TeV, with Z → ℓ⁻ℓ⁺ and Z → νν̄ summed over three flavours. Includes pinned builds, the exact amplitude cache (merged upstream), Born suppression, fixed-order and POWHEG event generation, scale and PDF weights, parton showers, STXS analysis, theory-uncertainty comparisons, and channel-specific LO+PS reweighting maps and reusable models, including a public ATLAS-style charged-lepton source with an A14 NLO+PS target. production/paper.sh defines the seven production and validation sets; analysis and data-release scripts reproduce and package the results.",
+  "description": "Reproduction package for loop-induced gg → ZH at 13 and 13.6 TeV, with Z → ℓ⁻ℓ⁺ and Z → νν̄ summed over three flavours. Includes pinned builds, the exact amplitude cache (merged upstream), Born suppression, fixed-order and POWHEG event generation, scale and PDF weights, parton showers, STXS analysis and theory-uncertainty comparisons. It also provides the LO+PS → NLO+PS reweighting: BDT-17 classifier ensembles for CMS-style (CP5, fixed scale) and ATLAS-style (A14, H_T scale) LO+PS sources in both decay channels, trained inside the domain pT(j1) < m_ZH, with calibration, independent evaluation and confirmation tests, NLO scale and PDF transport, and four deliverable model packages (ONNX models, calibration, application code and uncertainty recipe). production/paper.sh is the single definition of every run; analysis and data-release scripts reproduce and package the results.",
   "creators": [
     {
-      "name": "Zhang, L.",
-      "affiliation": "University of Maryland"
+      "name": "Zhang, Licheng",
+      "affiliation": "University of Maryland",
+      "orcid": "0000-0001-7947-9007"
     }
   ],
   "license": "GPL-3.0-only",
@@ -17,13 +18,17 @@
     "NLO",
     "event generation",
     "CMS",
-    "ATLAS"
+    "ATLAS",
+    "reweighting",
+    "BDT",
+    "STXS"
   ],
   "related_identifiers": [
     {
       "identifier": "arXiv:2603.15762",
-      "relation": "isSupplementTo",
+      "relation": "references",
       "scheme": "arxiv"
     }
-  ]
+  ],
+  "version": "3.0.0"
 }

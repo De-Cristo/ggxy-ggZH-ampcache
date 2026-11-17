@@ -1,14 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this reproduction package or amplitude cache, please cite it as below, together with arXiv:2603.15762."
-title: "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS with charged-lepton and neutrino decays"
+title: "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS and LO+PS reweighting to NLO+PS"
 type: software
 authors:
-  # TODO: full given name and ORCID
   - family-names: "Zhang"
     given-names: "Licheng"
     affiliation: "University of Maryland"
-    # orcid: "https://orcid.org/0000-0001-7947-9007"
-version: "2.0.0"
+    orcid: "https://orcid.org/0000-0001-7947-9007"
+version: "3.0.0"
 license: GPL-3.0-only
 repository-code: "https://github.com/De-Cristo/ggxy-ggZH-ampcache"
 keywords:
