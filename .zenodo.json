@@ -28,6 +28,12 @@
       "identifier": "arXiv:2603.15762",
       "relation": "references",
       "scheme": "arxiv"
+    },
+    {
+      "identifier": "10.5281/zenodo.24315535",
+      "relation": "isSupplementedBy",
+      "scheme": "doi",
+      "resource_type": "dataset"
     }
   ],
   "version": "3.0.0"
