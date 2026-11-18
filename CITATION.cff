@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this reproduction package or amplitude cache, please cite it as below, together with arXiv:2603.15762."
+message: "If you use this reproduction package or amplitude cache, please cite it as below, together with arXiv:2611.23020 and arXiv:2603.15762."
 title: "ggxy-ggZH-ampcache: reproduction package for gg → ZH at NLO+PS and LO+PS reweighting to NLO+PS"
 type: software
 authors:
@@ -8,6 +8,17 @@ authors:
     affiliation: "University of Maryland"
     orcid: "https://orcid.org/0000-0001-7947-9007"
 version: "3.0.0"
+doi: "10.5281/zenodo.24316545"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.24316544"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.24316545"
+    description: "Version 3.0.0"
+  - type: doi
+    value: "10.5281/zenodo.24315535"
+    description: "Data record"
 license: GPL-3.0-only
 repository-code: "https://github.com/De-Cristo/ggxy-ggZH-ampcache"
 keywords:
@@ -18,6 +29,18 @@ keywords:
   - NLO
   - event generation
 references:
+  - type: article
+    title: "Loop-induced gg → ZH at NLO+PS for LHC simulations: exact, fast scale and PDF event weights, theory uncertainties, and the limits of rescaled LO+PS"
+    authors:
+      - family-names: Zhang
+        given-names: Licheng
+      - family-names: Palmer
+        given-names: Christopher
+    year: 2026
+    url: "https://arxiv.org/abs/2611.23020"
+    identifiers:
+      - type: other
+        value: "arXiv:2611.23020"
   - type: article
     title: "gg → ZH at NLO matched to parton showers with ggxy and POWHEG"
     authors:

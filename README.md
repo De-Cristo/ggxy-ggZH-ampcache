@@ -5,7 +5,11 @@ An exact amplitude cache for the POWHEG-BOX-V2 process
 (gg → ZH at NLO QCD with full top-mass dependence, matched to parton showers;
 J. Davies, K. Schönwald, M. Steinhauser, D. Stremmer, [arXiv:2603.15762](https://arxiv.org/abs/2603.15762)),
 and a reproduction package for gg → ZH with Z → ℓ⁻ℓ⁺ or Z → νν̄ at NLO and NLO+PS
-at √s = 13.6 and 13 TeV. Both channels include all three lepton flavours.
+at √s = 13.6 and 13 TeV.
+The reproduction package accompanies L. Zhang and C. Palmer,
+[arXiv:2611.23020](https://arxiv.org/abs/2611.23020); release 3.0.0 is archived at
+[10.5281/zenodo.24316545](https://doi.org/10.5281/zenodo.24316545) and the data record at
+[10.5281/zenodo.24315535](https://doi.org/10.5281/zenodo.24315535). Both channels include all three lepton flavours.
 The `vv13600` and `vv13000` sets in [`production/`](production/README.md) reproduce the neutrino
 channel; its independently trained CMS-style map and 16 ONNX models are included in
 [`models/vv13600/`](models/vv13600/), with channel-specific metadata and original closure outcomes.
@@ -120,4 +124,5 @@ authors and licence terms apply to those files; this repository does not redistr
 process, POWHEG-BOX, ggxy, Recola or MCFM. `generator/fo/` contains programs derived from the
 ggxy examples (`examples/ggzh-nlo`). Please cite arXiv:2603.15762 and the ggxy paper (Comput.
 Phys. Commun. 320 (2026) 109933) when using the process, and this repository (see `CITATION.cff`)
-when using the cache or the reproduction package.
+when using the cache or the reproduction package, together with arXiv:2611.23020 for the
+reproduction package and its results.

@@ -25,6 +25,12 @@
   ],
   "related_identifiers": [
     {
+      "identifier": "arXiv:2611.23020",
+      "relation": "isSupplementTo",
+      "scheme": "arxiv",
+      "resource_type": "publication-preprint"
+    },
+    {
       "identifier": "arXiv:2603.15762",
       "relation": "references",
       "scheme": "arxiv"
